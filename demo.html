@@ -15,18 +15,24 @@
       src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
       crossorigin="anonymous"
     ></script>
-    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-
     <script>
-     
       window.googletag = window.googletag || { cmd: [] };
-      window.pbjs = window.pbjs || { cmd: [] }
+
       let anchorSlot;
-       
+
       googletag.cmd.push(() => {
-       
+        // Define an anchor ad slot at the top of the viewport.
+        // Note: a single anchor ad slot may be defined per page, at either the
+        // top or bottom of the viewport.
+        //
+        // Be aware that anchor ads are not limited to mobile devices. If you
+        // serve the same code to both mobile and non-mobile users, it is
+        // recommended to explicitly define when and where anchor ads should be
+        // shown for each environment. Here we use a basic check of viewport
+        // width to create a top anchor on mobile and a bottom anchor on
+        // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
-          "/19968336/header-bid-tag-1",
+          "/6355419/Travel",
           document.body.clientWidth <= 500
             ? googletag.enums.OutOfPageFormat.TOP_ANCHOR
             : googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
@@ -42,25 +48,20 @@
 
         // Define static ad slots.
         googletag
-          .defineSlot("/6355419/Travel/Europe", [300, 250], "static-ad-1")
+          .defineSlot("/6355419/Travel/Europe", [100, 100], "static-ad-1")
           .addService(googletag.pubads());
 
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
-
-
-         
-        });
       });
-     
     </script>
     <style></style>
   </head>
   <body>
     <div id="page-content" style="height: 900vh">
       <h1 id="status">Anchor ads are not supported on this page.</h1>
-      <div id="static-ad-1" style="width: 300px; height: 250px"></div>
+      <div id="static-ad-1" style="width: 100px; height: 100px"></div>
     </div>
     <script>
       googletag.cmd.push(() => {
