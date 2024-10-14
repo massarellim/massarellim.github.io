@@ -48,42 +48,8 @@
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
-        googletag.pubads().disableInitialLoad();
 
-        // Prebid config
-        pbjs.cmd.push(function() {
-          
-          var adUnits = [{
-            code: "/19968336/header-bid-tag-1",
-            mediaTypes: {
-              banner: {
-                sizes: [
-                  [320, 50]
-                ]
-              }
-            },
-            bids: [
-              {
-                bidder: 'openx',
-                params: {
-                  unit: '539439964',
-                  delDomain: 'se-demo-d.openx.net',
-                  customParams: {
-                    key1: 'v1',
-                    key2: ['v2', 'v3']
-                  },
-                }
-              }
-            ]
-          }];
-          
-          pbjs.addAdUnits(adUnits)
 
-         
-          pbjs.requestBids({bidsBackHandler:function(){
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();}
-          });
          
         });
       });
