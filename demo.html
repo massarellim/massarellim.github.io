@@ -54,6 +54,9 @@
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
+        googletag.pubads().disableInitialLoad();
+        googletag.display();
+        googletag.refresh();
       });
     </script>
     <style></style>
@@ -63,13 +66,5 @@
       <h1 id="status">Anchor ads are not supported on this page.</h1>
       <div id="static-ad-1" style="width: 100px; height: 100px"></div>
     </div>
-    <script>
-      googletag.cmd.push(() => {
-        // Ensure the first call to display comes after static ad slot
-        // divs are defined. If you do not have any static ad slots, this
-        // call can be made immediately after services are enabled.
-        googletag.display(anchorSlot);
-      });
-    </script>
   </body>
 </html>
