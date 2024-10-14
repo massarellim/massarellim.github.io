@@ -65,6 +65,24 @@
             {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
             {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
           ]}]);
+
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: {
+                    adUnitCode: '/6355419/Travel',
+                    bidder: 'rubicon'
+                  },
+                  then: {
+                    cpm: 9.99
+                  }
+                },
+              ]
+            }
+          });
+         
           pbjs.requestBids({bidsBackHandler:function(){
             pbjs.setTargetingForGPTAsync();
             googletag.pubads().refresh();
