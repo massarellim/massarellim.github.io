@@ -16,8 +16,9 @@
       crossorigin="anonymous"
     ></script>
     <script>
+     
       window.googletag = window.googletag || { cmd: [] };
-
+      window.pbjs = window.pbjs || { cmd: [] }
       let anchorSlot;
 
       googletag.cmd.push(() => {
@@ -54,6 +55,15 @@
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
+        googletag.pubads().disableInitialLoad();
+
+        pbjs.cmd.push(function() {
+        pbjs.addAdUnits([{code:'/6355419/Travel',mediaTypes:{banner:{sizes:[320, 50]}},
+            bids:[{bidder:'appnexus',params:{placementId:13144370}},{bidder:'rubicon',params:{placementId:67064}}]}]);
+        pbjs.requestBids({bidsBackHandler:function(){
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();}});
+          });
       });
     </script>
     <style></style>
