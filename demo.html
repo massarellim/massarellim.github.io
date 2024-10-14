@@ -18,7 +18,8 @@
     <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     <script>
       window.googletag = window.googletag || { cmd: [] };
-
+      var pbjs = pbjs || {};
+      pbjs.cmd = pbjs.cmd || [];
       let anchorSlot;
 
       googletag.cmd.push(() => {
