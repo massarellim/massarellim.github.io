@@ -75,24 +75,24 @@
           
           pbjs.addAdUnits(adUnits)
 
-          pbjs.setConfig({
-            debugging: {
-              enabled: true,
-              intercept: [
-                {
-                  when: {
-                    adUnitCode: '/19968336/header-bid-tag-1',
-                    bidder: 'appnexus'
-                  },
-                  then: {
-                    cpm: 50.00,
-                    width: 320,
-                    height: 50
-                  }
-                },
-              ]
-            }
-          });
+          // pbjs.setConfig({
+          //   debugging: {
+          //     enabled: true,
+          //     intercept: [
+          //       {
+          //         when: {
+          //           adUnitCode: '/19968336/header-bid-tag-1',
+          //           bidder: 'appnexus'
+          //         },
+          //         then: {
+          //           cpm: 50.00,
+          //           width: 320,
+          //           height: 50
+          //         }
+          //       },
+          //     ]
+          //   }
+          // });
          
           pbjs.requestBids({bidsBackHandler:function(){
               pbjs.setTargetingForGPTAsync();
