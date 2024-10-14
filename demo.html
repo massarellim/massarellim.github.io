@@ -22,10 +22,6 @@
       window.googletag = window.googletag || { cmd: [] };
       window.pbjs = window.pbjs || { cmd: [] }
       let anchorSlot;
-
-      googletag.cmd.push(() => {
-        googletag.pubads().disableInitialLoad();
-      })
        
       googletag.cmd.push(() => {
        
@@ -52,6 +48,7 @@
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
+        googletag.pubads().disableInitialLoad();
 
         // Prebid config
         pbjs.cmd.push(function() {
