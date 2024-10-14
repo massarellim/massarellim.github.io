@@ -62,12 +62,25 @@
                 ]
               }
             },
-            bids: [{
-              bidder: 'appnexus',
-              params: {
-                placementId: 13144370
+            bids: [
+              {
+                bidder: 'appnexus',
+                params: {
+                  placementId: 13144370
+                }
+              },
+              {
+                bidder: 'openx',
+                params: {
+                  unit: '539439964',
+                  delDomain: 'se-demo-d.openx.net',
+                  customParams: {
+                    key1: 'v1',
+                    key2: ['v2', 'v3']
+                  },
+                }
               }
-            }]
+            ]
           }];
           
           pbjs.addAdUnits(adUnits)
