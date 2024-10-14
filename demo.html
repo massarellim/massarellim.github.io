@@ -33,7 +33,7 @@
         // width to create a top anchor on mobile and a bottom anchor on
         // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
-          "/6355419/Travel",
+          "/19968336/header-bid-tag-1",
           document.body.clientWidth <= 500
             ? googletag.enums.OutOfPageFormat.TOP_ANCHOR
             : googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
@@ -56,6 +56,16 @@
         googletag.pubads().enableSingleRequest();
         googletag.pubads().disableInitialLoad();
         googletag.enableServices();
+
+        //Prebid
+        pbjs.cmd.push(function() {
+          pbjs.addAdUnits([{code:'/19968336/header-bid-tag-1',mediaTypes:{banner:{sizes:[320, 50]}}, bids:[{bidder:'appnexus',params:{placementId:13144370}},{bidder:'rubicon',params:{placementId:67064}}]}]);
+          pbjs.requestBids({bidsBackHandler:function(){
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          }});
+        });
+       
       });
     </script>
     <style></style>
