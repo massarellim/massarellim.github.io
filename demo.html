@@ -30,7 +30,7 @@
       googletag.cmd.push(() => {
        
         anchorSlot = googletag.defineOutOfPageSlot(
-          "/6355419/Travel",
+          "/19968336/header-bid-tag-1",
           document.body.clientWidth <= 500
             ? googletag.enums.OutOfPageFormat.TOP_ANCHOR
             : googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
@@ -81,12 +81,10 @@
               intercept: [
                 {
                   when: {
-                    // intercept bids from bidderA that have adUnitCode === 'test-div'
-                    adUnitCode: 'test-div',
-                    bidder: 'bidderA'
+                    adUnitCode: '/19968336/header-bid-tag-1',
+                    bidder: 'appnexus'
                   },
                   then: {
-                    // mock their response with sane defaults and `cpm: 10`
                     cpm: 10
                   }
                 },
