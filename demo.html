@@ -55,17 +55,14 @@
 
         // Prebid config
         pbjs.cmd.push(function() {
-           
-          var sizes = [
-            [320, 50]
-          ];
-          var PREBID_TIMEOUT = 700;
           
           var adUnits = [{
             code: '/19968336/header-bid-tag-1',
             mediaTypes: {
               banner: {
-                sizes: sizes
+                sizes: [
+                  [320, 50]
+                ]
               }
             },
             bids: [{
@@ -84,10 +81,12 @@
               intercept: [
                 {
                   when: {
-                    adUnitCode: '/19968336/header-bid-tag-1',
-                    bidder: 'appnexus'
+                    // intercept bids from bidderA that have adUnitCode === 'test-div'
+                    adUnitCode: 'test-div',
+                    bidder: 'bidderA'
                   },
                   then: {
+                    // mock their response with sane defaults and `cpm: 10`
                     cpm: 10
                   }
                 },
