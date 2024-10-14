@@ -15,6 +15,7 @@
       src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
       crossorigin="anonymous"
     ></script>
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     <script>
       window.googletag = window.googletag || { cmd: [] };
 
@@ -63,9 +64,6 @@
     <div id="page-content" style="height: 900vh">
       <h1 id="status">Anchor ads are not supported on this page.</h1>
       <div id="static-ad-1" style="width: 100px; height: 100px">
-        googletag.cmd.push(function() {
-          googletag.display('static-ad-1');
-        });
       </div>
     </div>
   </body>
