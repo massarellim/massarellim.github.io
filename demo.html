@@ -24,16 +24,11 @@
       let anchorSlot;
 
       googletag.cmd.push(() => {
-        // Define an anchor ad slot at the top of the viewport.
-        // Note: a single anchor ad slot may be defined per page, at either the
-        // top or bottom of the viewport.
-        //
-        // Be aware that anchor ads are not limited to mobile devices. If you
-        // serve the same code to both mobile and non-mobile users, it is
-        // recommended to explicitly define when and where anchor ads should be
-        // shown for each environment. Here we use a basic check of viewport
-        // width to create a top anchor on mobile and a bottom anchor on
-        // non-mobile devices.
+        googletag.pubads().disableInitialLoad();
+      })
+       
+      googletag.cmd.push(() => {
+       
         anchorSlot = googletag.defineOutOfPageSlot(
           "/6355419/Travel",
           document.body.clientWidth <= 500
@@ -57,25 +52,57 @@
         // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
-        googletag.pubads().disableInitialLoad();
 
+        // Prebid config
         pbjs.cmd.push(function() {
-          pbjs.addAdUnits([{code:'/19968336/header-bid-tag-1',mediaTypes:{banner:{sizes:[320, 50]}},
-              bids:[
-               {bidder:'appnexus',
-                params:{placementId:13144370}
-               },
-               {bidder:'rubicon',
-                params:{placementId:67064}
-               }
+           
+          var sizes = [
+            [320, 50]
+          ];
+          var PREBID_TIMEOUT = 700;
+          
+          var adUnits = [{
+            code: '/19968336/header-bid-tag-1',
+            mediaTypes: {
+              banner: {
+                sizes: sizes
+              }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 13144370
+              }
+            }]
+          }];
+          
+          pbjs.addAdUnits(adUnits)
+
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: {
+                    adUnitCode: '/19968336/header-bid-tag-1',
+                    bidder: 'appnexus'
+                  },
+                  then: {
+                    cpm: 10
+                  }
+                },
               ]
-          }]);
+            }
+          });
+         
           pbjs.requestBids({bidsBackHandler:function(){
               pbjs.setTargetingForGPTAsync();
               googletag.pubads().refresh();}
           });
+         
         });
       });
+     
     </script>
     <style></style>
   </head>
