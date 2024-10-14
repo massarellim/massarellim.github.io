@@ -51,7 +51,7 @@
 
         // Define static ad slots.
         googletag
-          .defineSlot("/19968336/header-bid-tag-1", [100, 100], "static-ad-1")
+          .defineSlot("/6355419/Travel/Europe", [300, 250], "static-ad-1")
           .addService(googletag.pubads());
 
         // Enable SRA and services.
@@ -60,12 +60,21 @@
         googletag.pubads().disableInitialLoad();
 
         pbjs.cmd.push(function() {
-        pbjs.addAdUnits([{code:'/19968336/header-bid-tag-1',mediaTypes:{banner:{sizes:[320, 50]}},
-            bids:[{bidder:'appnexus',params:{placementId:13144370}},{bidder:'rubicon',params:{placementId:67064}}]}]);
-        pbjs.requestBids({bidsBackHandler:function(){
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();}});
+          pbjs.addAdUnits([{code:'/19968336/header-bid-tag-1',mediaTypes:{banner:{sizes:[320, 50]}},
+              bids:[
+               {bidder:'appnexus',
+                params:{placementId:13144370}
+               },
+               {bidder:'rubicon',
+                params:{placementId:67064}
+               }
+              ]
+          }]);
+          pbjs.requestBids({bidsBackHandler:function(){
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();}
           });
+        });
       });
     </script>
     <style></style>
@@ -73,7 +82,7 @@
   <body>
     <div id="page-content" style="height: 900vh">
       <h1 id="status">Anchor ads are not supported on this page.</h1>
-      <div id="static-ad-1" style="width: 100px; height: 100px"></div>
+      <div id="static-ad-1" style="width: 300px; height: 250px"></div>
     </div>
     <script>
       googletag.cmd.push(() => {
