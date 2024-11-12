@@ -34,7 +34,7 @@
         // width to create a top anchor on mobile and a bottom anchor on
         // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
-          "/6355419/Travel",
+          "/6353/massarellim_anchor",
           document.body.clientWidth <= 500
             ? googletag.enums.OutOfPageFormat.TOP_ANCHOR
             : googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
@@ -49,7 +49,7 @@
 
         // Define static ad slots.
         googletag
-          .defineSlot("/6355419/Travel/Europe", [100, 100], "static-ad-1")
+          .defineSlot("/6353/massarellim_test", [320, 250], "static-ad-1")
           .addService(googletag.pubads());
 
         // Enable SRA and services.
@@ -98,7 +98,7 @@
   <body>
     <div id="page-content" style="height: 900vh">
       <h1 id="status">Anchor ads are not supported on this page.</h1>
-      <div id="static-ad-1" style="width: 100px; height: 100px">
+      <div id="static-ad-1" style="width: 300px; height: 250px">
         <script>
           googletag.cmd.push(function() {
               googletag.display("static-ad-1");
