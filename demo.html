@@ -43,7 +43,6 @@
         // Anchor slots return null if the page or device does not support anchors.
         if (anchorSlot) {
           anchorSlot.setTargeting("test", "anchor").addService(googletag.pubads());
-
           document.getElementById("status").innerText =
             "Anchor ad is initialized. Scroll page to activate.";
         }
@@ -60,7 +59,8 @@
 
         //Prebid
         pbjs.cmd.push(function() {
-          pbjs.addAdUnits([{code:'/6355419/Travel', mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
+
+          pbjs.addAdUnits([{code: anchorSlot.getSlotElementId() , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
             {bidder:'appnexus',params:{placementId:13144370}},
             {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
             {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
@@ -72,13 +72,13 @@
               intercept: [
                 {
                   when: {
-                    adUnitCode: '/6355419/Travel',
+                    adUnitCode: anchorSlot.getSlotElementId(),
                     bidder: 'rubicon'
                   },
                   then: {
                     cpm: 9.99,
+                    width: 320,
                     height: 50,
-                    width: 320
                   }
                 },
               ]
