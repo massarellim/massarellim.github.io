@@ -60,7 +60,7 @@
         //Prebid
         pbjs.cmd.push(function() {
 
-          pbjs.addAdUnits([{code: 'massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
+          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
             {bidder:'appnexus',params:{placementId:13144370}},
             {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
             {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
@@ -72,7 +72,7 @@
               intercept: [
                 {
                   when: {
-                    adUnitCode: 'massarellim_anchor',
+                    adUnitCode: '/6353/massarellim_anchor',
                     bidder: 'rubicon'
                   },
                   then: {
@@ -90,9 +90,9 @@
         	     return function(adUnitCode) {
                 console.log(slot)
                 console.log(adUnitCode)
-                console.log(slot?.getSlotElementId())
                 console.log(slot?.getAdUnitPath())
-                return adUnitCode === slot.getSlotElementId();
+                console.log(slot?.getSlotElementId())
+                return adUnitCode === slot.getAdUnitPath();
            	  };
             });
             googletag.pubads().refresh();
