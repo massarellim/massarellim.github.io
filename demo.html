@@ -88,10 +88,6 @@
           pbjs.requestBids({bidsBackHandler:function(){
             pbjs.setTargetingForGPTAsync(undefined, function (slot) {
         	     return function(adUnitCode) {
-                console.log(slot)
-                console.log(adUnitCode)
-                console.log(slot?.getAdUnitPath())
-                console.log(slot?.getSlotElementId())
                 return adUnitCode === slot.getAdUnitPath();
            	  };
             });
