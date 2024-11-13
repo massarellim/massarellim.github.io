@@ -90,8 +90,8 @@
         	     return function(adUnitCode) {
                 console.log(slot)
                 console.log(adUnitCode)
-                console.log(slot?.getAdUnitPath())
-                return adUnitCode === `${slot.getAdUnitPath()}`;
+                console.log(slot?.getSlotElementId())
+                return adUnitCode === slot.getSlotElementId();
            	  };
             });
             googletag.pubads().refresh();
