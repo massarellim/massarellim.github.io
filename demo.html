@@ -22,44 +22,17 @@
       pbjs.cmd = pbjs.cmd || [];
       let anchorSlot;
 
-        //Prebid
-        pbjs.cmd.push(function() {
-
-          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
-            {bidder:'appnexus',params:{placementId:13144370}},
-          ]}]);
-
-          pbjs.setConfig({
-            debugging: {
-              enabled: true,
-              intercept: [
-                {
-                  when: {
-                    adUnitCode: '/6353/massarellim_anchor',
-                    bidder: 'appnexus'
-                  },
-                  then: {
-                    cpm: 9.90,
-                    width: 320,
-                    height: 50,
-                  }
-                },
-              ]
-            }
-          });
-         
-          pbjs.requestBids({bidsBackHandler:function(){
-            pbjs.setTargetingForGPTAsync(undefined, function (slot) {
-        	     return function(adUnitCode) {
-                return adUnitCode === slot.getAdUnitPath();
-           	  };
-            });
-            googletag.pubads().refresh();
-          }});
-        });
-
       googletag.cmd.push(() => {
-
+        // Define an anchor ad slot at the top of the viewport.
+        // Note: a single anchor ad slot may be defined per page, at either the
+        // top or bottom of the viewport.
+        //
+        // Be aware that anchor ads are not limited to mobile devices. If you
+        // serve the same code to both mobile and non-mobile users, it is
+        // recommended to explicitly define when and where anchor ads should be
+        // shown for each environment. Here we use a basic check of viewport
+        // width to create a top anchor on mobile and a bottom anchor on
+        // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
           "/6353/massarellim_anchor",
           document.body.clientWidth <= 500
@@ -83,6 +56,48 @@
         googletag.pubads().enableSingleRequest();
         googletag.pubads().disableInitialLoad();
         googletag.enableServices();
+
+        //Prebid
+        pbjs.cmd.push(function() {
+
+          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
+            {bidder:'appnexus',params:{placementId:13144370}},
+            {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
+            {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
+          ]}]);
+
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: {
+                    adUnitCode: '/6353/massarellim_anchor',
+                    bidder: 'rubicon'
+                  },
+                  then: {
+                    cpm: 9.90,
+                    width: 320,
+                    height: 50,
+                  }
+                },
+              ]
+            }
+          });
+         
+          pbjs.requestBids({bidsBackHandler:function(){
+            pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+        	     return function(adUnitCode) {
+                console.log(slot)
+                console.log(adUnitCode)
+                console.log(slot?.getAdUnitPath())
+                console.log(slot?.getSlotElementId())
+                return adUnitCode === slot.getAdUnitPath();
+           	  };
+            });
+            googletag.pubads().refresh();
+          }});
+        });
        
       });
     </script>
