@@ -60,7 +60,7 @@
         //Prebid
         pbjs.cmd.push(function() {
 
-          pbjs.addAdUnits([{code: anchorSlot.getSlotElementId() , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
+          pbjs.addAdUnits([{code: 'massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
             {bidder:'appnexus',params:{placementId:13144370}},
             {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
             {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
@@ -72,7 +72,7 @@
               intercept: [
                 {
                   when: {
-                    adUnitCode: anchorSlot.getSlotElementId(),
+                    adUnitCode: 'massarellim_anchor',
                     bidder: 'rubicon'
                   },
                   then: {
