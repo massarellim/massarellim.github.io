@@ -37,8 +37,7 @@
           //googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
-          googletag.display("div-1");
-
+/*
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'fetched');
           });
@@ -86,6 +85,7 @@
         observer.observe(document.getElementById("div-1"));
         observer.observe(document.getElementById("div-3"));
         observer.observe(document.getElementById("div-5"));
+        */
         
         //function only to paint status table on top of page according to fetch/render (not needed on actual implementation)
         function updateSlotStatus(slotId, state) {
@@ -138,6 +138,11 @@
       <div class="main-content">
         slot1
         <div id="div-1" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-1");
+            });
+          </script>
         </div>
    
         <div style="height:200vh"></div>
