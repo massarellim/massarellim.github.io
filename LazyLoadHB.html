@@ -34,16 +34,12 @@
           });
  
           googletag.pubads().enableSingleRequest();
-          //googletag.pubads().disableInitialLoad();
+          googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
-          });
-          
-          googletag.pubads().addEventListener('slotOnload', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'loaded');
           });
 
           googletag.pubads().addEventListener('slotRenderEnded', function(event) {
@@ -54,7 +50,7 @@
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
           });
 
-/*
+
           pbjs.cmd.push(function() {
 
             pbjs.addAdUnits([{code: '/6353/test' , mediaTypes:{banner:{sizes:[300, 250]}}, bids:[
@@ -70,7 +66,7 @@
             });
             
           });
-             */
+             
         });
 /*
         const callback = (entries, observer) => {
