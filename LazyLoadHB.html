@@ -65,9 +65,11 @@
               }
             });
 
-            pbjs.requestBids({bidsBackHandler:function(){
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads.refresh()
+            pbjs.requestBids({
+              bidsBackHandler:function(){
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads.refresh();
+              }
             });
             
           });
