@@ -71,7 +71,9 @@
             pbjs.cmd.push(function() {
               pbjs.requestBids({bidsBackHandler:function(){
                 pbjs.setTargetingForGPTAsync();
-                googletag.pubads.refresh(entry.target)}
+                googletag.cmd.push(() => {
+                  googletag.pubads.refresh(entry.target)
+                });                       
               });
             });
           });
