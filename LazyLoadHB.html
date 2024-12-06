@@ -39,11 +39,19 @@
 
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'fetched');
+            updateSlotStatus(event.slot.getSlotElementId(), 'requested');
           });
           
           googletag.pubads().addEventListener('slotOnload', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'loaded');
+          });
+
+          googletag.pubads().addEventListener('slotRenderEnded', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
+          });
+
+          googletag.pubads().addEventListener('impressionViewable', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
           });
 
 /*
@@ -175,39 +183,53 @@
         <table>
           <tr>
             <th>Ad Slot</th>
-            <th>Fetched?</th>
+            <th>Requested?</th>
+            <th>Loaded?</th>
             <th>Rendered?</th>
+            <th>Viewed?</th>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 1</td>
-            <td id="div-1-fetched">No</td>
+            <td id="div-1-requested">No</td>
+            <td id="div-1-loaded">No</td>
             <td id="div-1-rendered">No</td>
+            <td id="div-1-viewed">No</td>
           </tr>
           <tr>
-            <td class="slot-name">Ad Slot 2</td>
-            <td id="div-2-fetched">No</td>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-2-requested">No</td>
+            <td id="div-2-loaded">No</td>
             <td id="div-2-rendered">No</td>
+            <td id="div-2-viewed">No</td>
           </tr>
           <tr>
-            <td class="slot-name">Ad Slot 3</td>
-            <td id="div-3-fetched">No</td>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-3-requested">No</td>
+            <td id="div-3-loaded">No</td>
             <td id="div-3-rendered">No</td>
+            <td id="div-3-viewed">No</td>
           </tr>
           <tr>
-            <td class="slot-name">Ad Slot 4</td>
-            <td id="div-4-fetched">No</td>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-4-requested">No</td>
+            <td id="div-4-loaded">No</td>
             <td id="div-4-rendered">No</td>
+            <td id="div-4-viewed">No</td>
           </tr>
           <tr>
-            <td class="slot-name">Ad Slot 5</td>
-            <td id="div-5-fetched">No</td>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-5-requested">No</td>
+            <td id="div-5-loaded">No</td>
             <td id="div-5-rendered">No</td>
+            <td id="div-5-viewed">No</td>
           </tr>
           <tr>
-            <td class="slot-name">Ad Slot 6</td>
-            <td id="div-6-fetched">No</td>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-6-requested">No</td>
+            <td id="div-6-loaded">No</td>
             <td id="div-6-rendered">No</td>
-          </tr> 
+            <td id="div-6-viewed">No</td>
+          </tr>
         </table>
         <p>
           Scroll the container below to lazily load the ad slots.
