@@ -34,7 +34,7 @@
           });
  
           googletag.pubads().enableSingleRequest();
-          //googletag.pubads().disableInitialLoad();
+          googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
           googletag.display("div-1");
@@ -61,15 +61,29 @@
                     then: {cpm: 9.90, width: 320, height: 50}}]
               }
             });
-           
-            pbjs.requestBids({bidsBackHandler:function(){
-              pbjs.setTargetingForGPTAsync();}
-            });
             
           });
           
         });
 
+        const callback = (entries, observer) => {
+          entries.forEach((entry) => {
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({bidsBackHandler:function(){
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads.refresh()}
+              });
+            });
+          });
+        };
+        
+        let observer = new IntersectionObserver(callback, {
+            rootMargin: '0px 0px 100%'
+        });
+
+        observer.observe(document.getElementById("div-1"));
+        observer.observe(document.getElementById("div-3"));
+        observer.observe(document.getElementById("div-5"));
         
         //function only to paint status table on top of page according to fetch/render (not needed on actual implementation)
         function updateSlotStatus(slotId, state) {
