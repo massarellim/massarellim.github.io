@@ -14,17 +14,17 @@
         
         googletag.cmd.push(function() {
           
-          googletag.defineSlot("/6353/test", [300, 250], "div-1")
+          googletag.defineSlot("/6353/test", [320, 50], "div-1")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test", [300, 250], "div-2")
+          googletag.defineSlot("/6353/test_no_hb", [320, 50], "div-2")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test", [300, 250], "div-3")
+          googletag.defineSlot("/6353/test", [320, 50], "div-3")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test", [300, 250], "div-4")
+          googletag.defineSlot("/6353/test_no_hb", [320, 50], "div-4")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test", [300, 250], "div-5")
+          googletag.defineSlot("/6353/test", [320, 50], "div-5")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test", [300, 250], "div-6")
+          googletag.defineSlot("/6353/test_no_hb", [320, 50], "div-6")
             .addService(googletag.pubads());
 
           googletag.pubads().enableLazyLoad({
@@ -58,7 +58,7 @@
               debugging: {
                 enabled: true,
                 intercept: [{when: {adUnitCode: '/6353/test', bidder: 'rubicon'},
-                    then: {cpm: 9.90, width: 300, height: 250}}]
+                    then: {cpm: 9.90, width: 320, height: 50}}]
               }
             });
            
@@ -122,32 +122,32 @@
    
       <div class="main-content">
         slot1
-        <div id="div-1" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-1" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
    
         <div style="height:200vh"></div>
         slot2
-        <div id="div-2" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-2" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
    
         <div style="height:200vh"></div>
         slot3
-        <div id="div-3" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-3" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
    
         <div style="height:200vh"></div>
         slot4
-        <div id="div-3" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-3" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
         
         <div style="height:200vh"></div>
         slot5
-        <div id="div-3" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-3" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
         
         <div style="height:200vh"></div>
         slot6
-        <div id="div-3" class="ad-slot" style="height: 250px; width: 300px;">
+        <div id="div-3" class="ad-slot" style="height: 320px; width: 50px;">
         </div>
       </div>
    
