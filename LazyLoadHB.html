@@ -2,64 +2,45 @@
     <head>
       <meta charset="utf-8">
       <title>Lazy loading example</title>
+      
       <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
       <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+      
       <script>
-          // Lazy load slots setup
-          const items = [
-              {
-                  id: 'div-4',
-                  lfetch: 500, 
-                  lrender: 300,
-                  lname: '/6353/test',
-                  lsizes: [300, 250]
-              },
-              {
-                  id: 'div-5',
-                  lfetch: 200, 
-                  lrender: 50,             
-                  lname: '/6353/test',
-                  lsizes: [300, 250]
-              },
-              {
-                  id: 'div-6',
-                  lfetch: 200, 
-                  lrender: 50,
-                  lname: '/6353/test',
-                  lsizes: [300, 250]
-              }
-   
-          ];
-   
-     
-          window.googletag = window.googletag || {cmd: []};
-          var pbjs = pbjs || {};
-          pbjs.cmd = pbjs.cmd || [];
+        
+        window.googletag = window.googletag || {cmd: []};
+        var pbjs = pbjs || {};
+        pbjs.cmd = pbjs.cmd || [];
+        
+        googletag.cmd.push(function() {
           
-          googletag.cmd.push(function() {
-          // SRA Slots (**WONT BE AFFECTED BY LAZY LOAD**)
-          var slots = [
           googletag.defineSlot("/6353/test", [300, 250], "div-1")
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test", [300, 250], "div-2")
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test", [300, 250], "div-3")
             .addService(googletag.pubads());
-          ];
-   
-          // Enable SRA and services.
+          googletag.defineSlot("/6353/test", [300, 250], "div-4")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test", [300, 250], "div-5")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test", [300, 250], "div-6")
+            .addService(googletag.pubads());
+
+          googletag.pubads().enableLazyLoad({
+           fetchMarginPercent: 400,  
+           renderMarginPercent: 100,  
+            mobileScaling: 1.0 
+          });
+ 
           googletag.pubads().enableSingleRequest();
-          googletag.enableServices(); 
-   
-           // Issue first SRA request (slots 1, 2 and 3) immediately.
-          googletag.pubads().refresh();     
-   
-          // Register event handlers to observe lazy loading behavior on status
-          // table on top of page (not required for actual implementation).
+          googletag.pubads().disableInitialLoad();
+          googletag.enableServices();
+
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'fetched');
           });
-   
+          
           googletag.pubads().addEventListener('slotOnload', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
           });
@@ -67,31 +48,6 @@
         });
   
    
-        //Function to be used to enable custom lazy loading, accepts div as
-        //parameter which contain specific fetch/render configurations as defined
-        //on custom fetch/render map
-        newLazyLoad = (newdiv) => {
-          googletag.cmd.push(function() {
-          // Search data of the desired adunit
-          let ad_unit = items.find(item => item.id == newdiv)
-          // Page Level Target Update
-          let slo ={};
-          slo[newdiv] = googletag.defineSlot(ad_unit.lname,ad_unit.lsizes, newdiv)
-            .addService(googletag.pubads()),
-          // Enable Lazy Loading
-            googletag.pubads().enableLazyLoad({
-             fetchMarginPercent: ad_unit.lfetch,  
-             // Fetch slots within customfetchrendermap object definitions of viewports.
-             renderMarginPercent: ad_unit.lrender,  
-             // Render slots within customfetchrendermap object definitions of viewports.
-              mobileScaling: 1.0 
-            });
-          console.log(slo)
-            // checking in console if it's defining lazyloading according to customfetchrendermap definition
-            googletag.display(newdiv);
-            googletag.pubads().refresh([slo[newdiv]]);
-          });
-          }
    
         //function only to paint status table on top of page according to fetch/render (not needed on actual implementation)
         function updateSlotStatus(slotId, state) {
