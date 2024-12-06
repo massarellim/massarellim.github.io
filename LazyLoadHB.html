@@ -64,6 +64,11 @@
                     then: {cpm: 9.90, width: 320, height: 50}}]
               }
             });
+
+            pbjs.requestBids({bidsBackHandler:function(){
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads.refresh()
+            });
             
           });
              
