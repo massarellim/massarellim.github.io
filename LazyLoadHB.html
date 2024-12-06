@@ -33,7 +33,7 @@
             mobileScaling: 1.0,
           });
  
-          googletag.pubads().enableSingleRequest();
+          //googletag.pubads().enableSingleRequest();
           //googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
@@ -156,26 +156,51 @@
         <div style="height:200vh"></div>
         slot2
         <div id="div-2" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-2");
+            });
+          </script>
         </div>
    
         <div style="height:200vh"></div>
         slot3
         <div id="div-3" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-3");
+            });
+          </script>
         </div>
    
         <div style="height:200vh"></div>
         slot4
         <div id="div-4" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-4");
+            });
+          </script>
         </div>
         
         <div style="height:200vh"></div>
         slot5
         <div id="div-5" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-5");
+            });
+          </script>
         </div>
         
         <div style="height:200vh"></div>
         slot6
         <div id="div-6" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-6");
+            });
+          </script>
         </div>
       </div>
    
