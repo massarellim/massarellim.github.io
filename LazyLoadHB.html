@@ -28,13 +28,13 @@
             .addService(googletag.pubads());
 
           googletag.pubads().enableLazyLoad({
-           fetchMarginPercent: 200,  
-           renderMarginPercent: 100,  
-            mobileScaling: 1.0 
+            fetchMarginPercent: 200,
+            renderMarginPercent: 100,
+            mobileScaling: 2.0,
           });
  
           googletag.pubads().enableSingleRequest();
-          googletag.pubads().disableInitialLoad();
+          //googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
           googletag.display("div-1");
