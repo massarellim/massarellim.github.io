@@ -62,15 +62,11 @@
             ]}]);
   
             pbjs.setConfig({
-              debugging: {
-                enabled: true,
-                intercept: [{when: {adUnitCode: '/6353/test_1', bidder: 'rubicon'},
-                    then: {cpm: 9.90, width: 320, height: 50}},
-                            {when: {adUnitCode: '/6353/test_2', bidder: 'rubicon'},
-                    then: {cpm: 9.90, width: 320, height: 50}}
-                           {when: {adUnitCode: '/6353/test_3', bidder: 'rubicon'},
-                    then: {cpm: 9.90, width: 320, height: 50}}]
-              }
+              debugging: {enabled: true, intercept: [
+                  {when: {adUnitCode: '/6353/test_1', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
+                  {when: {adUnitCode: '/6353/test_2', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
+                  {when: {adUnitCode: '/6353/test_3', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
+                ]}
             });
 
             pbjs.requestBids({
