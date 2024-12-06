@@ -37,7 +37,6 @@
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
-
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
           });
@@ -49,7 +48,6 @@
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
           });
-
 
           pbjs.cmd.push(function() {
 
