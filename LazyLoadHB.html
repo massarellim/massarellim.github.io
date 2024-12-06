@@ -33,7 +33,7 @@
             mobileScaling: 1.0,
           });
  
-          //googletag.pubads().enableSingleRequest();
+          googletag.pubads().enableSingleRequest();
           //googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
@@ -175,7 +175,7 @@
    
         <div style="height:200vh"></div>
         slot4
-        <div id="div-4" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-4" class="ad-slot" style="width: 320px; height: 50px visibility: hidden;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-4");
