@@ -28,7 +28,7 @@
             .addService(googletag.pubads());
 
           googletag.pubads().enableLazyLoad({
-           fetchMarginPercent: 400,  
+           fetchMarginPercent: 200,  
            renderMarginPercent: 100,  
             mobileScaling: 1.0 
           });
@@ -36,6 +36,8 @@
           googletag.pubads().enableSingleRequest();
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
+
+          googletag.display("div-1");
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'fetched');
