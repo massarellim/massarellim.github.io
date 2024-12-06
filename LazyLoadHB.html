@@ -68,7 +68,7 @@
             pbjs.requestBids({
               bidsBackHandler:function(){
                 pbjs.setTargetingForGPTAsync();
-                googletag.pubads.refresh();
+                googletag.pubads().refresh();
               }
             });
             
@@ -82,7 +82,7 @@
               pbjs.requestBids({bidsBackHandler:function(){
                 pbjs.setTargetingForGPTAsync();
                 googletag.cmd.push(() => {
-                  googletag.pubads.refresh(entry.target)
+                  googletag.pubads().refresh(entry.target)
                 });                       
               });
             });
