@@ -44,11 +44,32 @@
           googletag.pubads().addEventListener('slotOnload', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
           });
-   
-        });
+
+
+          pbjs.cmd.push(function() {
+
+            pbjs.addAdUnits([{code: '/6353/test' , mediaTypes:{banner:{sizes:[300, 250]}}, bids:[
+              {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
+            ]}]);
   
-   
-   
+            pbjs.setConfig({
+              debugging: {
+                enabled: true,
+                intercept: [{when: {adUnitCode: '/6353/test', bidder: 'rubicon'},
+                    then: {cpm: 9.90, width: 300, height: 250}}]
+              }
+            });
+           
+            pbjs.requestBids({bidsBackHandler:function(){
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();}
+            });
+            
+          });
+          
+        });
+
+        
         //function only to paint status table on top of page according to fetch/render (not needed on actual implementation)
         function updateSlotStatus(slotId, state) {
           var elem = document.getElementById(slotId + '-' + state);
