@@ -60,21 +60,21 @@
             ]}]);
   
             pbjs.setConfig({
+              debugging: {
+                enabled: true, 
+                intercept: [{
+                  when: {adUnitCode: /^test/}, 
+                  then: {cpm: 9.90}
+                }]
+              }
+            });
 
-                debugging: {
-                    enabled: true, 
-                    intercept: [{
-                        when: {adUnitCode: /^test/}, 
-                        then: {cpm: 9.90}
-                    }]}
-                });
-
-                pbjs.requestBids({
-                    bidsBackHandler:function(){
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    }
-                });
+            pbjs.requestBids({
+              bidsBackHandler:function(){
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+              }
+            });
 
             });
              
