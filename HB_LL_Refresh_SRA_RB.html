@@ -67,12 +67,14 @@
               }
             });
 
-            pbjs.requestBids({
-              bidsBackHandler:function(){
-                pbjs.setTargetingForGPTAsync();
-                googletag.pubads().refresh();
-              }
-            });
+            pbjs.requestBids({bidsBackHandler:function(){
+              pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+        	      return function(adUnitCode) {
+                  return adUnitCode === slot.getAdUnitPath();
+           	    };
+              });
+              googletag.pubads().refresh();
+            }});
 
           });
              
