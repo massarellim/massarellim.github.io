@@ -89,6 +89,7 @@
             function lazyLoad() {
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
+                console.log(ad.id);
                 if (isElementInViewport(ad)) {
                   triggerAdRequest(ad.id);
                   ad.classList.remove('lazy');
