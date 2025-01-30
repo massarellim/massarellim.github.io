@@ -26,14 +26,7 @@
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
             .addService(googletag.pubads());
-
-          googletag.pubads().enableLazyLoad({
-            fetchMarginPercent: 300,
-            renderMarginPercent: 100,
-            mobileScaling: 1.0,
-          });
  
-          googletag.pubads().enableSingleRequest();
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
@@ -67,6 +60,52 @@
               }
             });
 
+            // Define a function to check if an element is in the viewport
+            function isElementInViewport(el) {
+              var rect = el.getBoundingClientRect();
+              return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+              );
+            }
+            // Define a function to handle lazy loading
+            function lazyLoad() {
+              var ads = document.querySelectorAll('.lazy-ad');
+              ads.forEach(function(ad) {
+                if (isElementInViewport(ad)) {
+                    googletag.cmd.push(function() {
+                      googletag.display(ad.id);
+                  });
+                  ad.classList.remove('lazy-ad');
+                }
+              });
+            }
+            // Use Intersection Observer to trigger lazy loading
+            var observer = new IntersectionObserver(function(entries) {
+              entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                  var ad = entry.target;
+                  googletag.cmd.push(function() {
+                    googletag.display(ad.id);
+                  });
+                  observer.unobserve(ad);
+                  ad.classList.remove('lazy-ad');
+                }
+              });
+            });
+            // Start observing lazy ads
+            var lazyAds = document.querySelectorAll('.lazy');
+            lazyAds.forEach(function(ad) {
+              observer.observe(ad);
+            });
+
+            // Trigger lazy loading on scroll
+            window.addEventListener('scroll', lazyLoad);
+            window.addEventListener('resize', lazyLoad);
+
+            
             pbjs.requestBids({bidsBackHandler:function(){
               pbjs.setTargetingForGPTAsync(undefined, function (slot) {
                 return function(adUnitCode) {
@@ -130,7 +169,7 @@
    
       <div class="main-content">
         slot1
-        <div id="div-1" class="ad-slot" style="width: 300px; height: 250px;">
+        <div id="div-1" class="ad-slot, lazy" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-1");
@@ -140,7 +179,7 @@
    
         <div style="height:200vh"></div>
         slot2
-        <div id="div-2" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-2" class="ad-slot, lazy" style="width: 320px; height: 50px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-2");
@@ -150,7 +189,7 @@
    
         <div style="height:200vh"></div>
         slot3
-        <div id="div-3" class="ad-slot" style="width: 300px; height: 250px;">
+        <div id="div-3" class="ad-slot, lazy" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-3");
@@ -160,7 +199,7 @@
    
         <div style="height:200vh"></div>
         slot4
-        <div id="div-4" class="ad-slot" style="width: 320px; height: 50px visibility: 'hidden';">
+        <div id="div-4" class="ad-slot, lazy" style="width: 320px; height: 50px visibility: 'hidden';">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-4");
@@ -170,7 +209,7 @@
         
         <div style="height:200vh"></div>
         slot5
-        <div id="div-5" class="ad-slot" style="width: 300px; height: 250px;">
+        <div id="div-5" class="ad-slot, lazy" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-5");
@@ -180,7 +219,7 @@
         
         <div style="height:200vh"></div>
         slot6
-        <div id="div-6" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-6" class="ad-slot, lazy" style="width: 320px; height: 50px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-6");
