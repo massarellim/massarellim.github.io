@@ -102,7 +102,7 @@
                   console.log(slotsMap[ad.id])
                   console.log(slotsMap[ad])
                   console.log(slotsMap[ad.id].getAdUnitPath())
-                  triggerAdRequest(slotsMap[ad.id].getAdUnitPath());
+                  triggerAdRequest(ad.id));
                   ad.classList.remove('lazy');
                 }
               });
@@ -118,7 +118,7 @@
                   console.log(slotsMap[ad.id])
                   console.log(slotsMap[ad])
                   console.log(slotsMap[ad.id].getAdUnitPath())
-                  triggerAdRequest(slotsMap[ad.id].getAdUnitPath());
+                  triggerAdRequest(ad.id);
                   observer.unobserve(ad);
                   ad.classList.remove('lazy');
                 }
