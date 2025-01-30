@@ -31,6 +31,7 @@
           googletag.enableServices();
 
           var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key.getAdUnitPath()}), {});
+          console.log(slotsMap)
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
@@ -91,10 +92,9 @@
             function lazyLoad() {
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
-                
-                console.log(slots[ad.id]);
+                console.log(slotsMap[ad.id]);
                 if (isElementInViewport(ad)) {
-                  triggerAdRequest(slots[ad.id]);
+                  triggerAdRequest(slotsMap[ad.id]);
                   ad.classList.remove('lazy');
                 }
               });
