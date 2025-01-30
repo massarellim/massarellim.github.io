@@ -12,25 +12,25 @@
         var pbjs = pbjs || {};
         pbjs.cmd = pbjs.cmd || [];
         
-        googletag.cmd.push(function() {
+        googletag.cmd.push(function() {            
           
-          googletag.defineSlot("/6353/test_1", [300, 250], "div-1")
+          const slot1 = googletag.defineSlot("/6353/test_1", [300, 250], "div-1")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
+          const slot2 = googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_2", [300, 250], "div-3")
+          const slot3 = googletag.defineSlot("/6353/test_2", [300, 250], "div-3")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
+          const slot4 = googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_3", [300, 250], "div-5")
+          const slot5 = googletag.defineSlot("/6353/test_3", [300, 250], "div-5")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
+          const slot6 = googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
             .addService(googletag.pubads());
  
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
-          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key.getAdUnitPath()}), {});
+          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
@@ -71,7 +71,7 @@
                       pbjs.setTargetingForGPTAsync();
                       googletag.pubads().refresh([slotsMap[slotId]]);
                     },
-                    adUnitCodes: [slotsMap[slotId]],
+                    adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
                   });
                 });
               });
@@ -91,7 +91,7 @@
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
                 if (isElementInViewport(ad)) {
-                  triggerAdRequest(slotsMap[ad.id]);
+                  triggerAdRequest(slotsMap[ad.id].getAdUnitPath());
                   ad.classList.remove('lazy');
                 }
               });
@@ -101,7 +101,7 @@
               entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                   var ad = entry.target;
-                  triggerAdRequest(ad.id);
+                  triggerAdRequest(slotsMap[ad.id].getAdUnitPath());
                   observer.unobserve(ad);
                   ad.classList.remove('lazy');
                 }
