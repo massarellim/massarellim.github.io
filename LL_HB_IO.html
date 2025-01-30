@@ -30,7 +30,7 @@
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
-          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key.getAdUnitPath()}), {})
+          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key.getAdUnitPath()}), {});
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
@@ -69,14 +69,14 @@
                   pbjs.requestBids({bidsBackHandler:function(){
                     pbjs.setTargetingForGPTAsync(undefined, function (slotId) {
                       return function(adUnitCode) {
-                        return adUnitCode === slotId);
+                        return adUnitCode === slotId;
                       };
                     });
                   googletag.pubads().refresh([slotId]);
                   }});
                 });
               });
-            };
+            }
             // Define a function to check if an element is in the viewport
             function isElementInViewport(el) {
               var rect = el.getBoundingClientRect();
