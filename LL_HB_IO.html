@@ -60,6 +60,21 @@
               }
             });
 
+
+            function triggerAdRequest(slot) {
+              googletag.cmd.push(function() {
+                pbjs.cmd.push(function() {
+                  pbjs.requestBids({bidsBackHandler:function(){
+                    pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+                      return function(adUnitCode) {
+                        return adUnitCode === slot.getAdUnitPath();
+                      };
+                    });
+                  googletag.pubads().refresh(slot);
+                  }});
+                });
+              });
+            };
             // Define a function to check if an element is in the viewport
             function isElementInViewport(el) {
               var rect = el.getBoundingClientRect();
@@ -72,13 +87,11 @@
             }
             // Define a function to handle lazy loading
             function lazyLoad() {
-              var ads = document.querySelectorAll('.lazy-ad');
+              var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
                 if (isElementInViewport(ad)) {
-                    googletag.cmd.push(function() {
-                      googletag.display(ad.id);
-                  });
-                  ad.classList.remove('lazy-ad');
+                  triggerAdRequest(ad.id);
+                  ad.classList.remove('lazy');
                 }
               });
             }
@@ -87,11 +100,9 @@
               entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                   var ad = entry.target;
-                  googletag.cmd.push(function() {
-                    googletag.display(ad.id);
-                  });
+                  triggerAdRequest(ad.id);
                   observer.unobserve(ad);
-                  ad.classList.remove('lazy-ad');
+                  ad.classList.remove('lazy');
                 }
               });
             });
@@ -105,16 +116,21 @@
             window.addEventListener('scroll', lazyLoad);
             window.addEventListener('resize', lazyLoad);
 
-            
-            pbjs.requestBids({bidsBackHandler:function(){
-              pbjs.setTargetingForGPTAsync(undefined, function (slot) {
-                return function(adUnitCode) {
-                  return adUnitCode === slot.getAdUnitPath();
-                };
+            function triggerAdRequest(slot) {
+              googletag.cmd.push(function() {
+                pbjs.cmd.push(function() {
+                  pbjs.requestBids({bidsBackHandler:function(){
+                    pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+                      return function(adUnitCode) {
+                        return adUnitCode === slot.getAdUnitPath();
+                      };
+                    });
+                  googletag.pubads().refresh(slot);
+                  }});
+                });
               });
-              googletag.pubads().refresh();
-            }});
-
+            };
+            
           });
              
         });
