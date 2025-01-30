@@ -90,6 +90,7 @@
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
                 console.log(ad.id);
+                console.log(ad);
                 if (isElementInViewport(ad)) {
                   triggerAdRequest(ad.id);
                   ad.classList.remove('lazy');
