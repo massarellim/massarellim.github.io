@@ -31,7 +31,8 @@
           googletag.enableServices();
 
           var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
-
+          console.log(slotsMap);
+          
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
           });
