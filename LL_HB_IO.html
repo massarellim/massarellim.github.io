@@ -112,6 +112,12 @@
               entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                   var ad = entry.target;
+                  console.log(ad)
+                  console.log(ad.id)
+                  console.log(slotsMap)
+                  console.log(slotsMap[ad.id])
+                  console.log(slotsMap[ad])
+                  console.log(slotsMap[ad.id].getAdUnitPath())
                   triggerAdRequest(slotsMap[ad.id].getAdUnitPath());
                   observer.unobserve(ad);
                   ad.classList.remove('lazy');
