@@ -14,15 +14,15 @@
         
         googletag.cmd.push(function() {
           
-          googletag.defineSlot("/6353/test_1", [320, 50], "div-1")
+          googletag.defineSlot("/6353/test_1", [300, 250], "div-1")
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_2", [320, 50], "div-3")
+          googletag.defineSlot("/6353/test_2", [300, 250], "div-3")
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_3", [320, 50], "div-5")
+          googletag.defineSlot("/6353/test_3", [300, 250], "div-5")
             .addService(googletag.pubads());
           googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
             .addService(googletag.pubads());
@@ -130,7 +130,7 @@
    
       <div class="main-content">
         slot1
-        <div id="div-1" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-1" class="ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-1");
@@ -150,7 +150,7 @@
    
         <div style="height:200vh"></div>
         slot3
-        <div id="div-3" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-3" class="ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-3");
@@ -170,7 +170,7 @@
         
         <div style="height:200vh"></div>
         slot5
-        <div id="div-5" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-5" class="ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-5");
