@@ -66,10 +66,13 @@
             function triggerAdRequest(slotId) {
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
-                  pbjs.requestBids({bidsBackHandler:function(){
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh([slotId]);
-                  }});
+                  pbjs.requestBids({
+                    bidsBackHandler: function(){
+                      pbjs.setTargetingForGPTAsync();
+                      googletag.pubads().refresh([slotId]);
+                    },
+                    adUnits: [slotId],
+                  });
                 });
               });
             }
