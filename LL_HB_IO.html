@@ -31,7 +31,6 @@
           googletag.enableServices();
 
           var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key.getAdUnitPath()}), {});
-          console.log(slotsMap)
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
@@ -65,11 +64,14 @@
 
 
             function triggerAdRequest(slotId) {
+              console.log(slotId)
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({bidsBackHandler:function(){
                     pbjs.setTargetingForGPTAsync(undefined, function (slotId) {
                       return function(adUnitCode) {
+                        console.log(adUnitCode)
+                        console.log(slotId)
                         return adUnitCode === slotId;
                       };
                     });
@@ -92,7 +94,6 @@
             function lazyLoad() {
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
-                console.log(slotsMap[ad.id]);
                 if (isElementInViewport(ad)) {
                   triggerAdRequest(slotsMap[ad.id]);
                   ad.classList.remove('lazy');
