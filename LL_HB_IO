@@ -1,0 +1,242 @@
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Lazy loading example</title>
+      
+      <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+      <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+      
+      <script>
+        
+        window.googletag = window.googletag || {cmd: []};
+        var pbjs = pbjs || {};
+        pbjs.cmd = pbjs.cmd || [];
+        
+        googletag.cmd.push(function() {
+          
+          googletag.defineSlot("/6353/test_1", [320, 50], "div-1")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test_2", [320, 50], "div-3")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test_3", [320, 50], "div-5")
+            .addService(googletag.pubads());
+          googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
+            .addService(googletag.pubads());
+
+          googletag.pubads().enableLazyLoad({
+            fetchMarginPercent: 300,
+            renderMarginPercent: 100,
+            mobileScaling: 1.0,
+          });
+ 
+          googletag.pubads().enableSingleRequest();
+          googletag.pubads().disableInitialLoad();
+          googletag.enableServices();
+
+          googletag.pubads().addEventListener('slotRequested', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'requested');
+          });
+
+          googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
+          });
+
+          googletag.pubads().addEventListener('impressionViewable', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
+          });
+
+          pbjs.cmd.push(function() {
+
+            pbjs.addAdUnits([
+              {code:'/6353/test_1', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1233}}]},
+              {code:'/6353/test_2', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]},
+              {code:'/6353/test_3', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]}
+            ]);
+  
+            pbjs.setConfig({
+              debugging: {
+                enabled: true, 
+                intercept: [{
+                  when: {adUnitCode: /test/}, 
+                  then: {cpm: 9.90}
+                }]
+              }
+            });
+
+            pbjs.requestBids({bidsBackHandler:function(){
+              pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+                return function(adUnitCode) {
+                  return adUnitCode === slot.getAdUnitPath();
+                };
+              });
+              googletag.pubads().refresh();
+            }});
+
+          });
+             
+        });
+        
+        function updateSlotStatus(slotId, state) {
+          var elem = document.getElementById(slotId + '-' + state);
+          elem.className = 'activated';
+          elem.innerText = 'Yes';
+        }
+        
+      </script>
+      <style>
+        div.ad-slot {
+          border-style: dashed;
+          display: block;
+          margin: auto;
+        }
+   
+        div.main-content {
+          background-color: lightsteelblue;
+          margin-top: 230px;
+          overflow: hidden;
+          width: 100%;
+        }
+   
+        div.status-panel {
+          background: white;
+          height: 200px;
+          position: fixed;
+          top: 0;
+          width: 100%;
+        }
+   
+        table {
+          width: 100%;
+        }
+   
+        table th {
+          text-align: center;
+        }
+   
+        table td:not(.slot-name) {
+          background-color: lightsalmon;
+        }
+   
+        table td.activated {
+          background-color: lightgreen;
+        }
+      </style>
+    </head>
+    <body>
+   
+      <div class="main-content">
+        slot1
+        <div id="div-1" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-1");
+            });
+          </script>
+        </div>
+   
+        <div style="height:200vh"></div>
+        slot2
+        <div id="div-2" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-2");
+            });
+          </script>
+        </div>
+   
+        <div style="height:200vh"></div>
+        slot3
+        <div id="div-3" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-3");
+            });
+          </script>
+        </div>
+   
+        <div style="height:200vh"></div>
+        slot4
+        <div id="div-4" class="ad-slot" style="width: 320px; height: 50px visibility: 'hidden';">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-4");
+            });
+          </script>
+        </div>
+        
+        <div style="height:200vh"></div>
+        slot5
+        <div id="div-5" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-5");
+            });
+          </script>
+        </div>
+        
+        <div style="height:200vh"></div>
+        slot6
+        <div id="div-6" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-6");
+            });
+          </script>
+        </div>
+      </div>
+   
+      <div class="status-panel">
+        <table>
+          <tr>
+            <th>Ad Slot</th>
+            <th>Requested?</th>
+            <th>Rendered?</th>
+            <th>Viewed?</th>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 1</td>
+            <td id="div-1-requested">No</td>
+            <td id="div-1-rendered">No</td>
+            <td id="div-1-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 2</td>
+            <td id="div-2-requested">No</td>
+            <td id="div-2-rendered">No</td>
+            <td id="div-2-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 3</td>
+            <td id="div-3-requested">No</td>
+            <td id="div-3-rendered">No</td>
+            <td id="div-3-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 4</td>
+            <td id="div-4-requested">No</td>
+            <td id="div-4-rendered">No</td>
+            <td id="div-4-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 5</td>
+            <td id="div-5-requested">No</td>
+            <td id="div-5-rendered">No</td>
+            <td id="div-5-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 6</td>
+            <td id="div-6-requested">No</td>
+            <td id="div-6-rendered">No</td>
+            <td id="div-6-viewed">No</td>
+          </tr>
+        </table>
+        <p>
+          Scroll the container below to lazily load the ad slots.
+        </p>
+      </div>
+    </body>
+  </html>
