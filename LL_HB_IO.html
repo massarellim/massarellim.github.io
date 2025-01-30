@@ -30,6 +30,9 @@
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
 
+          var slots = googletag.pubads().getSlots();
+          console.log(slots)
+
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
           });
@@ -117,21 +120,6 @@
             // Trigger lazy loading on scroll
             window.addEventListener('scroll', lazyLoad);
             window.addEventListener('resize', lazyLoad);
-
-            function triggerAdRequest(slot) {
-              googletag.cmd.push(function() {
-                pbjs.cmd.push(function() {
-                  pbjs.requestBids({bidsBackHandler:function(){
-                    pbjs.setTargetingForGPTAsync(undefined, function (slot) {
-                      return function(adUnitCode) {
-                        return adUnitCode === slot.getAdUnitPath();
-                      };
-                    });
-                  googletag.pubads().refresh(slot);
-                  }});
-                });
-              });
-            };
             
           });
              
