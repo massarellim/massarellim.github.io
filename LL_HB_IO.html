@@ -64,18 +64,11 @@
 
 
             function triggerAdRequest(slotId) {
-              console.log(slotId)
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({bidsBackHandler:function(){
-                    pbjs.setTargetingForGPTAsync(undefined, function (slotId) {
-                      return function(adUnitCode) {
-                        console.log(adUnitCode)
-                        console.log(slotId)
-                        return adUnitCode === slotId;
-                      };
-                    });
-                  googletag.pubads().refresh([slotId]);
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh([slotId]);
                   }});
                 });
               });
