@@ -31,12 +31,7 @@
           googletag.enableServices();
 
           var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
-          console.log(slotsMap);
-          console.log(slotsMap['div-1'])
-          console.log(slotsMap['div-1'].getAdUnitPath())
-          console.log(slotsMap['div-1'].getSlotElementId())
 
-          
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
           });
@@ -84,10 +79,13 @@
             // Define a function to check if an element is in the viewport
             function isElementInViewport(el) {
               var rect = el.getBoundingClientRect();
+              console.log(rect)
+              console.log(document.documentElement.clientHeight)
+
               return (
                 rect.top >= 0 &&
                 rect.left >= 0 &&
-                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.bottom <= (window.innerHeight * 3 || document.documentElement.clientHeight * 3) &&
                 rect.right <= (window.innerWidth || document.documentElement.clientWidth)
               );
             }
@@ -96,12 +94,6 @@
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
                 if (isElementInViewport(ad)) {
-                  console.log(ad)
-                  console.log(ad.id)
-                  console.log(slotsMap)
-                  console.log(slotsMap[ad.id])
-                  console.log(slotsMap[ad])
-                  console.log(slotsMap[ad.id].getAdUnitPath())
                   triggerAdRequest(ad.id);
                   ad.classList.remove('lazy');
                 }
@@ -112,12 +104,6 @@
               entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                   var ad = entry.target;
-                  console.log(ad)
-                  console.log(ad.id)
-                  console.log(slotsMap)
-                  console.log(slotsMap[ad.id])
-                  console.log(slotsMap[ad])
-                  console.log(slotsMap[ad.id].getAdUnitPath())
                   triggerAdRequest(ad.id);
                   observer.unobserve(ad);
                   ad.classList.remove('lazy');
