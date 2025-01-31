@@ -91,11 +91,14 @@
                 rootMargin: "0px 0px 4000px 0px",
                 threshold: 1.0,
               };
-            
+                          console.log(options)
+
               var observer = new IntersectionObserver(function(entries) {
+                console.log(entries)
                 entries.forEach(function(entry) {
+                    console.log(entry)
                     var ad = entry.target;
-                    console.log('function: observer')
+                    console.log(ad)
                     triggerAdRequest(ad.id);
                     observer.unobserve(ad);
                     ad.classList.remove('lazy');
@@ -104,10 +107,15 @@
               
               // Start observing lazy ads
               var lazyAds = document.querySelectorAll('.lazy');
+              console.log(lazyAds)
               lazyAds.forEach(function(ad) {
+                console.log(ad)
                 observer.observe(ad);
               }
             }
+
+
+            
             /*
             // Define a function to check if an element is in the viewport
             function isElementInViewport(el) {
