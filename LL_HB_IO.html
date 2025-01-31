@@ -68,8 +68,6 @@
               }
             });
 
-            console.log('ciao');
-
             function triggerAdRequest(slotId) {
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
@@ -83,7 +81,6 @@
                 });
               });
             }
-            console.log('ciao');
 
             function createObserver() {
               let observer;
@@ -93,13 +90,9 @@
                 rootMargin: "0% 0% 300% 0%",
                 threshold: 1.0,
               };
-              console.log(options)
-            console.log('ciao');
 
               observer = new IntersectionObserver(function(entries) {
-                console.log(entries)
                 entries.forEach(function(entry) {
-                    console.log(entry)
                     var ad = entry.target;
                     console.log(ad)
                     triggerAdRequest(ad.id);
