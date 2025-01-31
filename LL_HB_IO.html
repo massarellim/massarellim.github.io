@@ -82,7 +82,33 @@
                 });
               });
             }
+
+            function createObserver() {
+              let observer;
             
+              let options = {
+                root: null,
+                rootMargin: "0% 0% 300% 0%",
+                threshold: 1.0,
+              };
+            
+              var observer = new IntersectionObserver(function(entries) {
+              entries.forEach(function(entry) {
+                  var ad = entry.target;
+                  console.log('function: observer')
+                  triggerAdRequest(ad.id);
+                  observer.unobserve(ad);
+                  ad.classList.remove('lazy');
+              });
+            }, options)
+              
+              // Start observing lazy ads
+              var lazyAds = document.querySelectorAll('.lazy');
+              lazyAds.forEach(function(ad) {
+                observer.observe(ad);
+              }
+
+            /*
             // Define a function to check if an element is in the viewport
             function isElementInViewport(el) {
               var rect = el.getBoundingClientRect();
@@ -125,6 +151,7 @@
             // Trigger lazy loading on scroll
             window.addEventListener('scroll', lazyLoad);
             window.addEventListener('resize', lazyLoad);
+            */
             
           });
              
