@@ -98,6 +98,7 @@
               var ads = document.querySelectorAll('.lazy');
               ads.forEach(function(ad) {
                 if (isElementInViewport(ad)) {
+                  console.log('function: lazyLoad')
                   triggerAdRequest(ad.id);
                   ad.classList.remove('lazy');
                 }
@@ -108,6 +109,7 @@
               entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                   var ad = entry.target;
+                  console.log('function: observer')
                   triggerAdRequest(ad.id);
                   observer.unobserve(ad);
                   ad.classList.remove('lazy');
