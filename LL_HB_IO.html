@@ -69,7 +69,7 @@
             });
 
             function triggerAdRequest(slotId) {
-              logger.log('lazyload requesting: ' + slotId)
+              console.log('lazyload requesting: ' + slotId)
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({
