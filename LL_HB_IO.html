@@ -68,6 +68,7 @@
               }
             });
 
+            console.log('ciao');
 
             function triggerAdRequest(slotId) {
               googletag.cmd.push(function() {
@@ -82,6 +83,7 @@
                 });
               });
             }
+            console.log('ciao');
 
             function createObserver() {
               let observer;
@@ -91,7 +93,8 @@
                 rootMargin: "0px 0px 4000px 0px",
                 threshold: 1.0,
               };
-                          console.log(options)
+              console.log(options)
+            console.log('ciao');
 
               observer = new IntersectionObserver(function(entries) {
                 console.log(entries)
