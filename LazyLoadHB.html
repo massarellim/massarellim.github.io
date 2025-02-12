@@ -33,26 +33,23 @@
 
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
-
-              const slot = event.slot;
-              console.log(slot)
-              const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
-              setTimeout(() => {
-
-                  pbjs.cmd.push(function() {
-                    console.log(slot.getAdunitPath());
-                    pbjs.requestBids({
-                      bidsBackHandler: function(){
-                        pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
-                        googletag.pubads().refresh([slot]);
-                      },
-                      adUnitCodes: [slot.getAdUnitPath()],
-                    });
+            const slot = event.slot;
+            console.log(slot)
+            const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
+            setTimeout(() => {
+              googletag.cmd.push(function() {            
+                pbjs.cmd.push(function() {
+                  console.log(slot.getAdUnitPath());
+                  pbjs.requestBids({
+                    bidsBackHandler: function(){
+                      pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
+                      googletag.pubads().refresh([slot]);
+                    },
+                    adUnitCodes: [slot.getAdUnitPath()],
                   });
-                
-              
-              }, refreshTimeout
-            );
+                });
+              });
+            }, refreshTimeout);  
           });
             
         });
