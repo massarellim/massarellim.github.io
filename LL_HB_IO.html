@@ -69,9 +69,7 @@
             });
 
             function triggerAdRequest(slotId) {
-              console.log(slotId)
               console.log([slotsMap[slotId]])
-              console.log([slotsMap[slotId].getAdUnitPath()])
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({
@@ -94,7 +92,6 @@
               let observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
                     var ad = entry.target;
-                    console.log(ad.id)
                     triggerAdRequest(ad.id);
                     observer.unobserve(ad);
                     ad.classList.remove('lazy');
@@ -102,9 +99,7 @@
               }, options)
               
               let lazyAds = document.querySelectorAll('.lazy');
-              console.log(lazyAds)
               lazyAds.forEach(function(ad) {
-                console.log(ad)
                 observer.observe(ad);
               })
             }
