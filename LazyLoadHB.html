@@ -11,6 +11,29 @@
         window.googletag = window.googletag || {cmd: []};
         var pbjs = pbjs || {};
         pbjs.cmd = pbjs.cmd || [];
+
+        googletag.cmd.push(function() {            
+
+          const slot6 = googletag.defineSlot("/6353/test_3", [300, 250], "div-7")
+            .addService(googletag.pubads());
+          const slot8 = googletag.defineSlot("/6353/test_3", [300, 250], "div-8")
+            .addService(googletag.pubads());
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+
+          googletag.pubads().addEventListener('slotRequested', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'requested');
+          });
+
+          googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
+          });
+
+          googletag.pubads().addEventListener('impressionViewable', function(event) {
+            updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
+          });
+        }
+          
         
         googletag.cmd.push(function() {            
           
@@ -37,18 +60,6 @@
           googletag.enableServices();
 
           var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
-
-          googletag.pubads().addEventListener('slotRequested', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'requested');
-          });
-
-          googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
-          });
-
-          googletag.pubads().addEventListener('impressionViewable', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
-          });
 
           pbjs.cmd.push(function() {
 
@@ -215,6 +226,28 @@
           </script>
         </div>
       </div>
+
+      <div style="height:200vh"></div>
+        slot6
+        <div id="div-7" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-6");
+            });
+          </script>
+        </div>
+      </div>
+
+      <div style="height:200vh"></div>
+        slot6
+        <div id="div-8" class="ad-slot" style="width: 320px; height: 50px;">
+          <script>
+            googletag.cmd.push(function() {
+              googletag.display("div-6");
+            });
+          </script>
+        </div>
+      </div>
    
       <div class="status-panel">
         <table>
@@ -259,6 +292,18 @@
             <td id="div-6-requested">No</td>
             <td id="div-6-rendered">No</td>
             <td id="div-6-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 7</td>
+            <td id="div-7-requested">No</td>
+            <td id="div-7-rendered">No</td>
+            <td id="div-7-viewed">No</td>
+          </tr>
+          <tr>
+            <td class="slot-name">Ad Slot 8</td>
+            <td id="div-8-requested">No</td>
+            <td id="div-8-rendered">No</td>
+            <td id="div-8-viewed">No</td>
           </tr>
         </table>
         <p>
