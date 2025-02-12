@@ -89,10 +89,12 @@
       
               let observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
+                  if (entry.isIntersecting) {
                     var ad = entry.target;
                     triggerAdRequest(ad.id);
                     observer.unobserve(ad);
                     ad.classList.remove('lazy');
+                  };
                 });
               }, options)
               
