@@ -34,7 +34,7 @@
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
 
-              const slotId = event.slot.getSlotElementId();
+              const slot = event.slot;
               console.log(slotId)
               const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
               setTimeout(() => {
@@ -44,10 +44,10 @@
                     console.log(slot.getAdunitPath());
                     pbjs.requestBids({
                       bidsBackHandler: function(){
-                        pbjs.setTargetingForGPTAsync([slotId.getAdUnitPath()]);
-                        googletag.pubads().refresh([slotId.getAdUnitPath()]);
+                        pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
+                        googletag.pubads().refresh([slot]);
                       },
-                      adUnitCodes: [slotId.getAdUnitPath()],
+                      adUnitCodes: [slot.getAdUnitPath()],
                     });
                   });
                 
