@@ -34,17 +34,15 @@
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
             const slot = event.slot;
-            console.log(slot);
-            console.log(slot.getAdUnitPath());
             const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
             setTimeout(() => {
               googletag.cmd.push(function() {            
                 pbjs.cmd.push(function() {
-                  console.log(slot.getAdUnitPath());
                   pbjs.requestBids({
                     bidsBackHandler: function(){
                       pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
                       googletag.pubads().refresh([slot]);
+                      updateSlotStatus(event.slot.getSlotElementId(), 'refreshed');
                     },
                     adUnitCodes: [slot.getAdUnitPath()],
                   });
@@ -142,6 +140,12 @@
           var elem = document.getElementById(slotId + '-' + state);
           elem.className = 'activated';
           elem.innerText = 'Yes';
+        }
+
+        function updateRefreshCounter(slotId, state) {
+          var elem = document.getElementById(slotId + '-' + state);
+          elem.className = 'activated';
+          elem.innerText = elem.innerText + 1;
         }
         
       </script>
@@ -277,54 +281,63 @@
             <th>Requested?</th>
             <th>Rendered?</th>
             <th>Viewed?</th>
+            <th>Refreshed?</th>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 1</td>
             <td id="div-1-requested">No</td>
             <td id="div-1-rendered">No</td>
             <td id="div-1-viewed">No</td>
+            <td id="div-1-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 2</td>
             <td id="div-2-requested">No</td>
             <td id="div-2-rendered">No</td>
             <td id="div-2-viewed">No</td>
+            <td id="div-2-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 3</td>
             <td id="div-3-requested">No</td>
             <td id="div-3-rendered">No</td>
             <td id="div-3-viewed">No</td>
+            <td id="div-3-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 4</td>
             <td id="div-4-requested">No</td>
             <td id="div-4-rendered">No</td>
             <td id="div-4-viewed">No</td>
+            <td id="div-4-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 5</td>
             <td id="div-5-requested">No</td>
             <td id="div-5-rendered">No</td>
             <td id="div-5-viewed">No</td>
+            <td id="div-5-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 6</td>
             <td id="div-6-requested">No</td>
             <td id="div-6-rendered">No</td>
             <td id="div-6-viewed">No</td>
+            <td id="div-6-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 7</td>
             <td id="div-7-requested">No</td>
             <td id="div-7-rendered">No</td>
             <td id="div-7-viewed">No</td>
+            <td id="div-7-refreshed">0</td>
           </tr>
           <tr>
             <td class="slot-name">Ad Slot 8</td>
             <td id="div-8-requested">No</td>
             <td id="div-8-rendered">No</td>
             <td id="div-8-viewed">No</td>
+            <td id="div-8-refreshed">0</td>
           </tr>
         </table>
         <p>
