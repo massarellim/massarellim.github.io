@@ -40,6 +40,8 @@
               setTimeout(() => {
 
                   pbjs.cmd.push(function() {
+                    console.log('here');
+                    console.log(slot.getAdunitPath());
                     pbjs.requestBids({
                       bidsBackHandler: function(){
                         pbjs.setTargetingForGPTAsync([slotId.getAdUnitPath()]);
