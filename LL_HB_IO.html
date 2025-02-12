@@ -70,16 +70,14 @@
             
             function triggerAdRequest(slotId) {
               console.log([slotsMap[slotId]][0].getName())
-              googletag.cmd.push(function() {
-                pbjs.cmd.push(function() {
+
                   pbjs.requestBids({
                     bidsBackHandler: function(){
                       pbjs.setTargetingForGPTAsync();
                       googletag.pubads().refresh([slotsMap[slotId]]);
                     },
                     adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
-                  });
-                });
+      
               });
             }
       
