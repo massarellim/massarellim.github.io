@@ -69,7 +69,6 @@
             });
 
             function triggerAdRequest(slotId) {
-              console.log('lazyload requesting: ' + slotId)
               googletag.cmd.push(function() {
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({
@@ -86,13 +85,12 @@
             function createObserver() {
               
               let options = {
-                rootMargin: "0% 0% 300% 0%",
+                rootMargin: "300% 0% 300% 0%",
               };
 
               let observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
                     var ad = entry.target;
-                    console.log('lazyload listening: ' + ad)
                     triggerAdRequest(ad.id);
                     observer.unobserve(ad);
                     ad.classList.remove('lazy');
