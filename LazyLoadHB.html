@@ -12,30 +12,31 @@
         var pbjs = pbjs || {};
         pbjs.cmd = pbjs.cmd || [];
         
-        googletag.cmd.push(function() {
+        googletag.cmd.push(function() {            
           
-          googletag.defineSlot("/6353/test_1", [320, 50], "div-1")
+          const slot1 = googletag.defineSlot("/6353/test_1", [300, 250], "div-1")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
+          const slot2 = googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_2", [320, 50], "div-3")
+          const slot3 = googletag.defineSlot("/6353/test_2", [300, 250], "div-3")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
+          const slot4 = googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_3", [320, 50], "div-5")
+          const slot5 = googletag.defineSlot("/6353/test_3", [300, 250], "div-5")
             .addService(googletag.pubads());
-          googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
+          const slot6 = googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
             .addService(googletag.pubads());
 
           googletag.pubads().enableLazyLoad({
             fetchMarginPercent: 300,
-            renderMarginPercent: 100,
+            renderMarginPercent: 25,
             mobileScaling: 1.0,
           });
- 
-          googletag.pubads().enableSingleRequest();
+          
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
+
+          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
@@ -51,28 +52,56 @@
 
           pbjs.cmd.push(function() {
 
-            pbjs.addAdUnits([{code: '/6353/test_1' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
-              {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
-            ]},{code: '/6353/test_2' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
-              {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
-            ]},{code: '/6353/test_3' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
-              {bidder:'rubicon',params:{accountId: 7780,siteId: 87184,zoneId: 413290}},
-            ]}]);
+            pbjs.addAdUnits([
+              {code:'/6353/test_1', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1233}}]},
+              {code:'/6353/test_2', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]},
+              {code:'/6353/test_3', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]}
+            ]);
   
             pbjs.setConfig({
-              debugging: {enabled: true, intercept: [
-                  {when: {adUnitCode: '/6353/test_1', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
-                  {when: {adUnitCode: '/6353/test_2', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
-                  {when: {adUnitCode: '/6353/test_3', bidder: 'rubicon'}, then: {cpm: 9.90, width: 320, height: 50}},
-                ]}
-            });
-
-            pbjs.requestBids({
-              bidsBackHandler:function(){
-                pbjs.setTargetingForGPTAsync();
-                googletag.pubads().refresh();
+              debugging: {
+                enabled: true, 
+                intercept: [{
+                  when: {adUnitCode: /test/}, 
+                  then: {cpm: 9.90}
+                }]
               }
             });
+            
+            function triggerAdRequest(slotId) {
+              console.log([slotsMap[slotId]][0].getName())
+              googletag.cmd.push(function() {    
+                pbjs.cmd.push(function() {
+                  pbjs.requestBids({
+                    bidsBackHandler: function(){
+                      pbjs.setTargetingForGPTAsync();
+                      googletag.pubads().refresh([slotsMap[slotId]]);
+                    },
+                    adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
+                  });
+                });
+              });
+            }
+      
+              let options = {
+                rootMargin: "0% 0% 300% 0%",
+              };
+      
+              let observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                  if (entry.isIntersecting) {
+                    var ad = entry.target;
+                    triggerAdRequest(ad.id);
+                    observer.unobserve(ad);
+                    ad.classList.remove('lazy');
+                  };
+                });
+              }, options)
+              
+              let lazyAds = document.querySelectorAll('.lazy');
+              lazyAds.forEach(function(ad) {
+                observer.observe(ad);
+              })
             
           });
              
@@ -128,7 +157,7 @@
    
       <div class="main-content">
         slot1
-        <div id="div-1" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-1" class="lazy ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-1");
@@ -138,7 +167,7 @@
    
         <div style="height:200vh"></div>
         slot2
-        <div id="div-2" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-2" class="lazy ad-slot" style="width: 320px; height: 50px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-2");
@@ -148,7 +177,7 @@
    
         <div style="height:200vh"></div>
         slot3
-        <div id="div-3" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-3" class="lazy ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-3");
@@ -158,7 +187,7 @@
    
         <div style="height:200vh"></div>
         slot4
-        <div id="div-4" class="ad-slot" style="width: 320px; height: 50px visibility: 'hidden';">
+        <div id="div-4" class="lazy ad-slot" style="width: 320px; height: 50px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-4");
@@ -168,7 +197,7 @@
         
         <div style="height:200vh"></div>
         slot5
-        <div id="div-5" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-5" class="lazy ad-slot" style="width: 300px; height: 250px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-5");
@@ -178,7 +207,7 @@
         
         <div style="height:200vh"></div>
         slot6
-        <div id="div-6" class="ad-slot" style="width: 320px; height: 50px;">
+        <div id="div-6" class="lazy ad-slot" style="width: 320px; height: 50px;">
           <script>
             googletag.cmd.push(function() {
               googletag.display("div-6");
@@ -238,4 +267,3 @@
       </div>
     </body>
   </html>
-
