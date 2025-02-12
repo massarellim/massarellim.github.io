@@ -19,7 +19,9 @@
           const slot8 = googletag.defineSlot("/6353/test_5", [300, 250], "div-8")
             .addService(googletag.pubads());
           googletag.pubads().enableSingleRequest();
+          googletag.pubads().disableInitialLoad();
           googletag.enableServices();
+          googletag.refresh([slot7, slot8])
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
