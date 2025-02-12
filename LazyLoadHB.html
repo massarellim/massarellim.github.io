@@ -42,7 +42,7 @@
                     bidsBackHandler: function(){
                       pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
                       googletag.pubads().refresh([slot]);
-                      updateSlotStatus(event.slot.getSlotElementId(), 'refreshed');
+                      updateRefreshCounter(event.slot.getSlotElementId(), 'refreshed');
                     },
                     adUnitCodes: [slot.getAdUnitPath()],
                   });
