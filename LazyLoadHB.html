@@ -21,7 +21,7 @@
           googletag.pubads().enableSingleRequest();
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
-          googletag.refresh([slot7, slot8])
+          googletag.pubads().refresh([slot7, slot8])
 
           googletag.pubads().addEventListener('slotRequested', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'requested');
