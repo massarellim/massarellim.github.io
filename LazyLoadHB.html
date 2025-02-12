@@ -35,10 +35,10 @@
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
 
               const slotId = event.slot.getSlotElementId();
-              const refreshTimeout = event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
+              console.log(slotId)
+              const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
               setTimeout(() => {
 
-                googletag.cmd.push(function() {    
                   pbjs.cmd.push(function() {
                     pbjs.requestBids({
                       bidsBackHandler: function(){
@@ -48,7 +48,7 @@
                       //adUnitCodes: [slotId],
                     });
                   });
-                });
+                
               
               }, refreshTimeout
             );
