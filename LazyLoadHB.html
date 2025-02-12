@@ -34,7 +34,6 @@
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
 
-            googletag.pubads().addEventListener("slotRenderEnded", (event) => {
               const slotId = event.slot.getSlotElementId();
               const refreshTimeout = event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
               setTimeout(() => {
@@ -52,10 +51,9 @@
                 });
               
               }, refreshTimeout
-              );
-            });
-            
+            );
           });
+            
         });
           
         
@@ -109,7 +107,7 @@
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({
                     bidsBackHandler: function(){
-                      pbjs.setTargetingForGPTAsync();
+                      pbjs.setTargetingForGPTAsync([slotsMap[slotId].getAdUnitPath()]);
                       googletag.pubads().refresh([slotsMap[slotId]]);
                     },
                     adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
