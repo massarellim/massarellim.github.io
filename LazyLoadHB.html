@@ -42,10 +42,10 @@
                   pbjs.cmd.push(function() {
                     pbjs.requestBids({
                       bidsBackHandler: function(){
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh([slotId]);
+                        pbjs.setTargetingForGPTAsync([slotId.getAdUnitPath()]);
+                        googletag.pubads().refresh([slotId.getAdUnitPath()]);
                       },
-                      //adUnitCodes: [slotId],
+                      adUnitCodes: [slotId.getAdUnitPath()],
                     });
                   });
                 
