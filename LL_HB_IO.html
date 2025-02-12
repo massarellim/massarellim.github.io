@@ -91,6 +91,7 @@
               let observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
                     var ad = entry.target;
+                    console.log(ad.id)
                     triggerAdRequest(ad.id);
                     observer.unobserve(ad);
                     ad.classList.remove('lazy');
@@ -99,6 +100,7 @@
               
               let lazyAds = document.querySelectorAll('.lazy');
               lazyAds.forEach(function(ad) {
+                console.log(ad)
                 observer.observe(ad);
               })
             }
