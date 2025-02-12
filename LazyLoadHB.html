@@ -33,6 +33,13 @@
 
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
+
+            googletag.pubads().addEventListener("slotRenderEnded", (event) => {
+              const slotId = event.slot.getSlotElementId();
+              const refreshTimeout = event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 30000;
+              setTimeout(() => {googletag.refresh(slotId);}, refreshTimeout);
+             });
+            
           });
         });
           
