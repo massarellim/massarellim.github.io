@@ -67,48 +67,48 @@
                 }]
               }
             });
-
-            function triggerAdRequest(slotId) {
-              console.log([slotsMap[slotId]][0].getName())
-              googletag.cmd.push(function() {
-                pbjs.cmd.push(function() {
-                  pbjs.requestBids({
-                    bidsBackHandler: function(){
-                      pbjs.setTargetingForGPTAsync();
-                      googletag.pubads().refresh([slotsMap[slotId]]);
-                    },
-                    adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
-                  });
-                });
-              });
-            }
-
-            function createObserver() {
-              
-              let options = {
-                rootMargin: "0% 0% 300% 0%",
-              };
-
-              let observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    var ad = entry.target;
-                    triggerAdRequest(ad.id);
-                    observer.unobserve(ad);
-                    ad.classList.remove('lazy');
-                });
-              }, options)
-              
-              let lazyAds = document.querySelectorAll('.lazy');
-              lazyAds.forEach(function(ad) {
-                observer.observe(ad);
-              })
-            }
-
-            createObserver()
             
           });
              
         });
+
+        function triggerAdRequest(slotId) {
+          console.log([slotsMap[slotId]][0].getName())
+          googletag.cmd.push(function() {
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                bidsBackHandler: function(){
+                  pbjs.setTargetingForGPTAsync();
+                  googletag.pubads().refresh([slotsMap[slotId]]);
+                },
+                adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
+              });
+            });
+          });
+        }
+  
+        function createObserver() {
+          
+          let options = {
+            rootMargin: "0% 0% 300% 0%",
+          };
+  
+          let observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                var ad = entry.target;
+                triggerAdRequest(ad.id);
+                observer.unobserve(ad);
+                ad.classList.remove('lazy');
+            });
+          }, options)
+          
+          let lazyAds = document.querySelectorAll('.lazy');
+          lazyAds.forEach(function(ad) {
+            observer.observe(ad);
+          })
+        }
+  
+        createObserver()
         
         function updateSlotStatus(slotId, state) {
           var elem = document.getElementById(slotId + '-' + state);
