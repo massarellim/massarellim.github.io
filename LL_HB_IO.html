@@ -28,8 +28,8 @@
             .addService(googletag.pubads());
 
           googletag.pubads().enableLazyLoad({
-            fetchMarginPercent: 400,
-            renderMarginPercent: 50,
+            fetchMarginPercent: 300,
+            renderMarginPercent: 25,
             mobileScaling: 1.0,
           });
           
@@ -84,7 +84,7 @@
             }
       
               let options = {
-                rootMargin: "0% 0% 400% 0%",
+                rootMargin: "0% 0% 300% 0%",
               };
       
               let observer = new IntersectionObserver(function(entries) {
