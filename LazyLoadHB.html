@@ -102,7 +102,6 @@
             });
             
             function triggerAdRequest(slotId) {
-              console.log([slotsMap[slotId]][0].getName())
               googletag.cmd.push(function() {    
                 pbjs.cmd.push(function() {
                   pbjs.requestBids({
