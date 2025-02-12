@@ -37,8 +37,23 @@
             googletag.pubads().addEventListener("slotRenderEnded", (event) => {
               const slotId = event.slot.getSlotElementId();
               const refreshTimeout = event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
-              setTimeout(() => {googletag.refresh(slotId);}, refreshTimeout);
-             });
+              setTimeout(() => {
+
+                googletag.cmd.push(function() {    
+                  pbjs.cmd.push(function() {
+                    pbjs.requestBids({
+                      bidsBackHandler: function(){
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh([slotId]);
+                      },
+                      //adUnitCodes: [slotId],
+                    });
+                  });
+                });
+              
+              }, refreshTimeout
+              );
+            });
             
           });
         });
