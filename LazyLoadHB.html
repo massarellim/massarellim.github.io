@@ -35,12 +35,11 @@
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
 
               const slot = event.slot;
-              console.log(slotId)
+              console.log(slot)
               const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
               setTimeout(() => {
 
                   pbjs.cmd.push(function() {
-                    console.log('here');
                     console.log(slot.getAdunitPath());
                     pbjs.requestBids({
                       bidsBackHandler: function(){
