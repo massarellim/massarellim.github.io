@@ -66,24 +66,15 @@
             {bidder: '33across',params: {siteId: 'examplePub123', productId: 'siab|inview'}}
           ]}]);
 
-          pbjs.setConfig({
-            debugging: {
-              enabled: true,
-              intercept: [
-                {
-                  when: {
-                    adUnitCode: '/6353/massarellim_anchor',
-                    bidder: 'rubicon'
-                  },
-                  then: {
-                    cpm: 9.90,
-                    width: 320,
-                    height: 50,
-                  }
-                },
-              ]
-            }
-          });
+            pbjs.setConfig({
+              debugging: {
+                enabled: true, 
+                intercept: [{
+                  when: {adUnitCode: '/6353/massarellim_anchor'}, 
+                  then: {cpm: 9.90}
+                }]
+              }
+            });
          
           pbjs.requestBids({bidsBackHandler:function(){
             pbjs.setTargetingForGPTAsync(undefined, function (slot) {
