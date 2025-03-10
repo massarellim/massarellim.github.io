@@ -65,14 +65,39 @@
 
 // must run before requestBids is invoked
 function auctionOptionsLogging() {
-    pbjs.onEvent('auctionInit', auction => {console.log(`Auction Options: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);})
-    pbjs.onEvent('bidRequested', bidderRequest => {console.log(`Auction Options: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);})
-    pbjs.onEvent('bidResponse', bid => {console.log(`Auction Options: Bid Response from ${bid.bidderCode} at ${Date.now()} in ${bid.responseTimestamp - bid.requestTimestamp}ms - ${bid.auctionId}`);})
-    pbjs.onEvent('noBid', bid => {console.log(`Auction Options: No Bid from ${bid.bidder} - ${bid.auctionId}`);})
-    pbjs.onEvent('bidderDone', bidderRequest => {console.log(`Auction Options: Bidder ${bidderRequest.bidderCode} Done in ${Date.now() - bidderRequest.start}ms - ${bidderRequest.auctionId}`);})
-    pbjs.onEvent('bidTimeout', timedOutBidders => {console.log(`Auction Options: Auction End! Timed Out! Bidders: ${Array.from(new Set(timedOutBidders.map(each => each.bidder))).join(',')} - ${timedOutBidders[0]?.auctionId}`);})
-    pbjs.onEvent('bidderError', { error, bidderRequest } => {console.log(`Auction Error: Bidder ${bidderRequest.bidderCode} responded with ${error.status} ${error.statusText} - ${bidderRequest.auctionId}`);})
-    pbjs.onEvent('auctionEnd', auction => {console.log(`Auction Options: Auction End! After ${Date.now() - auction.bidderRequests[0]?.auctionStart}ms - ${auction.bidderRequests[0]?.auctionId}`);
+pbjs.onEvent('auctionInit', auction => {
+        console.log(`Auction Options: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);
+    })
+
+    pbjs.onEvent('bidRequested', bidderRequest => {
+        console.log(`Auction Options: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);
+    })
+
+    pbjs.onEvent('bidResponse', bid => {
+        console.log(`Auction Options: Bid Response from ${bid.bidderCode} at ${Date.now()} in ${bid.responseTimestamp - bid.requestTimestamp}ms - ${bid.auctionId}`);
+    })
+
+    pbjs.onEvent('noBid', bid => {
+        console.log(`Auction Options: No Bid from ${bid.bidder} - ${bid.auctionId}`);
+    })
+
+    pbjs.onEvent('bidderDone', bidderRequest => {
+        console.log(`Auction Options: Bidder ${bidderRequest.bidderCode} Done in ${Date.now() - bidderRequest.start}ms - ${bidderRequest.auctionId}`);
+    })
+
+    pbjs.onEvent('bidTimeout', timedOutBidders => {
+        let auctionId = timedOutBidders.length > 0 ? timedOutBidders[0].auctionId : 0
+        console.log(`Auction Options: Auction End! Timed Out! Bidders: ${Array.from(new Set(timedOutBidders.map(each => each.bidder))).join(',')} - ${auctionId}`);
+    })
+
+    pbjs.onEvent('bidderError', { error, bidderRequest } => {
+        console.log(`Auction Error: Bidder ${bidderRequest.bidderCode} responded with ${error.status} ${error.statusText} - ${bidderRequest.auctionId}`);
+    })
+
+    pbjs.onEvent('auctionEnd', auction => {
+        let auctionId = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionId : 0
+        let auctionStart = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionStart : 0
+        console.log(`Auction Options: Auction End! After ${Date.now() - auctionStart}ms - ${auctionId}`);
         auctionOptionsLog(auctionId)
     })
 
