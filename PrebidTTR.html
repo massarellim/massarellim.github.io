@@ -56,13 +56,10 @@
 
             pbjs.requestBids({
               bidsBackHandler: function(){
-                pbjs.setTargetingForGPTAsync(undefined, function (slot) {
-                  return function(adUnitCode) {
-                    return adUnitCode === slot.getAdUnitPath();
-                  };
-                });
-              googletag.pubads().refresh();
-            }});
+                pbjs.setTargetingForGPTAsync()
+                googletag.pubads().refresh();
+              }
+            });
 
           }); 
         });
