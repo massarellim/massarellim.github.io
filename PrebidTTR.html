@@ -128,7 +128,7 @@ pbjs.onEvent('auctionInit', auction => {
                     adunit: code,
                     adId: bid.adId,
                     bidder: bid.bidder,
-                    secondary: !config.secondaryBidders.includes(bid.bidder),
+                    secondary: config?.secondaryBidders?.includes(bid.bidder),
                     time: bid.timeToRespond,
                     auctionTimeout: auctionTime,
                     cpm: bid.cpm,
