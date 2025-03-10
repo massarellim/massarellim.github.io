@@ -48,7 +48,7 @@
               debugging: {
                 enabled: true, 
                 intercept: [{
-                  when: {adUnitCode: /test/}, 
+                  when: {bidder: 'appnexus'}, 
                   then: {cpm: 9.90},
                   options: {delay: 1000},
                 }]
