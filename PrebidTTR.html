@@ -49,7 +49,8 @@
                 enabled: true, 
                 intercept: [{
                   when: {adUnitCode: /test/}, 
-                  then: {cpm: 9.90}
+                  then: {cpm: 9.90},
+                  delay: 1000
                 }]
               }
             });
