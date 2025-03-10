@@ -147,7 +147,7 @@ pbjs.onEvent('auctionInit', auction => {
                     adunit: code,
                     adId: bid.bidId,
                     bidder: bid.bidder,
-                    secondary: !config.secondaryBidders.includes(bid.bidder),
+                    secondary: config?.secondaryBidders?.includes(bid.bidder),
                 });
             });
         }
