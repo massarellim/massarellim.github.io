@@ -103,6 +103,11 @@ function auctionOptionsLogging() {
         auctionOptionsLog(auctionId)
     })
 
+    pbjs.onEvent('auctionEnd', auction => {
+      let pbjsEvents = pbjs.getEvents();
+      console.log(pbjsEvents);
+    })
+
     function auctionOptionsLog(auctionId) {
         let winners = pbjs.getAllWinningBids();
         let output = [];
