@@ -104,8 +104,10 @@ function auctionOptionsLogging() {
     })
 
     pbjs.onEvent('auctionEnd', auction => {
-      let pbjsEvents = pbjs.getEvents();
-      console.log(pbjsEvents);
+      pbjs.cmd.push(function() {
+        let pbjsEvents = pbjs.getEvents();
+        console.log(pbjsEvents);
+      }
     })
 
     function auctionOptionsLog(auctionId) {
