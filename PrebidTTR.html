@@ -66,11 +66,12 @@
 
 // must run before requestBids is invoked
 function auctionOptionsLogging() {
-pbjs.onEvent('auctionInit', auction => {
+    pbjs.onEvent('auctionInit', auction => {
         console.log(`Auction Options: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);
     })
 
     pbjs.onEvent('bidRequested', bidderRequest => {
+        console.log(bidderRequest);
         console.log(`Auction Options: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);
     })
 
