@@ -91,52 +91,55 @@
                 }]
               }
             }
+
+            let targetingMap = {};
+            pbjs.onEvent('auctionEnd', auction => {
+              pbjs.getEvents().forEach( (event) => {
+                switch(event.eventType) {
+                  case 'auctionInit':
+                      event.args.adUnits.forEach( (adUnit) => {
+                        targetingMap[adUnit.code] = {}
+                        adUnit.bids.forEach( (bid) => {
+                          targetingMap[adUnit.code][bid.bidder] = {}
+                          targetingMap[adUnit.code][bid.bidder].cpm = 0.0
+                          targetingMap[adUnit.code][bid.bidder].ttr = event.args.timeout + event.elapsedTime
+                        })
+                      })
+                    break;
+                  case 'bidResponse':cpms
+                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
+                      targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
+                    break;
+                  case 'noBid':
+                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
+                    break;
+                };
+              })
+              console.log(targetingMap);
+            })
             
             pbjs.requestBids({
               bidsBackHandler: function(){
                 pbjs.cmd.push(function() {
-                  let targetingMap = {};
-                  pbjs.onEvent('auctionEnd', auction => {
-                    pbjs.getEvents().forEach( (event) => {
-                      switch(event.eventType) {
-                        case 'auctionInit':
-                            event.args.adUnits.forEach( (adUnit) => {
-                              targetingMap[adUnit.code] = {}
-                              adUnit.bids.forEach( (bid) => {
-                                targetingMap[adUnit.code][bid.bidder] = {}
-                                targetingMap[adUnit.code][bid.bidder].cpm = 0.0
-                                targetingMap[adUnit.code][bid.bidder].ttr = event.args.timeout + event.elapsedTime
-                              })
-                            })
-                          break;
-                        case 'bidResponse':cpms
-                            targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
-                            targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
-                          break;
-                        case 'noBid':
-                            targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
-                          break;
-                      };
-                    })
-                    console.log(targetingMap);
-                  })
-                  googletag.pubads().getSlots().forEach( slot => {
-                    console.log(slot)
-                    console.log(slot.getAdUnitPath())
-                    console.log(targetingMap)
-                    console.log(targetingMap[slot.getAdUnitPath()])
-                    let adUnitPath = targetingMap[slot.getAdUnitPath()]
-                    console.log(adUnitPath)
-                    for (const bidder in adUnitPath) {
-                      console.log(`hb_pb_${bidder}`)
-                      console.log(adUnitPath[bidder])
-                      console.log(adUnitPath[bidder].cpm)
-                      slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
-                      slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
-                    }
-                  })
-                  pbjs.setTargetingForGPTAsync()
-                  googletag.pubads().refresh();
+                  
+                                googletag.pubads().getSlots().forEach( slot => {
+                                  console.log(slot)
+                                  console.log(slot.getAdUnitPath())
+                                  console.log(targetingMap)
+                                  console.log(targetingMap[slot.getAdUnitPath()])
+                                  let adUnitPath = targetingMap[slot.getAdUnitPath()]
+                                  console.log(adUnitPath)
+                                  for (const bidder in adUnitPath) {
+                                    console.log(`hb_pb_${bidder}`)
+                                    console.log(adUnitPath[bidder])
+                                    console.log(adUnitPath[bidder].cpm)
+                                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
+                                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
+                                  }
+                                })
+                                pbjs.setTargetingForGPTAsync()
+                                googletag.pubads().refresh();
+                  
                 })
               },
               timeout: 1500,
