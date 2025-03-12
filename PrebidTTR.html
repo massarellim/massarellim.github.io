@@ -131,16 +131,15 @@
               },
               timeout: 1500,
             });
-        
-            function updateSlotStatus(slotId, state) {
-              var elem = document.getElementById(slotId + '-' + state);
-              elem.className = 'activated';
-              elem.innerText = 'Yes';
-            }
-            
-          })  
-          
+         
+          })    
         });
+
+        function updateSlotStatus(slotId, state) {
+          var elem = document.getElementById(slotId + '-' + state);
+          elem.className = 'activated';
+          elem.innerText = 'Yes';
+        }
         
       </script>
       <style>
