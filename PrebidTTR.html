@@ -96,7 +96,8 @@
               bidsBackHandler: function(){
                 pbjs.setTargetingForGPTAsync()
                 googletag.pubads().refresh();
-              }
+              },
+              timeout: 1500,
             });
 
 // must run before requestBids is invoked
