@@ -59,8 +59,6 @@
               }
             });
 
-            //auctionOptionsLogging(); // include for logging
-
             pbjs.bidderSettings = {
               standard: {
                 adserverTargeting: [{
@@ -91,47 +89,7 @@
                 }]
               }
             }
-
-            let targetingMap = {};
-            pbjs.onEvent('auctionEnd', auction => {
-              pbjs.getEvents().forEach( (event) => {
-                switch(event.eventType) {
-                  case 'auctionInit':
-                      event.args.adUnits.forEach( (adUnit) => {
-                        targetingMap[adUnit.code] = {}
-                        adUnit.bids.forEach( (bid) => {
-                          targetingMap[adUnit.code][bid.bidder] = {}
-                          targetingMap[adUnit.code][bid.bidder].cpm = 0
-                          targetingMap[adUnit.code][bid.bidder].ttr = event.args.timeout + event.elapsedTime
-                        })
-                      })
-                    break;
-                  case 'bidResponse':
-                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
-                      targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
-                    break;
-                  case 'noBid':
-                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
-                    break;
-                };
-              })
-            })
             
-            pbjs.requestBids({
-              bidsBackHandler: function(){
-                googletag.pubads().getSlots().forEach( slot => {
-                  let adUnitPath = targetingMap[slot.getAdUnitPath()]
-                  for (const bidder in adUnitPath) {
-                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm.toFixed(2))
-                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr.toFixed(0))                    
-                  }
-                })
-                pbjs.setTargetingForGPTAsync()
-                googletag.pubads().refresh();
-              },
-              timeout: 1500,
-            });
-         
           })    
         });
 
