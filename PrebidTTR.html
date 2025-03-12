@@ -109,8 +109,10 @@
                   case 'auctionInit':
                       console.log(event)
                       targetingMap.timeout = event.args.timeout
-                      targetingMap.adUnitCodes = event.args.adUnitCodes
-                      console.log(event.elapsedTime)
+                      event.args.adUnitCodes.forEach( (adUnit) => {
+                        targetingMap.adUnit = {}
+                      }
+                      targetingMap.elapsedTime = event.args.elapsedTime
                     break;
                   case 'bidRequested':
                       console.log(event)
