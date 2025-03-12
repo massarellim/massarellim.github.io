@@ -125,7 +125,7 @@
                   for (const bidder in adUnitPath) {
                     slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
                     slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
-                  })
+                  }
                 })
                 pbjs.setTargetingForGPTAsync()
                 googletag.pubads().refresh();
