@@ -108,7 +108,8 @@
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
-                      Object.assign(targetingMap, { [timeout] : event.args.timeout})
+                      targetingMap.timeout = event.args.timeout
+                      Object.assign(targetingMap, { timeout : event.args.timeout})
                       event.args.adUnitCodes.forEach( (adUnit) => {
                         Object.assign(targetingMap, { [adUnit] : null})
                       })
