@@ -109,13 +109,10 @@
                   case 'auctionInit':
                       console.log(event)
                       targetingMap.timeout = event.args.timeout
-                      /*
-                      Object.assign(targetingMap, { timeout : event.args.timeout})
+                      targetingMap.elapsedTime = event.args.elapsedTime
                       event.args.adUnitCodes.forEach( (adUnit) => {
-                        Object.assign(targetingMap, { [adUnit] : null})
+                        targetingMap.adUnit = {}
                       })
-                      Object.assign(targetingMap, { [elapsedTime] : event.args.elapsedTime})
-                      */
                     break;
                   case 'bidRequested':
                       console.log(event)
