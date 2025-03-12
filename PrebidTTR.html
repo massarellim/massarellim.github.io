@@ -120,8 +120,13 @@
                   console.log(targetingMap);
                 })
                 googletag.pubads().getSlots().forEach( slot => {
-                  const adUnitPath = targetingMap[slot.getAdUnitPath()]
+                  console.log(slot)
+                  let adUnitPath = targetingMap[slot.getAdUnitPath()]
+                  console.log(adUnitPath)
                   for (const bidder in adUnitPath) {
+                    console.log(`hb_pb_${bidder}`)
+                    console.log(adUnitPath[bidder])
+                    console.log(adUnitPath[bidder].cpm)
                     slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
                     slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
                   }
