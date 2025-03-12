@@ -107,9 +107,6 @@
                       })
                     break;
                   case 'bidResponse':
-                      console.log(event.elapsedTime)
-                      console.log(event.args.cpm)
-                      console.log(targetingMap[event.args.adUnitCode][event.args.bidder].cpm)
                       targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
                       targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
                     break;
@@ -118,23 +115,14 @@
                     break;
                 };
               })
-              console.log(targetingMap);
             })
             
             pbjs.requestBids({
               bidsBackHandler: function(){
                 googletag.pubads().getSlots().forEach( slot => {
-                  console.log(slot)
-                  console.log(slot.getAdUnitPath())
-                  console.log(targetingMap)
-                  console.log(targetingMap[slot.getAdUnitPath()])
                   let adUnitPath = targetingMap[slot.getAdUnitPath()]
-                  console.log(adUnitPath)
                   for (const bidder in adUnitPath) {
-                    console.log(`hb_cpm_${bidder}`)
-                    console.log(adUnitPath[bidder])
-                    console.log(adUnitPath[bidder].cpm)
-                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
+                    slot.setTargeting(`hb_cpm_${bidder}`, adUnitPath[bidder].cpm)
                     slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
                   }
                 })
