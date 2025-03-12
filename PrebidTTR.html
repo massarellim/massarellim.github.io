@@ -108,8 +108,6 @@
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
-                      targetingMap.timeout = event.args.timeout
-                      targetingMap.elapsedTime = event.elapsedTime
                       event.args.adUnits.forEach( (adUnit) => {
                         targetingMap[adUnit.code] = {}
                         adUnit.bids.forEach( (bid) => {
@@ -119,11 +117,6 @@
                         })
                       })
                     break;
-                  case 'bidRequested':
-                      console.log(event)
-                      console.log(event.args.bidderCode)
-                      console.log(event.elapsedTime)
-                    break;
                   case 'bidResponse':
                       console.log(event)
                       console.log(event.args.adUitCode)
@@ -132,11 +125,7 @@
                       console.log(event.args.cpm)
                     break;
                   case 'noBid':
-                      console.log(event)
-                      console.log(event.args.adUitCode)
-                      console.log(event.args.bidder)
-                      console.log(event.elapsedTime)
-                      console.log("0.00")
+                      targetingMap.[event.args.adUitCode].[event.args.bidder].ttr = event.args.elapsedTime
                     break;
                   case 'auctionEnd':
                       console.log(event)
