@@ -105,8 +105,11 @@
               console.log(auction);
               pbjs.getEvents().forEach( (event) => {
                 switch(event.eventType) {
-                  case 'beforeRequestBids':
+                  case 'auctionInit':
                       console.log(event)
+                      console.log(event.auctionId)
+                      console.log(event.timeout)
+                      console.log(event.args.adUnitCodes)
                       console.log(event.elapsedTime)
                     break;
                   case 'bidRequested':
@@ -116,12 +119,14 @@
                     break;
                   case 'bidResponse':
                       console.log(event)
+                      console.log(event.args.adUitCode)
                       console.log(event.args.bidderCode)
                       console.log(event.elapsedTime)
                       console.log(event.args.cpm)
                     break;
                   case 'noBid':
                       console.log(event)
+                      console.log(event.args.adUitCode)
                       console.log(event.args.bidder)
                       console.log(event.elapsedTime)
                       console.log("0.00")
