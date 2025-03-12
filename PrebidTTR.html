@@ -123,7 +123,7 @@
                   let adUnitPath = targetingMap[slot.getAdUnitPath()]
                   for (const bidder in adUnitPath) {
                     slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm.toFixed(2))
-                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr.toFixed(0))                    
+                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
                   }
                 })
                 pbjs.setTargetingForGPTAsync()
