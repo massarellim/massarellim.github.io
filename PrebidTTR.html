@@ -106,7 +106,10 @@
                         })
                       })
                     break;
-                  case 'bidResponse':cpms
+                  case 'bidResponse':
+                      console.log(event.elapsedTime)
+                      console.log(event.args.cpm)
+                      console.log(targetingMap[event.args.adUnitCode][event.args.bidder].cpm)
                       targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime
                       targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
                     break;
