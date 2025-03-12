@@ -121,10 +121,10 @@
                   console.log(targetingMap);
                 })
                 googletag.pubads().getSlots().forEach( slot => {
-                  targetingMap[slot.getAdUnitPath()].forEach( bidder => {
-                    console.log(Object.keys(bidder))
-                    slot.setTargeting(`hb_pb_${bidder}`, bidder.cpm)
-                    slot.setTargeting(`hb_ttr_${bidder}`, bidder.ttr)                    
+                  const adUnitPath = targetingMap[slot.getAdUnitPath()]
+                  for (const bidder in adUnitPath) {
+                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
+                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
                   })
                 })
                 pbjs.setTargetingForGPTAsync()
