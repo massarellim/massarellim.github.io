@@ -120,11 +120,11 @@
                     break;
                   case 'bidResponse':
                       console.log(event)
-                      targetingMap[event.args.adUitCode][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
-                      targetingMap[event.args.adUitCode][event.args.bidder].cpm = event.args.cpm
+                      targetingMap[event.args.adUnit.code][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
+                      targetingMap[event.args.adUnit.code][event.args.bidder].cpm = event.args.cpm
                     break;
                   case 'noBid':
-                      targetingMap[event.args.adUitCode][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
+                      targetingMap[event.args.adUnit.code][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
                     break;
                   case 'auctionEnd':
                       console.log(event)
