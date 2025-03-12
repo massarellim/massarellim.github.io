@@ -108,7 +108,7 @@
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
-                      targetingMap.auctionStart = event.args.elapsedTime
+                      targetingMap.auctionStart = event.elapsedTime
                       event.args.adUnits.forEach( (adUnit) => {
                         targetingMap[adUnit.code] = {}
                         adUnit.bids.forEach( (bid) => {
