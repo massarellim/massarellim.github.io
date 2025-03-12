@@ -63,34 +63,34 @@
 
             pbjs.bidderSettings = {
               standard: {
-                  adserverTargeting: [{
-                      key: "hb_bidder",
-                      val: function(bidResponse) {
-                          return bidResponse.bidderCode;
-                      }
-                  }, {
-                      key: "hb_adid",
-                      val: function(bidResponse) {
-                          return bidResponse.adId;
-                      }
-                  }, {
-                      key: "hb_pb",
-                      val: function(bidResponse) {
-                          return bidResponse.pbMg;
-                      }
-                  }, {
-                      key: 'hb_size',
-                      val: function (bidResponse) {
-                          return bidResponse.size;
-                      }
-                  }, {
-                      key: 'hb_ttr',
-                      val: function (bidResponse) {
-                          return bidResponse.timeToRespond;
-                      }
-                  }]
+                adserverTargeting: [{
+                  key: "hb_bidder",
+                  val: function(bidResponse) {
+                      return bidResponse.bidderCode;
+                  }
+                }, {
+                  key: "hb_adid",
+                  val: function(bidResponse) {
+                      return bidResponse.adId;
+                  }
+                }, {
+                  key: "hb_pb",
+                  val: function(bidResponse) {
+                      return bidResponse.pbMg;
+                  }
+                }, {
+                  key: 'hb_size',
+                  val: function (bidResponse) {
+                      return bidResponse.size;
+                  }
+                }, {
+                  key: 'hb_ttr',
+                  val: function (bidResponse) {
+                      return bidResponse.timeToRespond;
+                  }
+                }]
               }
-          }
+            }
             
             pbjs.requestBids({
               bidsBackHandler: function(){
