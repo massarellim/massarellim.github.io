@@ -113,7 +113,14 @@
                       console.log(event.elapsedTime)
                     break;
                   case 'bidResponse':
+                      console.log(event.args.bidderCode)
                       console.log(event.elapsedTime)
+                      console.log(event.args.cpm)
+                    break;
+                  case 'noBid':
+                      console.log(event.args.bidderCode)
+                      console.log(event.elapsedTime)
+                      console.log("0.00")
                     break;
                   case 'auctionEnd':
                       console.log(event.elapsedTime)
