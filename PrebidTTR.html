@@ -107,8 +107,8 @@
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
-                      console.log(event.auctionId)
-                      console.log(event.timeout)
+                      console.log(event.args.auctionId)
+                      console.log(event.args.timeout)
                       console.log(event.args.adUnitCodes)
                       console.log(event.elapsedTime)
                     break;
