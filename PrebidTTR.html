@@ -102,9 +102,9 @@
             });
 
             pbjs.onEvent('auctionEnd', auction => {
+              let targetingMap = {};
               console.log(auction);
               pbjs.getEvents().forEach( (event) => {
-                let targetingMap = {};
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
