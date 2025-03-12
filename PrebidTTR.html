@@ -120,27 +120,23 @@
             
             pbjs.requestBids({
               bidsBackHandler: function(){
-                pbjs.cmd.push(function() {
-                  
-                                googletag.pubads().getSlots().forEach( slot => {
-                                  console.log(slot)
-                                  console.log(slot.getAdUnitPath())
-                                  console.log(targetingMap)
-                                  console.log(targetingMap[slot.getAdUnitPath()])
-                                  let adUnitPath = targetingMap[slot.getAdUnitPath()]
-                                  console.log(adUnitPath)
-                                  for (const bidder in adUnitPath) {
-                                    console.log(`hb_pb_${bidder}`)
-                                    console.log(adUnitPath[bidder])
-                                    console.log(adUnitPath[bidder].cpm)
-                                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
-                                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
-                                  }
-                                })
-                                pbjs.setTargetingForGPTAsync()
-                                googletag.pubads().refresh();
-                  
+                googletag.pubads().getSlots().forEach( slot => {
+                  console.log(slot)
+                  console.log(slot.getAdUnitPath())
+                  console.log(targetingMap)
+                  console.log(targetingMap[slot.getAdUnitPath()])
+                  let adUnitPath = targetingMap[slot.getAdUnitPath()]
+                  console.log(adUnitPath)
+                  for (const bidder in adUnitPath) {
+                    console.log(`hb_cpm_${bidder}`)
+                    console.log(adUnitPath[bidder])
+                    console.log(adUnitPath[bidder].cpm)
+                    slot.setTargeting(`hb_pb_${bidder}`, adUnitPath[bidder].cpm)
+                    slot.setTargeting(`hb_ttr_${bidder}`, adUnitPath[bidder].ttr)                    
+                  }
                 })
+                pbjs.setTargetingForGPTAsync()
+                googletag.pubads().refresh();
               },
               timeout: 1500,
             });
