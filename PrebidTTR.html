@@ -104,12 +104,12 @@
             pbjs.onEvent('auctionEnd', auction => {
               console.log(auction);
               pbjs.getEvents().forEach( (event) => {
+                let targetingMap = {};
                 switch(event.eventType) {
                   case 'auctionInit':
                       console.log(event)
-                      console.log(event.args.auctionId)
-                      console.log(event.args.timeout)
-                      console.log(event.args.adUnitCodes)
+                      targetingMap.timeout = event.args.timeout
+                      targetingMap.adUnitCodes = event.args.adUnitCodes
                       console.log(event.elapsedTime)
                     break;
                   case 'bidRequested':
