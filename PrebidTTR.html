@@ -101,7 +101,7 @@
                         targetingMap[adUnit.code] = {}
                         adUnit.bids.forEach( (bid) => {
                           targetingMap[adUnit.code][bid.bidder] = {}
-                          targetingMap[adUnit.code][bid.bidder].cpm = 0.0
+                          targetingMap[adUnit.code][bid.bidder].cpm = 0
                           targetingMap[adUnit.code][bid.bidder].ttr = event.args.timeout + event.elapsedTime
                         })
                       })
