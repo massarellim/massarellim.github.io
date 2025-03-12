@@ -95,8 +95,8 @@
             
             pbjs.requestBids({
               bidsBackHandler: function(){
+                let targetingMap = {};
                 pbjs.onEvent('auctionEnd', auction => {
-                  let targetingMap = {};
                   pbjs.getEvents().forEach( (event) => {
                     switch(event.eventType) {
                       case 'auctionInit':
@@ -120,7 +120,14 @@
                   })
                   console.log(targetingMap);
                 })
-                //pbjs.setTargetingForGPTAsync()
+                googletag.pubads().getSlots().forEach( slot => {
+                  targetingMap[slot.getAdUnitPath()].forEach( bidder => {
+                    console.log(bidder)
+                    slot.setTargeting(`hb_pb_${bidder}`, bidder.cpm)
+                    slot.setTargeting(`hb_ttr_${bidder}`, bidder.ttr)                    
+                  })
+                })
+                pbjs.setTargetingForGPTAsync()
                 googletag.pubads().refresh();
               },
               timeout: 1500,
