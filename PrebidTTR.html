@@ -110,8 +110,11 @@
                       console.log(event)
                       targetingMap.timeout = event.args.timeout
                       targetingMap.elapsedTime = event.elapsedTime
-                      event.args.adUnitCodes.forEach( (adUnit) => {
-                        targetingMap[adUnit] = {}
+                      event.args.adUnits.forEach( (adUnit) => {
+                        targetingMap[adUnit.code] = {}
+                        adUnit.bids.forEach( (bid) => {
+                          targetingMap[adUnit.code][bid.bidder] = {}
+                        })
                       })
                     break;
                   case 'bidRequested':
