@@ -119,7 +119,10 @@
                       })
                     break;
                   case 'bidResponse':
-                      console.log(event)
+                      console.log(event.args.elapsedTime)
+                      console.log(targetingMap.auctionStart)
+                      console.log(event.args.elapsedTime-targetingMap.auctionStart)
+
                       targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
                       targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
                     break;
