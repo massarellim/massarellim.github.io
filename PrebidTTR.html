@@ -123,11 +123,11 @@
                       console.log(targetingMap.auctionStart)
                       console.log(event.args.elapsedTime-targetingMap.auctionStart)
 
-                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
+                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime - targetingMap.auctionStart
                       targetingMap[event.args.adUnitCode][event.args.bidder].cpm = event.args.cpm
                     break;
                   case 'noBid':
-                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.args.elapsedTime - targetingMap.auctionStart
+                      targetingMap[event.args.adUnitCode][event.args.bidder].ttr = event.elapsedTime - targetingMap.auctionStart
                     break;
                   case 'auctionEnd':
                       console.log(event)
