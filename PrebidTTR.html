@@ -102,7 +102,26 @@
             });
 
             pbjs.onEvent('auctionEnd', auction => {
-              pbjs.getEvents().forEach(el => console.log(el))
+              console.log(auction);
+              pbjs.getEvents().forEach( event =>
+                switch(event.eventType) {
+                  case 'beforeRequestBids':
+                      console.log(event.elapsedTime)
+                    break;
+                  case 'bidRequested':
+                      console.log(event.args.bidderCode)
+                      console.log(event.elapsedTime)
+                    break;
+                  case 'bidResponse':
+                      console.log(event.elapsedTime)
+                    break;
+                  case 'auctionEnd':
+                      console.log(event.elapsedTime)
+                    break;
+                  default:
+                      console.log(event.elapsedTime)
+                }
+              )
             })
 
             /*
