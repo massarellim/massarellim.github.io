@@ -63,9 +63,7 @@
               standard: {
                 adserverTargeting: [{
                   key: "hb_bidder",
-                  val: function(bidResponse) {
-                      return bidResponse.bidderCode;
-                  }
+                  val: bidResponse => bidResponse.bidderCode
                 }, {
                   key: "hb_adid",
                   val: function(bidResponse) {
