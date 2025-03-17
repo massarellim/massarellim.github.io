@@ -60,32 +60,13 @@
             });
 
             pbjs.bidderSettings = {
-              standard: {
-                adserverTargeting: [{
-                  key: "hb_bidder",
-                  val: bidResponse => bidResponse.bidderCode
-                }, {
-                  key: "hb_adid",
-                  val: function(bidResponse) {
-                      return bidResponse.adId;
-                  }
-                }, {
-                  key: "hb_pb",
-                  val: function(bidResponse) {
-                      return bidResponse.pbMg;
-                  }
-                }, {
-                  key: 'hb_size',
-                  val: function (bidResponse) {
-                      return bidResponse.size;
-                  }
-                }, {
-                  key: 'hb_ttr',
-                  val: function (bidResponse) {
-                      return bidResponse.timeToRespond;
-                  }
-                }]
-              }
+              standard: {adserverTargeting: [
+                  {key: "hb_bidder", val: bidResponse => bidResponse.bidderCode},
+                  {key: "hb_adid", val: bidResponse => bidResponse.adId},
+                  {key: "hb_pb", val: bidResponse => bidResponse.pbMg},
+                  {key: 'hb_size', val: bidResponse => bidResponse.size},
+                  {key: 'hb_ttr', val: bidResponse => bidResponse.timeToRespond}
+              ]}
             }
 
             pbjs.requestBids({
