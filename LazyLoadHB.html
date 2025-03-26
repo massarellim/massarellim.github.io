@@ -34,7 +34,7 @@
           googletag.pubads().addEventListener('impressionViewable', function(event) {
             updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
             const slot = event.slot;
-            const refreshTimeout = 3000; //event.advertiserId == 'Google_AdExchange_ID' ? 240000 : 10000;
+            const refreshTimeout = 3000;
             setTimeout(() => {
               googletag.cmd.push(function() {            
                 pbjs.cmd.push(function() {
