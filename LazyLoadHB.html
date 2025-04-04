@@ -1,349 +1,376 @@
-  <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Lazy loading example</title>
-      
-      <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
-      <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-      
-      <script>
-        
-        window.googletag = window.googletag || {cmd: []};
-        var pbjs = pbjs || {};
-        pbjs.cmd = pbjs.cmd || [];
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Lazy loading example</title>
 
-        googletag.cmd.push(function() {            
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
 
-          const slot7 = googletag.defineSlot("/6353/test_no_LL_1", [300, 250], "div-7")
-            .addService(googletag.pubads());
-          const slot8 = googletag.defineSlot("/6353/test_no_LL_2", [300, 250], "div-8")
-            .addService(googletag.pubads());
-          googletag.pubads().enableSingleRequest();
-          googletag.pubads().disableInitialLoad();
-          googletag.enableServices();
-          googletag.pubads().refresh([slot7, slot8])
+    <script>
+      window.googletag = window.googletag || { cmd: [] };
+      var pbjs = pbjs || {};
+      pbjs.cmd = pbjs.cmd || [];
 
-          googletag.pubads().addEventListener('slotRequested', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'requested');
+      googletag.cmd.push(function () {
+        const slot7 = googletag
+          .defineSlot("/6353/test_no_LL_1", [300, 250], "div-7")
+          .addService(googletag.pubads());
+        const slot8 = googletag
+          .defineSlot("/6353/test_no_LL_2", [300, 250], "div-8")
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+        googletag.pubads().refresh([slot7, slot8]);
+
+        googletag.pubads().addEventListener("slotRequested", function (event) {
+          updateSlotStatus(event.slot.getSlotElementId(), "requested");
+        });
+
+        googletag
+          .pubads()
+          .addEventListener("slotRenderEnded", function (event) {
+            updateSlotStatus(event.slot.getSlotElementId(), "rendered");
           });
 
-          googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'rendered');
-          });
-
-          googletag.pubads().addEventListener('impressionViewable', function(event) {
-            updateSlotStatus(event.slot.getSlotElementId(), 'viewed');
+        googletag
+          .pubads()
+          .addEventListener("impressionViewable", function (event) {
+            updateSlotStatus(event.slot.getSlotElementId(), "viewed");
             const slot = event.slot;
             const refreshTimeout = 3000;
             setTimeout(() => {
-              googletag.cmd.push(function() {            
-                pbjs.cmd.push(function() {
+              googletag.cmd.push(function () {
+                pbjs.cmd.push(function () {
                   pbjs.requestBids({
-                    bidsBackHandler: function(){
+                    bidsBackHandler: function () {
                       pbjs.setTargetingForGPTAsync([slot.getAdUnitPath()]);
                       googletag.pubads().refresh([slot]);
-                      updateRefreshCounter(event.slot.getSlotElementId(), 'refreshed');
+                      updateRefreshCounter(
+                        event.slot.getSlotElementId(),
+                        "refreshed"
+                      );
                     },
                     adUnitCodes: [slot.getAdUnitPath()],
                   });
                 });
               });
-            }, refreshTimeout);  
+            }, refreshTimeout);
           });
-            
+      });
+
+      googletag.cmd.push(function () {
+        const slot1 = googletag
+          .defineSlot("/6353/test_1", [300, 250], "div-1")
+          .addService(googletag.pubads());
+        const slot2 = googletag
+          .defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
+          .addService(googletag.pubads());
+        const slot3 = googletag
+          .defineSlot("/6353/test_2", [300, 250], "div-3")
+          .addService(googletag.pubads());
+        const slot4 = googletag
+          .defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
+          .addService(googletag.pubads());
+        const slot5 = googletag
+          .defineSlot("/6353/test_3", [300, 250], "div-5")
+          .addService(googletag.pubads());
+        const slot6 = googletag
+          .defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
+          .addService(googletag.pubads());
+
+        googletag.pubads().enableLazyLoad({
+          fetchMarginPercent: 300,
+          renderMarginPercent: 25,
+          mobileScaling: 1.0,
         });
-          
-        
-        googletag.cmd.push(function() {            
-          
-          const slot1 = googletag.defineSlot("/6353/test_1", [300, 250], "div-1")
-            .addService(googletag.pubads());
-          const slot2 = googletag.defineSlot("/6353/test_no_hb_1", [320, 50], "div-2")
-            .addService(googletag.pubads());
-          const slot3 = googletag.defineSlot("/6353/test_2", [300, 250], "div-3")
-            .addService(googletag.pubads());
-          const slot4 = googletag.defineSlot("/6353/test_no_hb_2", [320, 50], "div-4")
-            .addService(googletag.pubads());
-          const slot5 = googletag.defineSlot("/6353/test_3", [300, 250], "div-5")
-            .addService(googletag.pubads());
-          const slot6 = googletag.defineSlot("/6353/test_no_hb_3", [320, 50], "div-6")
-            .addService(googletag.pubads());
 
-          googletag.pubads().enableLazyLoad({
-            fetchMarginPercent: 300,
-            renderMarginPercent: 25,
-            mobileScaling: 1.0,
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+
+        var slotsMap = googletag
+          .pubads()
+          .getSlots()
+          .reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key }), {});
+
+        pbjs.cmd.push(function () {
+          pbjs.addAdUnits([
+            {
+              code: "/6353/test_1",
+              mediaTypes: { banner: { sizes: [300, 250] } },
+              bids: [{ bidder: "appnexus", params: { placementId: 1233 } }],
+            },
+            {
+              code: "/6353/test_2",
+              mediaTypes: { banner: { sizes: [300, 250] } },
+              bids: [{ bidder: "appnexus", params: { placementId: 1234 } }],
+            },
+            {
+              code: "/6353/test_3",
+              mediaTypes: { banner: { sizes: [300, 250] } },
+              bids: [{ bidder: "appnexus", params: { placementId: 1234 } }],
+            },
+          ]);
+
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: { adUnitCode: /test/ },
+                  then: { cpm: 9.9, width: 300, height: 250 },
+                },
+              ],
+            },
           });
-          
-          googletag.pubads().disableInitialLoad();
-          googletag.enableServices();
 
-          var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
-
-          pbjs.cmd.push(function() {
-
-            pbjs.addAdUnits([
-              {code:'/6353/test_1', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1233}}]},
-              {code:'/6353/test_2', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]},
-              {code:'/6353/test_3', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1234}}]}
-            ]);
-  
-            pbjs.setConfig({
-              debugging: {
-                enabled: true, 
-                intercept: [{
-                  when: {adUnitCode: /test/}, 
-                  then: {cpm: 9.90, width: 300, height: 250}
-                }]
-              }
-            });
-            
-            function triggerAdRequest(slotId) {
-              googletag.cmd.push(function() {    
-                pbjs.cmd.push(function() {
-                  pbjs.requestBids({
-                    bidsBackHandler: function(){
-                      pbjs.setTargetingForGPTAsync([slotsMap[slotId].getAdUnitPath()]);
-                      googletag.pubads().refresh([slotsMap[slotId]]);
-                    },
-                    adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
-                  });
+          function triggerAdRequest(slotId) {
+            googletag.cmd.push(function () {
+              pbjs.cmd.push(function () {
+                pbjs.requestBids({
+                  bidsBackHandler: function () {
+                    pbjs.setTargetingForGPTAsync([
+                      slotsMap[slotId].getAdUnitPath(),
+                    ]);
+                    googletag.pubads().refresh([slotsMap[slotId]]);
+                  },
+                  adUnitCodes: [slotsMap[slotId].getAdUnitPath()],
                 });
               });
-            }
-      
-              let options = {
-                rootMargin: "0% 0% 300% 0%",
-              };
-      
-              let observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                  if (entry.isIntersecting) {
-                    var ad = entry.target;
-                    triggerAdRequest(ad.id);
-                    observer.unobserve(ad);
-                    ad.classList.remove('lazy');
-                  };
-                });
-              }, options)
-              
-              let lazyAds = document.querySelectorAll('.lazy');
-              lazyAds.forEach(function(ad) {
-                observer.observe(ad);
-              })
-            
+            });
+          }
+
+          let options = {
+            rootMargin: "0% 0% 300% 0%",
+          };
+
+          let observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                var ad = entry.target;
+                triggerAdRequest(ad.id);
+                observer.unobserve(ad);
+                ad.classList.remove("lazy");
+              }
+            });
+          }, options);
+
+          let lazyAds = document.querySelectorAll(".lazy");
+          lazyAds.forEach(function (ad) {
+            observer.observe(ad);
           });
-             
         });
-        
-        function updateSlotStatus(slotId, state) {
-          var elem = document.getElementById(slotId + '-' + state);
-          elem.className = 'activated';
-          elem.innerText = 'Yes';
-        }
+      });
 
-        function updateRefreshCounter(slotId, state) {
-          var elem = document.getElementById(slotId + '-' + state);
-          elem.className = 'activated';
-          elem.innerText = +elem.innerText +1;
-        }
-        
-      </script>
-      <style>
-        div.ad-slot {
-          border-style: dashed;
-          display: block;
-          margin: auto;
-        }
-   
-        div.main-content {
-          background-color: lightsteelblue;
-          margin-top: 250px;
-          overflow: hidden;
-          width: 100%;
-        }
-   
-        div.status-panel {
-          background: white;
-          height: 250px;
-          position: fixed;
-          top: 0;
-          width: 100%;
-        }
-   
-        table {
-          width: 90%;
-          margin: auto;
-        }
-   
-        table th {
-          text-align: center;
-        }
-   
-        table td:not(.slot-name) {
-          background-color: lightsalmon;
-        }
-   
-        table td.activated {
-          background-color: lightgreen;
-        }
-      </style>
-    </head>
-    <body>
-   
-      <div class="main-content">
-        slot1
-        <div id="div-1" class="lazy ad-slot" style="width: 300px; height: 250px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-1");
-            });
-          </script>
-        </div>
-   
-        <div style="height:200vh"></div>
-        slot2
-        <div id="div-2" class="lazy ad-slot" style="width: 320px; height: 50px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-2");
-            });
-          </script>
-        </div>
-   
-        <div style="height:200vh"></div>
-        slot3
-        <div id="div-3" class="lazy ad-slot" style="width: 300px; height: 250px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-3");
-            });
-          </script>
-        </div>
-   
-        <div style="height:200vh"></div>
-        slot4
-        <div id="div-4" class="lazy ad-slot" style="width: 320px; height: 50px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-4");
-            });
-          </script>
-        </div>
-        
-        <div style="height:200vh"></div>
-        slot5
-        <div id="div-5" class="lazy ad-slot" style="width: 300px; height: 250px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-5");
-            });
-          </script>
-        </div>
-        
-        <div style="height:200vh"></div>
-        slot6
-        <div id="div-6" class="lazy ad-slot" style="width: 320px; height: 50px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-6");
-            });
-          </script>
-        </div>
+      function updateSlotStatus(slotId, state) {
+        var elem = document.getElementById(slotId + "-" + state);
+        elem.className = "activated";
+        elem.innerText = "Yes";
+      }
 
-        <div style="height:200vh"></div>
-        slot7
-        <div id="div-7" class="ad-slot" style="width: 300px; height: 250px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-7");
-            });
-          </script>
-        </div>
+      function updateRefreshCounter(slotId, state) {
+        var elem = document.getElementById(slotId + "-" + state);
+        elem.className = "activated";
+        elem.innerText = +elem.innerText + 1;
+      }
+    </script>
+    <style>
+      div.ad-slot {
+        border-style: dashed;
+        display: block;
+        margin: auto;
+      }
 
-        <div style="height:200vh"></div>
-        slot8
-        <div id="div-8" class="ad-slot" style="width: 300px; height: 250px;">
-          <script>
-            googletag.cmd.push(function() {
-              googletag.display("div-8");
-            });
-          </script>
-        </div>
+      div.main-content {
+        background-color: lightsteelblue;
+        margin-top: 250px;
+        overflow: hidden;
+        width: 100%;
+      }
 
-        <div style="height:10vh"></div>
+      div.status-panel {
+        background: white;
+        height: 250px;
+        position: fixed;
+        top: 0;
+        width: 100%;
+      }
 
+      table {
+        width: 90%;
+        margin: auto;
+      }
+
+      table th {
+        text-align: center;
+      }
+
+      table td:not(.slot-name) {
+        background-color: lightsalmon;
+      }
+
+      table td.activated {
+        background-color: lightgreen;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-content">
+      slot1
+      <div id="div-1" class="lazy ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-1");
+          });
+        </script>
       </div>
-   
-      <div class="status-panel">
-        <table>
-          <tr>
-            <th>Ad Slot</th>
-            <th>Requested?</th>
-            <th>Rendered?</th>
-            <th>Viewed?</th>
-            <th>Refreshed?</th>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 1</td>
-            <td id="div-1-requested">No</td>
-            <td id="div-1-rendered">No</td>
-            <td id="div-1-viewed">No</td>
-            <td id="div-1-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 2</td>
-            <td id="div-2-requested">No</td>
-            <td id="div-2-rendered">No</td>
-            <td id="div-2-viewed">No</td>
-            <td id="div-2-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 3</td>
-            <td id="div-3-requested">No</td>
-            <td id="div-3-rendered">No</td>
-            <td id="div-3-viewed">No</td>
-            <td id="div-3-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 4</td>
-            <td id="div-4-requested">No</td>
-            <td id="div-4-rendered">No</td>
-            <td id="div-4-viewed">No</td>
-            <td id="div-4-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 5</td>
-            <td id="div-5-requested">No</td>
-            <td id="div-5-rendered">No</td>
-            <td id="div-5-viewed">No</td>
-            <td id="div-5-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 6</td>
-            <td id="div-6-requested">No</td>
-            <td id="div-6-rendered">No</td>
-            <td id="div-6-viewed">No</td>
-            <td id="div-6-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 7</td>
-            <td id="div-7-requested">No</td>
-            <td id="div-7-rendered">No</td>
-            <td id="div-7-viewed">No</td>
-            <td id="div-7-refreshed">0</td>
-          </tr>
-          <tr>
-            <td class="slot-name">Ad Slot 8</td>
-            <td id="div-8-requested">No</td>
-            <td id="div-8-rendered">No</td>
-            <td id="div-8-viewed">No</td>
-            <td id="div-8-refreshed">0</td>
-          </tr>
-        </table>
-        <p>
-          Scroll the container below to lazily load the ad slots.
-        </p>
+
+      <div style="height: 200vh"></div>
+      slot2
+      <div id="div-2" class="lazy ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-2");
+          });
+        </script>
       </div>
-    </body>
-  </html>
+
+      <div style="height: 200vh"></div>
+      slot3
+      <div id="div-3" class="lazy ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-3");
+          });
+        </script>
+      </div>
+
+      <div style="height: 200vh"></div>
+      slot4
+      <div id="div-4" class="lazy ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-4");
+          });
+        </script>
+      </div>
+
+      <div style="height: 200vh"></div>
+      slot5
+      <div id="div-5" class="lazy ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-5");
+          });
+        </script>
+      </div>
+
+      <div style="height: 200vh"></div>
+      slot6
+      <div id="div-6" class="lazy ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-6");
+          });
+        </script>
+      </div>
+
+      <div style="height: 200vh"></div>
+      slot7
+      <div id="div-7" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-7");
+          });
+        </script>
+      </div>
+
+      <div style="height: 200vh"></div>
+      slot8
+      <div id="div-8" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-8");
+          });
+        </script>
+      </div>
+
+      <div style="height: 10vh"></div>
+    </div>
+
+    <div class="status-panel">
+      <table>
+        <tr>
+          <th>Ad Slot</th>
+          <th>Requested?</th>
+          <th>Rendered?</th>
+          <th>Viewed?</th>
+          <th>Refreshed?</th>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 1</td>
+          <td id="div-1-requested">No</td>
+          <td id="div-1-rendered">No</td>
+          <td id="div-1-viewed">No</td>
+          <td id="div-1-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 2</td>
+          <td id="div-2-requested">No</td>
+          <td id="div-2-rendered">No</td>
+          <td id="div-2-viewed">No</td>
+          <td id="div-2-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 3</td>
+          <td id="div-3-requested">No</td>
+          <td id="div-3-rendered">No</td>
+          <td id="div-3-viewed">No</td>
+          <td id="div-3-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 4</td>
+          <td id="div-4-requested">No</td>
+          <td id="div-4-rendered">No</td>
+          <td id="div-4-viewed">No</td>
+          <td id="div-4-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 5</td>
+          <td id="div-5-requested">No</td>
+          <td id="div-5-rendered">No</td>
+          <td id="div-5-viewed">No</td>
+          <td id="div-5-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 6</td>
+          <td id="div-6-requested">No</td>
+          <td id="div-6-rendered">No</td>
+          <td id="div-6-viewed">No</td>
+          <td id="div-6-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 7</td>
+          <td id="div-7-requested">No</td>
+          <td id="div-7-rendered">No</td>
+          <td id="div-7-viewed">No</td>
+          <td id="div-7-refreshed">0</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 8</td>
+          <td id="div-8-requested">No</td>
+          <td id="div-8-rendered">No</td>
+          <td id="div-8-viewed">No</td>
+          <td id="div-8-refreshed">0</td>
+        </tr>
+      </table>
+      <p>Scroll the container below to lazily load the ad slots.</p>
+    </div>
+  </body>
+</html>
