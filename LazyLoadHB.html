@@ -14,35 +14,36 @@
     ></script>
 
     <script>
-      // Constants
-      const networkCode = "6353";
-      const refreshTimeout = 30 * 1000;
-      const globalObjects = ["googletag", "pbjs"];
-      const rootMargin = { rootMargin: "300% 0% 300% 0%" };
+      // --- Configuration ---
+      const networkCode = "6353"; // Your Google Ad Manager network code
+      const refreshTimeout = 30 * 1000; // Time in milliseconds before attempting to refresh a viewed slot
+      const globalObjects = ["googletag", "pbjs"]; // Array of global objects to initialize
+      const rootMarginConfig = { rootMargin: "300% 0% 300% 0%" }; // Configuration for the Intersection Observer
 
       const lazyLoadConfig = {
-        fetchMarginPercent: 300,
-        renderMarginPercent: 25,
-        mobileScaling: 1.0,
+        fetchMarginPercent: 300, // How far in advance to fetch (as a percentage of viewport height)
+        renderMarginPercent: 25, // How close to the viewport to render (as a percentage of viewport height)
+        mobileScaling: 1.0, // Scaling factor for mobile devices
       };
 
-      const hbConfig = {
-        bidder: "appnexus",
-        params: { placementId: 123456 },
+      const prebidConfig = {
+        bidder: "appnexus", // The Prebid bidder adapter being used
+        params: { placementId: 123456 }, // Bidder-specific parameters
       };
 
-      const interceptConfig = {
-        when: { adUnitCode: /test/ },
-        then: { cpm: 9.9, width: 300, height: 250 },
+      const prebidInterceptConfig = {
+        when: { adUnitCode: /test/ }, // Apply this intercept when the ad unit code matches this regex
+        then: { cpm: 9.9, width: 300, height: 250 }, // Force this CPM and size for debugging
       };
 
       const slotDefinitions = [
+        // Array defining each ad slot on the page
         {
-          adUnit: "no_LL_1",
-          divId: "div-1",
-          sizes: [300, 250],
-          isLazyLoad: false,
-          hasHb: false,
+          adUnit: "no_LL_1", // Google Ad Manager ad unit code
+          divId: "div-1", // ID of the HTML div element where the ad will render
+          sizes: [300, 250], // Array of acceptable ad sizes for this slot
+          isLazyLoad: false, // Whether this slot should be lazy-loaded
+          hasHb: false, // Whether this slot should participate in header bidding
         },
         {
           adUnit: "no_LL_2",
@@ -95,25 +96,45 @@
         },
       ];
 
-      // Utility function to define slots
+      // --- Utility Functions ---
+      /**
+       * Defines a Google Ad Manager ad slot.
+       * @param {string} adUnit - The ad unit code.
+       * @param {Array<Array<number>>} sizes - An array of acceptable ad sizes.
+       * @param {string} divId - The ID of the div element for the ad slot.
+       * @returns {googletag.Slot|null} The defined Google Ad Manager slot, or null if definition fails.
+       */
       function defineAdSlot(adUnit, sizes, divId) {
-        return googletag
-          .defineSlot(`/${networkCode}/${adUnit}`, sizes, divId)
-          .addService(googletag.pubads());
+        try {
+          return googletag
+            .defineSlot(`/${networkCode}/${adUnit}`, sizes, divId)
+            .addService(googletag.pubads());
+        } catch (error) {
+          console.error(`Error defining slot ${divId}:`, error);
+          return null;
+        }
       }
 
-      // Utility function to init slots based on lazyload
+      /**
+       * Filters the slot definitions based on whether they should be lazy-loaded.
+       * @param {Array<Object>} slots - The array of slot definitions.
+       * @param {boolean} shouldBeLazy - True to filter for lazy-load slots, false otherwise.
+       * @returns {Object} An object mapping div IDs to their defined Google Ad Manager slots.
+       */
       function filterSlots(slots, shouldBeLazy) {
-        const slotsMap = slots
+        return slots
           .filter((slot) => slot.isLazyLoad === shouldBeLazy)
           .reduce((acc, slot) => {
             acc[slot.divId] = defineAdSlot(slot.adUnit, slot.sizes, slot.divId);
             return acc;
           }, {});
-        return slotsMap;
       }
 
-      // Utility function to convert slotsMap objects to arrays
+      /**
+       * Converts an object of slots (divId: googletag.Slot) into an array of googletag.Slot objects.
+       * @param {Object} obj - The object of slots.
+       * @returns {Array<googletag.Slot>} An array of Google Ad Manager slot objects.
+       */
       function objectToArray(obj) {
         if (typeof Object.values(obj)[0] === "object") {
           return Object.values(obj);
@@ -122,115 +143,153 @@
         }
       }
 
-      // Utility function to get ad unit paths from slots
+      /**
+       * Extracts the ad unit paths from an array of Google Ad Manager slot objects.
+       * @param {Array<googletag.Slot>} slots - The array of Google Ad Manager slot objects.
+       * @returns {Array<string>} An array of ad unit paths.
+       */
       function getSlotPath(slots) {
         return slots.map((slot) => slot.getAdUnitPath());
       }
 
-      // Utility function to request bids from prebid and update GAM targeting
+      /**
+       * Sends an ad request to Prebid and then updates Google Ad Manager targeting and refreshes the slots.
+       * @param {Object} slotsMap - An object mapping div IDs to their defined Google Ad Manager slots.
+       */
       function sendAdRequest(slotsMap) {
-        const slotsArray = objectToArray(slotsMap);
-        const slotsPaths = getSlotPath(slotsArray);
-        googletag.cmd.push(function () {
-          pbjs.cmd.push(function () {
-            pbjs.requestBids({
-              bidsBackHandler: function () {
-                pbjs.setTargetingForGPTAsync(slotsPaths);
-                googletag.pubads().refresh(slotsArray);
-              },
-              adUnitCodes: slotsPaths,
+        try {
+          const slotsArray = objectToArray(slotsMap);
+          const slotsPaths = getSlotPath(slotsArray);
+          googletag.cmd.push(() => {
+            pbjs.cmd.push(() => {
+              pbjs.requestBids({
+                bidsBackHandler: () => {
+                  try {
+                    pbjs.setTargetingForGPTAsync(slotsPaths);
+                    googletag.pubads().refresh(slotsArray);
+                  } catch (error) {
+                    console.error("Error in bidsBackHandler:", error);
+                  }
+                },
+                adUnitCodes: slotsPaths,
+              });
             });
           });
-        });
-      }
-
-      // Utility function to update the status of a slot in the UI
-      function updateSlotStatus(slotId, state) {
-        const elem = document.getElementById(`${slotId}-${state}`);
-        if (state == "requested" && elem.className == "activated") {
-          const refresh = document.getElementById(`${slotId}-refreshed`);
-          refresh.className = "activated";
-          refresh.innerText = +refresh.innerText + 1;
-        } else if (elem) {
-          elem.className = "activated";
-          elem.innerText = "Yes";
+        } catch (error) {
+          console.error("Error sending ad request:", error);
         }
       }
 
-      // Initialize global objects if they don't exist
+      /**
+       * Updates the status of an ad slot in the UI.
+       * @param {string} slotId - The ID of the div element for the ad slot.
+       * @param {string} state - The state to update (e.g., 'requested', 'rendered', 'viewed').
+       */
+      function updateSlotStatus(slotId, state) {
+        try {
+          const elem = document.getElementById(`${slotId}-${state}`);
+          if (state === "requested" && elem && elem.className == "activated") {
+            const refreshElem = document.getElementById(`${slotId}-refreshed`);
+            if (refreshElem) {
+              refreshElem.className = "activated";
+              refreshElem.innerText = +refresh.innerText + 1;
+            }
+          } else if (elem) {
+            elem.className = "activated";
+            elem.innerText = "Yes";
+          }
+        } catch (error) {
+          console.error(
+            `Error updating status for slot ${slotId}-${state}:`,
+            error
+          );
+        }
+      }
+
+      // --- Initialization ---
+      // Ensure global objects exist
       globalObjects.forEach((obj) => {
         window[obj] = window[obj] || { cmd: [] };
       });
 
-      googletag.cmd.push(function () {
-        // Register event listeners for GAM
-        googletag.pubads().addEventListener("slotRequested", (event) => {
-          updateSlotStatus(event.slot.getSlotElementId(), "requested");
-        });
-
-        googletag.pubads().addEventListener("slotRenderEnded", (event) => {
-          updateSlotStatus(event.slot.getSlotElementId(), "rendered");
-        });
-
-        googletag.pubads().addEventListener("impressionViewable", (event) => {
-          updateSlotStatus(event.slot.getSlotElementId(), "viewed");
-          setTimeout(() => {
-            sendAdRequest(event.slot);
-          }, refreshTimeout);
-        });
-
-        // Enable SRA and disable load for Prebid
-        googletag.pubads().enableSingleRequest();
-        googletag.pubads().disableInitialLoad();
-
-        // Define ATF slots and call GAM
-        const atfSlotsMap = filterSlots(slotDefinitions, false);
-        googletag.enableServices();
-        googletag.pubads().refresh(objectToArray(atfSlotsMap));
-
-        // Enable Lazy Load for BTF slots
-        googletag.pubads().enableLazyLoad(lazyLoadConfig);
-
-        // Define BTF slots and map them to Prebid slots
-        const btfSlotsMap = filterSlots(slotDefinitions, true);
-        const prebidAdUnits = slotDefinitions
-          .filter((slot) => slot.isLazyLoad && slot.hasHb)
-          .map((slot) => ({
-            code: `/${networkCode}/${slot.adUnit}`,
-            mediaTypes: { banner: { sizes: [slot.sizes] } },
-            bids: [hbConfig],
-          }));
-
-        // Define Prebid slots
-        pbjs.cmd.push(function () {
-          pbjs.addAdUnits(prebidAdUnits);
-
-          // Setup debug intercepts to always force Prebid to respond
-          pbjs.setConfig({
-            debugging: {
-              enabled: true,
-              intercept: [interceptConfig],
-            },
+      googletag.cmd.push(() => {
+        try {
+          // Register event listeners for Google Ad Manager
+          googletag.pubads().addEventListener("slotRequested", (event) => {
+            updateSlotStatus(event.slot.getSlotElementId(), "requested");
           });
 
-          // Define intersection observers to lazily trigger ad requests
-          const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                const ad = entry.target;
-                sendAdRequest(btfSlotsMap[ad.id]);
-                observer.unobserve(ad);
-                ad.classList.remove("lazy");
-              }
-            });
-          }, rootMargin);
-
-          // Initialize intersection observers for lazy slots
-          const lazyAds = document.querySelectorAll(".lazy");
-          lazyAds.forEach((ad) => {
-            observer.observe(ad);
+          googletag.pubads().addEventListener("slotRenderEnded", (event) => {
+            updateSlotStatus(event.slot.getSlotElementId(), "rendered");
           });
-        });
+
+          googletag.pubads().addEventListener("impressionViewable", (event) => {
+            updateSlotStatus(event.slot.getSlotElementId(), "viewed");
+            setTimeout(() => {
+              sendAdRequest(event.slot); // Send request for the individual viewed slot
+            }, refreshTimeout);
+          });
+
+          // Enable Single Request Architecture (SRA) for more efficient ad loading
+          googletag.pubads().enableSingleRequest();
+          // Disable initial load to allow Prebid to fetch bids first
+          googletag.pubads().disableInitialLoad();
+
+          // Define and display Above-The-Fold (ATF) slots immediately
+          const atfSlotsMap = filterSlots(slotDefinitions, false);
+          googletag.enableServices();
+          googletag.pubads().refresh(objectToArray(atfSlotsMap));
+
+          // Enable Lazy Load for Below-The-Fold (BTF) slots
+          googletag.pubads().enableLazyLoad(lazyLoadConfig);
+
+          // Define Prebid ad units for BTF slots that participate in header bidding
+          const btfSlotsMap = filterSlots(slotDefinitions, true);
+          const prebidAdUnits = slotDefinitions
+            .filter((slot) => slot.isLazyLoad && slot.hasHb)
+            .map((slot) => ({
+              code: `/${networkCode}/${slot.adUnit}`,
+              mediaTypes: { banner: { sizes: [slot.sizes] } },
+              bids: [prebidConfig],
+            }));
+
+          // Initialize Prebid
+          pbjs.cmd.push(() => {
+            try {
+              pbjs.addAdUnits(prebidAdUnits);
+
+              // Configure Prebid debugging and intercept settings
+              pbjs.setConfig({
+                debugging: {
+                  enabled: true,
+                  intercept: [prebidInterceptConfig],
+                },
+              });
+
+              // Define Intersection Observer for lazy loading
+              const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    const slot = entry.target;
+                    sendAdRequest(btfSlotsMap[slot.id]);
+                    observer.unobserve(slot); // Stop observing once the ad is requested
+                    ad.classList.remove("lazy"); // Remove the lazy class
+                  }
+                });
+              }, rootMarginConfig);
+
+              // Observe all lazy-loaded ad slots
+              const lazyAds = document.querySelectorAll(".lazy");
+              lazyAds.forEach((ad) => {
+                observer.observe(ad);
+              });
+            } catch (error) {
+              console.error("Error initializing Prebid:", error);
+            }
+          });
+        } catch (error) {
+          console.error("Error initializing Google Ad Manager:", error);
+        }
       });
     </script>
 
