@@ -21,7 +21,11 @@ const tagsToExtract = [
   "childContentEligibility",
 ]; // Lists which tags to extract from the API response, to be printed in the sheet.
 
-// Turns the list of tags into a regular expression for later use when downloading data from the API.
+/**
+ * Turns the list of tags into a regular expression for later use when downloading data from the API.
+ * @param {string[]} properties An array of tag names to extract.
+ * @return {RegExp} A regular expression to match the specified tags in the API response.
+ */
 function generateRegex(properties) {
   let regexString = "";
   properties.forEach((property) => {
@@ -58,14 +62,24 @@ function getLatestApiVersion() {
   }
 }
 
-const apiVersion = getLatestApiVersion(); // Retrieves and stores the latest API version.
+// Retrieves and stores the latest API version.
+const apiVersion = getLatestApiVersion();
+
+// Gets the email address of the active user.
+const userEmail = Session.getActiveUser().getEmail();
+// Initializes the API headers with the OAuth token.
+const apiHeaders = { Authorization: `Bearer ${ScriptApp.getOAuthToken()}` };
+if (userEmail.endsWith("@google.com")) {
+  // Checks if the user's email ends with "@google.com".
+  apiHeaders["Is-internal-user"] = true; // Allows googlers to bypass network access restrictions.
+}
 
 /**
  * Calls the Google Ad Manager API with the specified operation and query.
  * @param {string} apiOperation The API operation to call (e.g., "getLineItemsByStatement", "updateLineItems").
- * @param {string} apiQuery The SOAP query or array of queries.
+ * @param {string|string[]} apiQuery The SOAP query or array of queries.
  * @param {boolean} filterStatement Indicates if the apiQuery is a filter statement (for get operations).
- * @param {string} networkCode The Ad Manager network code.
+ * @param {string|string[]} networkCode The Ad Manager network code.
  * @return {string} The API response as a string.
  */
 function callGamApi(apiOperation, apiQuery, filterStatement, networkCode) {
@@ -93,7 +107,7 @@ function callGamApi(apiOperation, apiQuery, filterStatement, networkCode) {
       `https://ads.google.com/apis/ads/publisher/${apiVersion}/${apiService}`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${ScriptApp.getOAuthToken()}` },
+        headers: apiHeaders,
         contentType: "text/xml; charset=utf-8",
         payload: soapRequest, // Sets the SOAP request XML as the payload.
         muteHttpExceptions: true, // Prevents HTTP exceptions from being thrown for non-200 responses.
