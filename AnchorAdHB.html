@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <!--
  @license
  Copyright 2022 Google LLC. All Rights Reserved.
@@ -15,7 +15,10 @@
       src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
       crossorigin="anonymous"
     ></script>
-    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
     <script>
       window.googletag = window.googletag || { cmd: [] };
       var pbjs = pbjs || {};
@@ -35,12 +38,18 @@
         // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
           "/6353/massarellim_anchor",
+<<<<<<< HEAD
          googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
+=======
+          googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR
+>>>>>>> 327659f (Prettify and change size to 728x90)
         );
 
         // Anchor slots return null if the page or device does not support anchors.
         if (anchorSlot) {
-          anchorSlot.setTargeting("test", "anchor").addService(googletag.pubads());
+          anchorSlot
+            .setTargeting("test", "anchor")
+            .addService(googletag.pubads());
           document.getElementById("status").innerText =
             "Anchor ad is initialized. Scroll page to activate.";
         }
@@ -56,8 +65,16 @@
         googletag.enableServices();
 
         //Prebid
-        pbjs.cmd.push(function() {
+        pbjs.cmd.push(function () {
+          pbjs.addAdUnits([
+            {
+              code: "/6353/massarellim_anchor",
+              mediaTypes: { banner: { sizes: [728, 90] } },
+              bids: [{ bidder: "appnexus", params: { placementId: 13144370 } }],
+            },
+          ]);
 
+<<<<<<< HEAD
           pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[728, 90]}}, bids:[
             {bidder:'appnexus',params:{placementId:13144370}}
           ]}]);
@@ -80,8 +97,31 @@
             });
             googletag.pubads().refresh();
           }});
+=======
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: { adUnitCode: "/6353/massarellim_anchor" },
+                  then: { cpm: 9.9, width: 728, height: 90 },
+                },
+              ],
+            },
+          });
+
+          pbjs.requestBids({
+            bidsBackHandler: function () {
+              pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+                return function (adUnitCode) {
+                  return adUnitCode === slot.getAdUnitPath();
+                };
+              });
+              googletag.pubads().refresh();
+            },
+          });
+>>>>>>> 327659f (Prettify and change size to 728x90)
         });
-       
       });
     </script>
     <style></style>
@@ -91,8 +131,8 @@
       <h1 id="status">Anchor ads are not supported on this page.</h1>
       <div id="static-ad-1" style="width: 300px; height: 250px">
         <script>
-          googletag.cmd.push(function() {
-              googletag.display("static-ad-1");
+          googletag.cmd.push(function () {
+            googletag.display("static-ad-1");
           });
         </script>
       </div>
