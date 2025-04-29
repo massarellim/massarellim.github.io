@@ -1,0 +1,39 @@
+<head>
+  <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script>
+    window.googletag = window.googletag || { cmd: [] };
+
+    googletag.cmd.push(function () {
+      googletag.pubads().setPrivacySettings({
+        childDirectedTreatment: false,
+        limitedAds: false,
+        restrictDataProcessing: false,
+        underAgeOfConsent: false,
+      });
+
+      var testSlot = googletag
+        .defineSlot("/35821442/amica.it/homepage/test", [300, 250], "test-ad")
+        .addService(googletag.pubads());
+
+      googletag.pubads().disableInitialLoad();
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+
+      if (!document.getElementById("test-ad")) {
+        var div = document.createElement("div");
+        div.id = "test-ad";
+        div.style = "width:300px;height:250px;background:#eee";
+        document.body.appendChild(div);
+      }
+
+      try {
+        console.log("Directly requesting test ad");
+        googletag.display("test-ad");
+        googletag.pubads().refresh([testSlot]);
+      } catch (e) {
+        console.error("Error requesting ad:", e);
+      }
+    });
+  </script>
+</head>
+<body></body>
