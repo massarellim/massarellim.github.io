@@ -35,9 +35,7 @@
         // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
           "/6353/massarellim_anchor",
-          document.body.clientWidth <= 500
-            ? googletag.enums.OutOfPageFormat.TOP_ANCHOR
-            : googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
+         googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
         );
 
         // Anchor slots return null if the page or device does not support anchors.
@@ -60,7 +58,7 @@
         //Prebid
         pbjs.cmd.push(function() {
 
-          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[320, 50]}}, bids:[
+          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[728, 90]}}, bids:[
             {bidder:'appnexus',params:{placementId:13144370}}
           ]}]);
 
@@ -69,7 +67,7 @@
                 enabled: true, 
                 intercept: [{
                   when: {adUnitCode: '/6353/massarellim_anchor'}, 
-                  then: {cpm: 9.90, width: 320, height: 50}
+                  then: {cpm: 9.90, width: 728, height: 90}
                 }]
               }
             });
