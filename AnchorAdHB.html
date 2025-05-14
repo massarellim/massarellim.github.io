@@ -38,11 +38,7 @@
         // non-mobile devices.
         anchorSlot = googletag.defineOutOfPageSlot(
           "/6353/massarellim_anchor",
-<<<<<<< HEAD
-         googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR,
-=======
           googletag.enums.OutOfPageFormat.BOTTOM_ANCHOR
->>>>>>> 327659f (Prettify and change size to 728x90)
         );
 
         // Anchor slots return null if the page or device does not support anchors.
@@ -74,30 +70,6 @@
             },
           ]);
 
-<<<<<<< HEAD
-          pbjs.addAdUnits([{code: '/6353/massarellim_anchor' , mediaTypes:{banner:{sizes:[728, 90]}}, bids:[
-            {bidder:'appnexus',params:{placementId:13144370}}
-          ]}]);
-
-            pbjs.setConfig({
-              debugging: {
-                enabled: true, 
-                intercept: [{
-                  when: {adUnitCode: '/6353/massarellim_anchor'}, 
-                  then: {cpm: 9.90, width: 728, height: 90}
-                }]
-              }
-            });
-         
-          pbjs.requestBids({bidsBackHandler:function(){
-            pbjs.setTargetingForGPTAsync(undefined, function (slot) {
-        	     return function(adUnitCode) {
-                return adUnitCode === slot.getAdUnitPath();
-           	  };
-            });
-            googletag.pubads().refresh();
-          }});
-=======
           pbjs.setConfig({
             debugging: {
               enabled: true,
@@ -120,7 +92,6 @@
               googletag.pubads().refresh();
             },
           });
->>>>>>> 327659f (Prettify and change size to 728x90)
         });
       });
     </script>
