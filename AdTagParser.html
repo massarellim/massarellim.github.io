@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compact Ad Tag Parser</title>
+    <style>
+      :root {
+        --primary: #1967d2;
+        --bg: #f8f9fa;
+        --border: #dadce0;
+        --text: #202124;
+        --desc-text: #5f6368;
+        --code-text: #d93025;
+        --alias-text: #e37400;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1 {
+        margin-bottom: 5px;
+        font-size: 24px;
+      }
+      .subtitle {
+        color: var(--desc-text);
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+
+      /* Input Area - Compact */
+      .input-group {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      textarea {
+        flex-grow: 1;
+        height: 60px; /* Shorter height */
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-family: "Roboto Mono", monospace;
+        font-size: 12px;
+        resize: vertical;
+      }
+
+      button {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 0 20px;
+        height: 60px; /* Match textarea height */
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      button:hover {
+        background-color: #1765cc;
+      }
+
+      /* Table Styling - Compact Mode */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        table-layout: fixed;
+        font-size: 13px; /* Smaller base font */
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 6px 10px; /* Tight padding */
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        word-wrap: break-word;
+      }
+
+      th {
+        background-color: #f1f3f4;
+        color: var(--desc-text);
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      tr:hover {
+        background-color: #f8faff;
+      }
+
+      /* Columns */
+      .col-param {
+        width: 140px;
+        font-family: "Roboto Mono", monospace;
+        color: var(--code-text);
+        font-weight: 700;
+      }
+      .col-val {
+        width: 30%;
+        font-family: "Roboto Mono", monospace;
+        color: #3c4043;
+        font-size: 12px;
+      }
+      .col-desc {
+        width: auto;
+        line-height: 1.4;
+      }
+
+      /* Inline Description Styling */
+      .desc-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .desc-title {
+        font-weight: 700;
+        color: #202124;
+      }
+      .desc-text {
+        color: var(--desc-text);
+      }
+
+      /* Badges - Mini Version */
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+      .b-core {
+        background: #e6f4ea;
+        color: #137333;
+        border: 1px solid #ceead6;
+      }
+      .b-pod {
+        background: #fce8e6;
+        color: #c5221f;
+        border: 1px solid #fad2cf;
+      }
+      .b-dai {
+        background: #e8f0fe;
+        color: #1967d2;
+        border: 1px solid #d2e3fc;
+      }
+      .b-sdk {
+        background: #fff8e1;
+        color: #f29900;
+        border: 1px solid #fce8b2;
+      }
+      .b-priv {
+        background: #f1f3f4;
+        color: #5f6368;
+        border: 1px solid #ddadad;
+      }
+
+      /* Alias Warning */
+      .alias-tag {
+        background: #fff3e0;
+        color: #e37400;
+        font-size: 10px;
+        padding: 1px 4px;
+        border-radius: 3px;
+        border: 1px solid #ffe0b2;
+        font-weight: bold;
+        margin-right: 5px;
+      }
+
+      /* Sub-table for cust_params (Compact) */
+      .sub-table {
+        width: 100%;
+        border: 1px solid #eee;
+        margin-top: 2px;
+        background: #fff;
+      }
+      .sub-table td {
+        padding: 3px 6px;
+        border-bottom: 1px solid #eee;
+        font-size: 11px;
+      }
+      .sub-table .key {
+        width: 30%;
+        color: #444;
+        font-weight: 600;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 30px;
+        color: var(--desc-text);
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      Ad Tag Parser
+      <span style="font-weight: normal; font-size: 16px; color: #5f6368"
+        >(Compact Edition)</span
+      >
+    </h1>
+
+    <div class="input-group">
+      <textarea
+        id="urlInput"
+        placeholder="Paste Ad Tag URL here... (https://pubads.g.doubleclick.net/...)"
+      ></textarea>
+      <button onclick="parseUrl()">Decode</button>
+    </div>
+
+    <div id="resultsArea">
+      <div class="empty-state">Results will appear here...</div>
+    </div>
+
+    <script>
+      // --- DICTIONARY (Same comprehensive list as before) ---
+      const paramDict = {
+        // Core
+        iu: { t: "Ad Unit", cat: "core", d: "The ad unit path (inventory)." },
+        sz: { t: "Size", cat: "core", d: "Master video slot size." },
+        gdfp_req: { t: "Google Schema", cat: "core", d: "Must be '1'." },
+        env: {
+          t: "Environment",
+          cat: "core",
+          d: "'vp' (player) or 'instream'.",
+        },
+        output: { t: "Output", cat: "core", d: "vast, vmap, etc." },
+        unviewed_position_start: {
+          t: "Delayed Imp",
+          cat: "core",
+          d: "1=Count on view (Standard).",
+        },
+        description_url: {
+          t: "Desc URL",
+          cat: "core",
+          d: "Page content URL (Context).",
+        },
+        url: { t: "Page URL", cat: "core", d: "Full page URL." },
+        correlator: {
+          t: "Correlator",
+          cat: "core",
+          d: "Timestamp for exclusions.",
+        },
+
+        // Pods
+        ad_rule: { t: "Ad Rule", cat: "pod", d: "1=VMAP/Playlist request." },
+        pod: { t: "Pod #", cat: "pod", d: "Sequence number of the break." },
+        ppos: { t: "Pod Pos", cat: "pod", d: "Position within the pod." },
+        vpos: { t: "Video Pos", cat: "pod", d: "preroll, midroll, postroll." },
+        mridx: { t: "Midroll Idx", cat: "pod", d: "Index of midroll break." },
+        min_ad_duration: { t: "Min Dur", cat: "pod", d: "Min ad length (ms)." },
+        max_ad_duration: { t: "Max Dur", cat: "pod", d: "Max ad length (ms)." },
+        pmnd: { t: "Pod Min", cat: "pod", d: "Min pod duration." },
+        pmxd: { t: "Pod Max", cat: "pod", d: "Max pod duration." },
+        pmad: { t: "Pod Max Ads", cat: "pod", d: "Max ads in pod." },
+        lip: { t: "Last in Pod", cat: "pod", d: "true=Last ad." },
+        nofb: { t: "No Fallback", cat: "pod", d: "1=Disable fallbacks." },
+        ptpl: { t: "Template ID", cat: "pod", d: "Publisher Template ID." },
+
+        // Targeting / DAI
+        cust_params: { t: "Custom Params", cat: "core", d: "Key-values." },
+        scp: { t: "Slot Params", cat: "core", d: "Slot-level key-values." },
+        ciu_szs: { t: "Companions", cat: "core", d: "Banner sizes." },
+        excl_cat: { t: "Exclusions", cat: "dai", d: "Blocked categories." },
+        hl: { t: "Language", cat: "dai", d: "Lang code." },
+        ppid: { t: "PPID", cat: "dai", d: "Publisher Provided ID." },
+        cmsid: { t: "CMS ID", cat: "dai", d: "Content Source ID." },
+        vid: { t: "Video ID", cat: "dai", d: "Content ID." },
+        msid: { t: "App ID", cat: "dai", d: "Mobile App ID." },
+        an: { t: "App Name", cat: "dai", d: "Application Name." },
+        is_lat: { t: "Limit Tracking", cat: "dai", d: "1=Opted out." },
+        rdid: { t: "Device ID", cat: "dai", d: "IDFA/AAID." },
+        ss_req: { t: "SSAI Req", cat: "dai", d: "1=Server Side Request." },
+
+        // Privacy
+        tfcd: { t: "Child Directed", cat: "priv", d: "1=COPPA enabled." },
+        npa: { t: "Non-Personal", cat: "priv", d: "1=GDPR/CCPA privacy mode." },
+        rdp: { t: "Restricted Data", cat: "priv", d: "1=CCPA restricted." },
+        gdpr: { t: "GDPR", cat: "priv", d: "1=GDPR applies." },
+        gdpr_consent: { t: "GDPR String", cat: "priv", d: "Consent string." },
+        ltd: { t: "Limited Ads", cat: "priv", d: "1=Limited ads mode." },
+
+        // Player/SDK
+        vpa: { t: "Auto-Play", cat: "sdk", d: "auto or click." },
+        vpmute: { t: "Muted", cat: "sdk", d: "1=Started muted." },
+        plcmt: { t: "Placement", cat: "sdk", d: "1=Instream." },
+        sdkv: { t: "SDK Ver", cat: "sdk", d: "IMA SDK Version." },
+        osd: { t: "On Screen", cat: "sdk", d: "Duration viewable." },
+        vad_type: { t: "Ad Type", cat: "sdk", d: "linear or nonlinear." },
+      };
+
+      const paramAliases = {
+        slotname: "iu",
+        client: "gdfp_req",
+        ad_type: "vad_type",
+        video_id: "vid",
+        videoCmsId: "cmsid",
+      };
+
+      function parseUrl() {
+        const input = document.getElementById("urlInput").value.trim();
+        const resultsArea = document.getElementById("resultsArea");
+
+        if (!input) {
+          return;
+        }
+
+        try {
+          let urlToParse = input.match(/https?:\/\/[^\s"']+/)
+            ? input.match(/https?:\/\/[^\s"']+/)[0]
+            : input;
+          urlToParse = urlToParse.replace(/&amp;/g, "&");
+
+          let queryString = urlToParse.includes("?")
+            ? urlToParse.split("?")[1]
+            : urlToParse;
+          const params = new URLSearchParams(queryString);
+          const entries = [];
+
+          for (const [key, value] of params.entries()) {
+            entries.push({ key, value });
+          }
+
+          if (entries.length === 0) {
+            resultsArea.innerHTML =
+              '<div class="empty-state">No parameters found.</div>';
+            return;
+          }
+
+          let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-param">Parameter</th>
+                            <th class="col-val">Value</th>
+                            <th class="col-desc">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+          entries.forEach((item) => {
+            let key = item.key;
+            let def = paramDict[key];
+            let isAlias = false;
+            let aliasName = "";
+
+            if (!def) {
+              const mapped = paramAliases[key];
+              if (mapped && paramDict[mapped]) {
+                def = paramDict[mapped];
+                isAlias = true;
+                aliasName = mapped;
+              }
+            }
+
+            if (!def) def = { t: "Unknown", cat: "misc", d: "" };
+
+            // Values
+            let valDisplay = escapeHtml(item.value);
+            if (key === "cust_params" || key === "scp") {
+              valDisplay = formatCustParams(item.value);
+            } else {
+              try {
+                valDisplay = decodeURIComponent(valDisplay);
+              } catch (e) {}
+            }
+
+            // Badges
+            let bClass = "b-priv";
+            if (def.cat === "core") bClass = "b-core";
+            if (def.cat === "pod") bClass = "b-pod";
+            if (def.cat === "dai") bClass = "b-dai";
+            if (def.cat === "sdk") bClass = "b-sdk";
+
+            // Alias Tag
+            let aliasHtml = isAlias
+              ? `<span class="alias-tag">Alias: ${aliasName}</span>`
+              : "";
+
+            // Row content
+            html += `
+                    <tr>
+                        <td class="col-param">${key}</td>
+                        <td class="col-val">${valDisplay}</td>
+                        <td class="col-desc">
+                            <div class="desc-row">
+                                ${aliasHtml}
+                                <span class="badge ${bClass}">${def.cat === "misc" ? "?" : def.cat}</span>
+                                <span class="desc-title">${def.t}:</span>
+                                <span class="desc-text">${def.d}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+          });
+
+          html += `</tbody></table>`;
+          resultsArea.innerHTML = html;
+        } catch (e) {
+          resultsArea.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+        }
+      }
+
+      function formatCustParams(str) {
+        try {
+          const dec = decodeURIComponent(str);
+          const pairs = dec.split("&");
+          if (pairs.length === 0) return dec;
+          let sub = `<table class="sub-table">`;
+          pairs.forEach((p) => {
+            const parts = p.split("=");
+            sub += `<tr><td class="key">${escapeHtml(parts[0])}</td><td>${escapeHtml(parts.slice(1).join("="))}</td></tr>`;
+          });
+          return sub + `</table>`;
+        } catch (e) {
+          return escapeHtml(str);
+        }
+      }
+
+      function escapeHtml(t) {
+        if (!t) return t;
+        return String(t)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+    </script>
+  </body>
+</html>

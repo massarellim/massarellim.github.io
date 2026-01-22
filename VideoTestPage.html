@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head> </head>
+  <body>
+    <div id="mainContainer">
+      <video id="videoElement">
+        <source
+          src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4"
+          type="video/mp4"
+        />
+      </video>
+
+      <div id="adContainer"></div>
+    </div>
+
+    <button id="playButton">Play Video with Ad</button>
+
+    <script
+      type="text/javascript"
+      src="//imasdk.googleapis.com/js/sdkloader/ima3.js"
+    ></script>
+
+    <script>
+      var videoElement = document.getElementById("videoElement");
+      var adContainer = document.getElementById("adContainer");
+      var playButton = document.getElementById("playButton");
+
+      var adDisplayContainer;
+      var adsLoader;
+      var adsManager;
+
+      // On mobile/modern browsers, initialization must be triggered by a user action (click)
+      playButton.addEventListener("click", initializeIMA);
+
+      function initializeIMA() {
+        playButton.style.display = "none"; // Hide button after click
+
+        // Step A: Create the AdDisplayContainer
+        // This handles the UI rendering of the ads
+        adDisplayContainer = new google.ima.AdDisplayContainer(
+          adContainer,
+          videoElement,
+        );
+        adDisplayContainer.initialize();
+
+        // Step B: Create the AdsLoader
+        // This handles the fetching of the VAST XML
+        adsLoader = new google.ima.AdsLoader(adDisplayContainer);
+
+        // Listen for the ADS_MANAGER_LOADED event
+        adsLoader.addEventListener(
+          google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+          onAdsManagerLoaded,
+          false,
+        );
+
+        // Listen for errors
+        adsLoader.addEventListener(
+          google.ima.AdErrorEvent.Type.AD_ERROR,
+          onAdError,
+          false,
+        );
+
+        // Step C: Request Ads
+        var adsRequest = new google.ima.AdsRequest();
+
+        // This is a Google test VAST tag. Replace this URL with your own later.
+        adsRequest.adTagUrl =
+          "https://pubads.g.doubleclick.net/gampad/ads?" +
+          "iu=/21775744923/external/single_ad_samples&sz=640x480&" +
+          "cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&" +
+          "gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&correlator=";
+
+        // Specify dimensions
+        adsRequest.linearAdSlotWidth = 640;
+        adsRequest.linearAdSlotHeight = 360;
+        adsRequest.nonLinearAdSlotWidth = 640;
+        adsRequest.nonLinearAdSlotHeight = 150;
+
+        adsLoader.requestAds(adsRequest);
+      }
+
+      function onAdsManagerLoaded(adsManagerLoadedEvent) {
+        // Get the ads manager
+        var adsRenderingSettings = new google.ima.AdsRenderingSettings();
+        adsManager = adsManagerLoadedEvent.getAdsManager(
+          videoElement,
+          adsRenderingSettings,
+        );
+
+        // Step D: Add Event Listeners for the Ad
+
+        // 1. When the ad needs to pause your content (Pre-roll start)
+        adsManager.addEventListener(
+          google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
+          function () {
+            videoElement.pause();
+            // Enable pointer events on the ad container so user can click "Skip" or "Learn More"
+            adContainer.style.pointerEvents = "auto";
+          },
+        );
+
+        // 2. When the ad is done and your content should resume
+        adsManager.addEventListener(
+          google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
+          function () {
+            videoElement.play();
+            adContainer.style.pointerEvents = "none";
+          },
+        );
+
+        // 3. Error handling during playback
+        adsManager.addEventListener(
+          google.ima.AdErrorEvent.Type.AD_ERROR,
+          onAdError,
+        );
+
+        try {
+          // Initialize the manager and start playback
+          adsManager.init(640, 360, google.ima.ViewMode.NORMAL);
+          adsManager.start();
+        } catch (adError) {
+          // Play video content if ad fails
+          videoElement.play();
+        }
+      }
+
+      function onAdError(adErrorEvent) {
+        console.log(adErrorEvent.getError());
+        // If the ad fails to load, always fall back to playing the content
+        if (adsManager) {
+          adsManager.destroy();
+        }
+        videoElement.play();
+      }
+    </script>
+  </body>
+</html>
