@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Compact Ad Tag Parser</title>
+    <title>Universal Ad Tag Parser (Video + GPT Display)</title>
     <style>
       :root {
         --primary: #1967d2;
@@ -36,7 +36,6 @@
         font-size: 14px;
       }
 
-      /* Input Area - Compact */
       .input-group {
         background: white;
         padding: 15px;
@@ -50,7 +49,7 @@
 
       textarea {
         flex-grow: 1;
-        height: 60px; /* Shorter height */
+        height: 60px;
         padding: 10px;
         border: 1px solid var(--border);
         border-radius: 4px;
@@ -64,7 +63,7 @@
         color: white;
         border: none;
         padding: 0 20px;
-        height: 60px; /* Match textarea height */
+        height: 60px;
         font-size: 14px;
         font-weight: 600;
         border-radius: 4px;
@@ -75,7 +74,6 @@
         background-color: #1765cc;
       }
 
-      /* Table Styling - Compact Mode */
       table {
         width: 100%;
         border-collapse: collapse;
@@ -84,13 +82,13 @@
         overflow: hidden;
         border: 1px solid var(--border);
         table-layout: fixed;
-        font-size: 13px; /* Smaller base font */
+        font-size: 13px;
       }
 
       th,
       td {
         text-align: left;
-        padding: 6px 10px; /* Tight padding */
+        padding: 6px 10px;
         border-bottom: 1px solid var(--border);
         vertical-align: top;
         word-wrap: break-word;
@@ -108,15 +106,14 @@
         background-color: #f8faff;
       }
 
-      /* Columns */
       .col-param {
-        width: 140px;
+        width: 150px;
         font-family: "Roboto Mono", monospace;
         color: var(--code-text);
         font-weight: 700;
       }
       .col-val {
-        width: 30%;
+        width: 35%;
         font-family: "Roboto Mono", monospace;
         color: #3c4043;
         font-size: 12px;
@@ -126,7 +123,6 @@
         line-height: 1.4;
       }
 
-      /* Inline Description Styling */
       .desc-row {
         display: flex;
         align-items: baseline;
@@ -141,7 +137,7 @@
         color: var(--desc-text);
       }
 
-      /* Badges - Mini Version */
+      /* Badges */
       .badge {
         display: inline-block;
         font-size: 10px;
@@ -156,54 +152,49 @@
         background: #e6f4ea;
         color: #137333;
         border: 1px solid #ceead6;
-      }
+      } /* Video Core */
       .b-pod {
         background: #fce8e6;
         color: #c5221f;
         border: 1px solid #fad2cf;
-      }
+      } /* Pods */
       .b-dai {
         background: #e8f0fe;
         color: #1967d2;
         border: 1px solid #d2e3fc;
-      }
-      .b-sdk {
+      } /* Targeting */
+      .b-disp {
+        background: #e9f2ff;
+        color: #0b57d0;
+        border: 1px solid #c3d9fc;
+      } /* Display/GPT */
+      .b-dev {
         background: #fff8e1;
         color: #f29900;
         border: 1px solid #fce8b2;
-      }
+      } /* Device/Signals */
       .b-priv {
         background: #f1f3f4;
         color: #5f6368;
         border: 1px solid #ddadad;
-      }
+      } /* Privacy */
 
-      /* Alias Warning */
-      .alias-tag {
-        background: #fff3e0;
-        color: #e37400;
-        font-size: 10px;
-        padding: 1px 4px;
-        border-radius: 3px;
-        border: 1px solid #ffe0b2;
-        font-weight: bold;
-        margin-right: 5px;
-      }
-
-      /* Sub-table for cust_params (Compact) */
+      /* Sub-tables */
       .sub-table {
         width: 100%;
         border: 1px solid #eee;
-        margin-top: 2px;
+        margin-top: 4px;
         background: #fff;
+        border-radius: 4px;
       }
       .sub-table td {
-        padding: 3px 6px;
+        padding: 4px 6px;
         border-bottom: 1px solid #eee;
         font-size: 11px;
+        font-family: "Roboto Mono";
       }
       .sub-table .key {
-        width: 30%;
+        width: 100px;
         color: #444;
         font-weight: 600;
       }
@@ -218,17 +209,14 @@
   </head>
   <body>
     <h1>
-      Ad Tag Parser
+      Universal Ad Tag Parser
       <span style="font-weight: normal; font-size: 16px; color: #5f6368"
-        >(Compact Edition)</span
+        >(Video + Display)</span
       >
     </h1>
 
     <div class="input-group">
-      <textarea
-        id="urlInput"
-        placeholder="Paste Ad Tag URL here... (https://pubads.g.doubleclick.net/...)"
-      ></textarea>
+      <textarea id="urlInput" placeholder="Paste Ad Tag URL here..."></textarea>
       <button onclick="parseUrl()">Decode</button>
     </div>
 
@@ -237,18 +225,23 @@
     </div>
 
     <script>
-      // --- DICTIONARY (Same comprehensive list as before) ---
+      // --- DICTIONARY ---
+      // Combined VAST (Video) and GPT (Display) parameters
       const paramDict = {
-        // Core
+        // --- CORE VIDEO & COMMON ---
         iu: { t: "Ad Unit", cat: "core", d: "The ad unit path (inventory)." },
-        sz: { t: "Size", cat: "core", d: "Master video slot size." },
+        sz: { t: "Size", cat: "core", d: "Master slot size." },
         gdfp_req: { t: "Google Schema", cat: "core", d: "Must be '1'." },
         env: {
           t: "Environment",
           cat: "core",
           d: "'vp' (player) or 'instream'.",
         },
-        output: { t: "Output", cat: "core", d: "vast, vmap, etc." },
+        output: {
+          t: "Output",
+          cat: "core",
+          d: "vast, vmap, ldjh (List Display).",
+        },
         unviewed_position_start: {
           t: "Delayed Imp",
           cat: "core",
@@ -265,60 +258,132 @@
           cat: "core",
           d: "Timestamp for exclusions.",
         },
+        dt: {
+          t: "Display Time",
+          cat: "core",
+          d: "Timestamp of request generation.",
+        },
 
-        // Pods
-        ad_rule: { t: "Ad Rule", cat: "pod", d: "1=VMAP/Playlist request." },
-        pod: { t: "Pod #", cat: "pod", d: "Sequence number of the break." },
-        ppos: { t: "Pod Pos", cat: "pod", d: "Position within the pod." },
-        vpos: { t: "Video Pos", cat: "pod", d: "preroll, midroll, postroll." },
-        mridx: { t: "Midroll Idx", cat: "pod", d: "Index of midroll break." },
-        min_ad_duration: { t: "Min Dur", cat: "pod", d: "Min ad length (ms)." },
-        max_ad_duration: { t: "Max Dur", cat: "pod", d: "Max ad length (ms)." },
-        pmnd: { t: "Pod Min", cat: "pod", d: "Min pod duration." },
-        pmxd: { t: "Pod Max", cat: "pod", d: "Max pod duration." },
-        pmad: { t: "Pod Max Ads", cat: "pod", d: "Max ads in pod." },
-        lip: { t: "Last in Pod", cat: "pod", d: "true=Last ad." },
-        nofb: { t: "No Fallback", cat: "pod", d: "1=Disable fallbacks." },
-        ptpl: { t: "Template ID", cat: "pod", d: "Publisher Template ID." },
-
-        // Targeting / DAI
-        cust_params: { t: "Custom Params", cat: "core", d: "Key-values." },
-        scp: { t: "Slot Params", cat: "core", d: "Slot-level key-values." },
-        ciu_szs: { t: "Companions", cat: "core", d: "Banner sizes." },
-        excl_cat: { t: "Exclusions", cat: "dai", d: "Blocked categories." },
-        hl: { t: "Language", cat: "dai", d: "Lang code." },
-        ppid: { t: "PPID", cat: "dai", d: "Publisher Provided ID." },
-        cmsid: { t: "CMS ID", cat: "dai", d: "Content Source ID." },
-        vid: { t: "Video ID", cat: "dai", d: "Content ID." },
-        msid: { t: "App ID", cat: "dai", d: "Mobile App ID." },
-        an: { t: "App Name", cat: "dai", d: "Application Name." },
-        is_lat: { t: "Limit Tracking", cat: "dai", d: "1=Opted out." },
-        rdid: { t: "Device ID", cat: "dai", d: "IDFA/AAID." },
-        ss_req: { t: "SSAI Req", cat: "dai", d: "1=Server Side Request." },
-
-        // Privacy
+        // --- DISPLAY (GPT) / SRA SPECIFIC ---
+        ifi: {
+          t: "Iframe ID",
+          cat: "disp",
+          d: "Instance ID of the ad slot iframe.",
+        },
+        pvsid: {
+          t: "Page View ID",
+          cat: "disp",
+          d: "Session ID linking slots to one page view.",
+        },
+        iu_parts: {
+          t: "Ad Unit Parts",
+          cat: "disp",
+          d: "Ad unit hierarchy parts (SRA).",
+        },
+        enc_prev_ius: {
+          t: "Prev Ad Units",
+          cat: "disp",
+          d: "Encoded list of previous ad units on page.",
+        },
+        prev_iu_szs: {
+          t: "Prev Sizes",
+          cat: "disp",
+          d: "Sizes of previous ad units on page.",
+        },
+        fluid: { t: "Fluid Slot", cat: "disp", d: "height=Fluid, 0=Fixed." },
+        impl: {
+          t: "Implementation",
+          cat: "disp",
+          d: "fifs=Friendly Iframe SafeFrame.",
+        },
+        sfv: {
+          t: "SafeFrame Ver",
+          cat: "disp",
+          d: "SafeFrame API version (e.g. 1-0-37).",
+        },
         tfcd: { t: "Child Directed", cat: "priv", d: "1=COPPA enabled." },
         npa: { t: "Non-Personal", cat: "priv", d: "1=GDPR/CCPA privacy mode." },
-        rdp: { t: "Restricted Data", cat: "priv", d: "1=CCPA restricted." },
+        adxs: {
+          t: "Slot X Coords",
+          cat: "disp",
+          d: "X-position of slots on page.",
+        },
+        adys: {
+          t: "Slot Y Coords",
+          cat: "disp",
+          d: "Y-position of slots on page.",
+        },
+        psz: {
+          t: "Page/Player Size",
+          cat: "disp",
+          d: "Dimensions of the page/container.",
+        },
+        msz: {
+          t: "Max Size",
+          cat: "disp",
+          d: "Max available size for the slot.",
+        },
+        ohw: {
+          t: "Overhead Width",
+          cat: "disp",
+          d: "Space occupied by other elements.",
+        },
+        fws: {
+          t: "Font Web Signals",
+          cat: "disp",
+          d: "Internal rendering signal.",
+        },
+        abxe: { t: "AdBlock Exp", cat: "disp", d: "Internal experiment." },
+
+        // --- DEVICE / TELEMETRY (Client Signals) ---
+        biw: {
+          t: "Browser Width",
+          cat: "dev",
+          d: "Inner width of browser window.",
+        },
+        bih: {
+          t: "Browser Height",
+          cat: "dev",
+          d: "Inner height of browser window.",
+        },
+        u_w: { t: "Screen Width", cat: "dev", d: "Device screen width." },
+        u_h: { t: "Screen Height", cat: "dev", d: "Device screen height." },
+        u_tz: { t: "Timezone", cat: "dev", d: "Offset from UTC (minutes)." },
+        u_his: { t: "History Len", cat: "dev", d: "Browser history length." },
+        uach: {
+          t: "UA Client Hints",
+          cat: "dev",
+          d: "Base64 encoded Browser/Platform details.",
+        },
+        vis: {
+          t: "Visibility",
+          cat: "dev",
+          d: "1=Visible, 2=Hidden, 4=Prerender.",
+        },
+        scr_x: { t: "Screen X", cat: "dev", d: "Screen X position." },
+        scr_y: { t: "Screen Y", cat: "dev", d: "Screen Y position." },
+
+        // --- TARGETING / IDENTITY ---
+        cust_params: { t: "Custom Params", cat: "core", d: "Key-values." },
+        scp: { t: "Slot Params", cat: "core", d: "Slot-level key-values." },
+        ppid: { t: "PPID", cat: "dai", d: "Publisher Provided ID." },
         gdpr: { t: "GDPR", cat: "priv", d: "1=GDPR applies." },
-        gdpr_consent: { t: "GDPR String", cat: "priv", d: "Consent string." },
-        ltd: { t: "Limited Ads", cat: "priv", d: "1=Limited ads mode." },
+        gdpr_consent: { t: "GDPR String", cat: "priv", d: "TC String." },
+        addtl_consent: {
+          t: "Google Consent",
+          cat: "priv",
+          d: "Google Additional Consent string.",
+        },
+        cookie: { t: "Cookie", cat: "dai", d: "Doubleclick Cookie hash." },
+        gpic: { t: "Google Pic", cat: "dai", d: "Google Paid ID Cookie." },
 
-        // Player/SDK
-        vpa: { t: "Auto-Play", cat: "sdk", d: "auto or click." },
-        vpmute: { t: "Muted", cat: "sdk", d: "1=Started muted." },
-        plcmt: { t: "Placement", cat: "sdk", d: "1=Instream." },
-        sdkv: { t: "SDK Ver", cat: "sdk", d: "IMA SDK Version." },
-        osd: { t: "On Screen", cat: "sdk", d: "Duration viewable." },
-        vad_type: { t: "Ad Type", cat: "sdk", d: "linear or nonlinear." },
-      };
-
-      const paramAliases = {
-        slotname: "iu",
-        client: "gdfp_req",
-        ad_type: "vad_type",
-        video_id: "vid",
-        videoCmsId: "cmsid",
+        // --- VIDEO SPECIFIC (Retained) ---
+        ad_rule: { t: "Ad Rule", cat: "pod", d: "1=VMAP." },
+        pod: { t: "Pod #", cat: "pod", d: "Break sequence." },
+        vpos: { t: "Video Pos", cat: "pod", d: "preroll/midroll." },
+        min_ad_duration: { t: "Min Dur", cat: "pod", d: "Min ad length." },
+        max_ad_duration: { t: "Max Dur", cat: "pod", d: "Max ad length." },
+        vad_type: { t: "Ad Type", cat: "core", d: "linear/nonlinear." },
       };
 
       function parseUrl() {
@@ -330,10 +395,11 @@
         }
 
         try {
+          // Extraction Logic
           let urlToParse = input.match(/https?:\/\/[^\s"']+/)
             ? input.match(/https?:\/\/[^\s"']+/)[0]
             : input;
-          urlToParse = urlToParse.replace(/&amp;/g, "&");
+          urlToParse = urlToParse.replace(/&amp;/g, "&"); // Fix copy-paste HTML entities
 
           let queryString = urlToParse.includes("?")
             ? urlToParse.split("?")[1]
@@ -366,25 +432,23 @@
           entries.forEach((item) => {
             let key = item.key;
             let def = paramDict[key];
-            let isAlias = false;
-            let aliasName = "";
 
-            if (!def) {
-              const mapped = paramAliases[key];
-              if (mapped && paramDict[mapped]) {
-                def = paramDict[mapped];
-                isAlias = true;
-                aliasName = mapped;
-              }
-            }
-
+            // Fallback for unknown
             if (!def) def = { t: "Unknown", cat: "misc", d: "" };
 
-            // Values
+            // Processing Values
             let valDisplay = escapeHtml(item.value);
+
+            // 1. Cust Params Decoding
             if (key === "cust_params" || key === "scp") {
               valDisplay = formatCustParams(item.value);
-            } else {
+            }
+            // 2. UACH (User Agent Client Hints) Base64 Decoding
+            else if (key === "uach") {
+              valDisplay = formatBase64Json(item.value);
+            }
+            // 3. Standard Decoding
+            else {
               try {
                 valDisplay = decodeURIComponent(valDisplay);
               } catch (e) {}
@@ -395,12 +459,8 @@
             if (def.cat === "core") bClass = "b-core";
             if (def.cat === "pod") bClass = "b-pod";
             if (def.cat === "dai") bClass = "b-dai";
-            if (def.cat === "sdk") bClass = "b-sdk";
-
-            // Alias Tag
-            let aliasHtml = isAlias
-              ? `<span class="alias-tag">Alias: ${aliasName}</span>`
-              : "";
+            if (def.cat === "disp") bClass = "b-disp"; // New Display badge
+            if (def.cat === "dev") bClass = "b-dev"; // New Device badge
 
             // Row content
             html += `
@@ -409,7 +469,6 @@
                         <td class="col-val">${valDisplay}</td>
                         <td class="col-desc">
                             <div class="desc-row">
-                                ${aliasHtml}
                                 <span class="badge ${bClass}">${def.cat === "misc" ? "?" : def.cat}</span>
                                 <span class="desc-title">${def.t}:</span>
                                 <span class="desc-text">${def.d}</span>
@@ -426,6 +485,7 @@
         }
       }
 
+      // Helper: Cust Params Table
       function formatCustParams(str) {
         try {
           const dec = decodeURIComponent(str);
@@ -438,6 +498,29 @@
           });
           return sub + `</table>`;
         } catch (e) {
+          return escapeHtml(str);
+        }
+      }
+
+      // Helper: Base64 JSON Decoder (for uach)
+      function formatBase64Json(str) {
+        try {
+          // Decode Base64
+          const jsonStr = atob(str);
+          // Parse JSON to format it nicely
+          const jsonObj = JSON.parse(jsonStr);
+
+          // Build a mini table for the JSON object
+          let sub = `<table class="sub-table">`;
+          for (const [k, v] of Object.entries(jsonObj)) {
+            let displayVal = v;
+            // Handle nested arrays (like full_version_list)
+            if (typeof v === "object") displayVal = JSON.stringify(v);
+            sub += `<tr><td class="key">${escapeHtml(k)}</td><td>${escapeHtml(displayVal)}</td></tr>`;
+          }
+          return sub + `</table>`;
+        } catch (e) {
+          // If decode fails, just return original
           return escapeHtml(str);
         }
       }
