@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Universal Ad Tag Parser v7 (Deep Dive)</title>
+    <title>Universal Ad Tag Parser v8 (Complete)</title>
     <style>
       :root {
         --primary: #1967d2;
@@ -47,7 +47,7 @@
 
       textarea {
         flex-grow: 1;
-        height: 80px;
+        height: 100px;
         padding: 10px;
         border: 1px solid var(--border);
         border-radius: 4px;
@@ -211,7 +211,7 @@
     <h1>
       Universal Ad Tag Parser
       <span style="font-weight: normal; font-size: 16px; color: #5f6368"
-        >v7 (Deep Dive)</span
+        >v8 (Complete)</span
       >
     </h1>
 
@@ -228,7 +228,7 @@
       // --- DICTIONARY ---
       const paramDict = {
         // --- CORE / STANDARD ---
-        iu: { t: "Ad Unit", cat: "core", d: "Inventory path." },
+        iu: { t: "Ad Unit", cat: "core", d: "Inventory path (Ad Unit)." },
         sz: { t: "Size", cat: "core", d: "Slot size (e.g. 640x480)." },
         gdfp_req: { t: "Google Schema", cat: "core", d: "Must be '1'." },
         env: {
@@ -236,72 +236,68 @@
           cat: "core",
           d: "'vp' (player) or 'instream'.",
         },
-        output: {
-          t: "Output",
-          cat: "core",
-          d: "vast, vmap, ldjh (display list).",
-        },
+        output: { t: "Output", cat: "core", d: "vast, vmap, ldjh, xml_vast4." },
         unviewed_position_start: {
           t: "Delayed Imp",
           cat: "core",
           d: "1=Count on view (Standard).",
         },
-        description_url: { t: "Desc URL", cat: "core", d: "Context URL." },
+        description_url: {
+          t: "Desc URL",
+          cat: "core",
+          d: "Content Context URL.",
+        },
         url: { t: "Page URL", cat: "core", d: "Full page URL." },
-        correlator: { t: "Correlator", cat: "core", d: "Cache buster." },
+        correlator: {
+          t: "Correlator",
+          cat: "core",
+          d: "Cache buster timestamp.",
+        },
         adk: {
           t: "Ad Key",
           cat: "core",
-          d: "Unique slot identifier (prevents collision in SRA).",
+          d: "Unique slot identifier (SRA safe).",
         },
         sid: { t: "Session ID", cat: "core", d: "Session identifier." },
+        ciu_szs: { t: "Companions", cat: "core", d: "Companion banner sizes." },
 
         // --- LATENCY / DEBUG (Internal) ---
         dt: {
           t: "Display Time",
           cat: "int",
-          d: "Timestamp (ms) when request started.",
+          d: "Timestamp (ms) request started.",
         },
-        dlt: {
-          t: "Download Latency",
+        dlt: { t: "Down Latency", cat: "int", d: "Download time (ms)." },
+        idt: { t: "Impression Delay", cat: "int", d: "Time to impression." },
+        ged: {
+          t: "Google Event Data",
           cat: "int",
-          d: "Time taken to fetch/load (ms).",
+          d: "Detailed latency timings.",
         },
-        idt: {
-          t: "Impression Delay",
-          cat: "int",
-          d: "Time until impression definition met.",
-        },
-        gedve: {
-          t: "Event Data",
-          cat: "int",
-          d: "Google Event Data (Performance Timings).",
-        },
-        eid: {
-          t: "Experiment IDs",
-          cat: "int",
-          d: "Active Google A/B test IDs.",
-        },
-        htps: { t: "HTTPS Signal", cat: "int", d: "Request is secure." },
-        nel: {
-          t: "Network Log",
-          cat: "int",
-          d: "Network Error Logging signal.",
-        },
+        gedve: { t: "Event Data", cat: "int", d: "Legacy event data." },
+        eid: { t: "Experiment IDs", cat: "int", d: "Active A/B test IDs." },
+        htps: { t: "HTTPS", cat: "int", d: "Secure signal." },
+        nel: { t: "Network Log", cat: "int", d: "Network Error Logging." },
         eoid: { t: "Exchange Order", cat: "int", d: "Internal Order ID." },
-        pvsid: {
-          t: "Page View ID",
+        eoidce: {
+          t: "Order Signal",
           cat: "int",
-          d: "Unique ID for the page view.",
+          d: "Internal Order/Exchange flag.",
         },
+        pvsid: { t: "Page View ID", cat: "int", d: "Unique Page View ID." },
         ptpl: { t: "Template ID", cat: "int", d: "Publisher Template ID." },
         ptt: {
           t: "Page Tag Type",
           cat: "int",
-          d: "Internal tag type (17=Standard GPT).",
+          d: "Tag type (20=HTML5 VSI/IMA).",
+        },
+        sdr: {
+          t: "Render Signal",
+          cat: "int",
+          d: "Server Dedupe/Render signal.",
         },
 
-        // --- SDK / OPEN MEASUREMENT (OMID) ---
+        // --- SDK / OPEN MEASUREMENT (OMID) / PLAYER ---
         sdki: {
           t: "SDK Internal",
           cat: "dev",
@@ -311,32 +307,33 @@
         sdk_apis: {
           t: "Supported APIs",
           cat: "omid",
-          d: "2=MRAID, 7=OMID 1.0, 8=OMID 1.2 (Viewability).",
+          d: "2=MRAID, 7=OMID 1.0, 8=OMID 1.2.",
         },
         omid_p: {
           t: "OMID Partner",
           cat: "omid",
-          d: "Open Measurement Partner (e.g. Google1).",
+          d: "Open Measurement Partner (Google).",
         },
-        vo: {
-          t: "Verification Opt",
-          cat: "omid",
-          d: "Verification/Viewability enabled.",
-        },
+        vo: { t: "Verif Opt", cat: "omid", d: "Verification enabled." },
         vpa: { t: "Auto-Play", cat: "dev", d: "auto or click." },
         vpmute: { t: "Muted", cat: "dev", d: "1=Started muted." },
-
-        // --- DISPLAY / GPT SPECIFIC ---
-        ifi: { t: "Iframe ID", cat: "dev", d: "Slot instance ID." },
-        impl: {
-          t: "Implementation",
+        osd: { t: "On Screen", cat: "dev", d: "On screen duration." },
+        frm: { t: "Frame Rate", cat: "dev", d: "Friendly Iframe signal." },
+        vis: {
+          t: "Visibility",
           cat: "dev",
-          d: "fifs=Friendly Iframe SafeFrame.",
+          d: "Visibility state (1=Visible).",
         },
-        biw: { t: "Browser Width", cat: "dev", d: "Inner width." },
-        bih: { t: "Browser Height", cat: "dev", d: "Inner height." },
-        u_w: { t: "Screen Width", cat: "dev", d: "Screen resolution." },
-        u_h: { t: "Screen Height", cat: "dev", d: "Screen resolution." },
+        mpt: {
+          t: "Player Type",
+          cat: "dev",
+          d: "Media Player Title (e.g. h5_vsi).",
+        },
+        u_so: { t: "Orientation", cat: "dev", d: "l=Landscape, p=Portrait." },
+        ctv: { t: "Connected TV", cat: "dev", d: "1=Is CTV device." },
+        is_amp: { t: "Is AMP", cat: "dev", d: "1=Accelerated Mobile Page." },
+
+        // --- DEVICE / DISPLAY SPECIFIC ---
         uach: {
           t: "UA Hints",
           cat: "dev",
@@ -347,7 +344,7 @@
           cat: "dev",
           d: "1=Browser cookies enabled.",
         },
-        c: { t: "Cookie Enabled", cat: "dev", d: "1=Yes." },
+        hl: { t: "Language", cat: "dev", d: "Browser language." },
 
         // --- TARGETING / DAI ---
         cust_params: { t: "Custom Params", cat: "core", d: "Key-values." },
@@ -355,16 +352,18 @@
         ppid: { t: "PPID", cat: "dai", d: "Publisher Provided ID." },
         scor: { t: "Scoring", cat: "dai", d: "Competitive exclusion score." },
         cookie: { t: "Cookie Hash", cat: "dai", d: "User ID hash." },
-        media_url: {
-          t: "Media URL",
-          cat: "core",
-          d: "Direct link to creative (debug/preview).",
-        },
+        media_url: { t: "Media URL", cat: "core", d: "Creative/Asset URL." },
 
         // --- PRIVACY ---
         tfcd: { t: "Child Directed", cat: "priv", d: "1=COPPA." },
         npa: { t: "Non-Personal", cat: "priv", d: "1=GDPR/CCPA." },
         gdpr: { t: "GDPR", cat: "priv", d: "1=Applies." },
+        gdpr_consent: { t: "GDPR String", cat: "priv", d: "Consent string." },
+        addtl_consent: {
+          t: "Addtl Consent",
+          cat: "priv",
+          d: "Google Ad Tech Providers (ATP).",
+        },
       };
 
       function parseUrl() {
@@ -428,12 +427,12 @@
             else if (key === "uach") {
               valDisplay = formatBase64Json(item.value);
             }
-            // 3. GEDVE (Performance Timings) - Special formatting
-            else if (key === "gedve") {
-              valDisplay = formatGedve(item.value);
+            // 3. GED / GEDVE (Performance Timings)
+            else if (key === "ged" || key === "gedve") {
+              valDisplay = formatGed(item.value);
             }
-            // 4. Experiment IDs (Comma list)
-            else if (key === "eid") {
+            // 4. Comma Separated Lists (eid, sdk_apis)
+            else if (key === "eid" || key === "sdk_apis") {
               valDisplay = item.value.split(",").join(", ");
             }
             // 5. Standard Decode
@@ -507,15 +506,16 @@
         }
       }
 
-      // Helper: GEDVE (Google Event Data)
-      // Format: e4_td411_tt410... (key-value pairs separated by _)
-      function formatGedve(str) {
+      // Helper: GED/GEDVE (Google Event Data)
+      // Format: ve4_td411_tt410...
+      function formatGed(str) {
         try {
           const parts = str.split("_");
           if (parts.length < 2) return str;
           let sub = `<table class="sub-table">`;
           parts.forEach((p) => {
-            // Heuristic: Split alphabetic prefix from numeric value
+            // Split key from value (e.g., "td411" -> "td": "411")
+            // Heuristic: alphabetic prefix is key
             const match = p.match(/^([a-z]+)(.*)$/);
             if (match) {
               sub += `<tr><td class="key">${match[1]}</td><td>${match[2]}</td></tr>`;
