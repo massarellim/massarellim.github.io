@@ -13,9 +13,13 @@ Before creating projects, you need to gather the opportunity data.
     *   Set the range to **Q4 2025** through **Q4 2026**.
     *   Apply the filter.
 3.  **Extract Data**:
-    *   Scrape the "All Opportunities" table to extract the following columns for each row:
+    *   Scrape the "All Opportunities" table to extract the following columns for each row, **satisfying ALL valid conditions**:
+        *   **Revenue** > $200k
+        *   **Opportunity Stage** is NOT `Lost`, `Abandoned`, or `Implemented`
+    *   **Columns**:
         *   `Opportunity ID` (from the Opportunity link)
         *   `Opportunity Name`
+        *   `Opportunity Stage`
         *   `Company ID` (from the Partner/Portfolio link)
         *   `Company Name`
         *   `Owner` (Sales POC)
@@ -24,9 +28,9 @@ Before creating projects, you need to gather the opportunity data.
 
 **Example Data Format:**
 ```tsv
-Opportunity ID	Opportunity Name	Company ID	Company Name	Owner	Revenue
-79710110	[26Q2] RCS renewal	1222877	CairoRCS Media	Livia Bettini	$32,000.00k
-90047413	[26Q2] AdKaora Renewal	42409394	AdKaora - adkaora.com	Emanuele Gallozzi	$25,000.00k
+Opportunity ID	Opportunity Name	Opportunity Stage	Company ID	Company Name	Owner	Revenue
+79710110	[26Q2] RCS renewal	Negotiation	1222877	CairoRCS Media	Livia Bettini	$32,000.00k
+90047413	[26Q2] AdKaora Renewal	Qualifying	42409394	AdKaora - adkaora.com	Emanuele Gallozzi	$25,000.00k
 ...
 ```
 
@@ -40,8 +44,12 @@ Once you have the table above, process each row to create a new project:
 2.  **Fill Opportunity Details**:
     *   **Opportunity ID**: Enter the value from the `Opportunity ID` column.
     *   **Sales POC**: Enter the name from the `Owner` column and select the matching user from the dropdown.
-    *   **Title**: Enter the value from the `Opportunity Name` column.
-    *   **Description**: Enter the value from the `Opportunity Name` column (same as Title).
+    *   **Title**: Enter the value from the `Opportunity Name` column, followed by the Revenue formatted in Millions (e.g., " 32.0M").
+        *   **Format**: Convert the value to Millions (M) rounded to one decimal place (nearest 100k).
+        *   **Examples**:
+            *   $32,000k -> 32.0M
+            *   $210k -> 0.2M
+    *   **Description**: Enter the value from the `Opportunity Name` column (without the revenue value).
 3.  **Configure Company**:
     *   **Company level**: Change the dropdown to "Division".
     *   **Customer**: Enter the `Company ID` into the "Customer name (Division)" field and select the matching company from the suggestions (e.g., "[Company Name] ([Company ID])").
