@@ -208,7 +208,6 @@
         pbjs.requestBids({
           bidsBackHandler: function (bids) {
             log("Bids returned.");
-            // Build the ad tag video URL via GAM module
             adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
               adUnit: videoAdUnit,
               params: {
@@ -219,6 +218,8 @@
                   anotherKey: "anotherValue",
                 },
                 output: "vast",
+                vpos: "preroll",
+                ppos: "2",
               },
             });
 
