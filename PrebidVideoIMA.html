@@ -84,8 +84,15 @@
     <script>
         window.__tcfapi = function(command, version, callback, parameter) {
             if (command === 'addEventListener' || command === 'getTCData') {
+                var now = new Date();
                 var tcData = {
+                    cmpId: 10,
+                    cmpVersion: 2,
+                    tcfPolicyVersion: 2,
                     gdprApplies: true,
+                    created: now,
+                    lastUpdated: now,
+                    addtlConsent: "2~89.1301.2577.70.587.2403.2535.3095.3100~dv.",
                     tcString: "CQdZmkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",
                     eventStatus: "tcloaded",
                     cmpStatus: "loaded",
