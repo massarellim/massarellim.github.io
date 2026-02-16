@@ -80,6 +80,35 @@
         }
     </style>
 
+    <!-- TCF v2 CMP Stub for Full Consent -->
+    <script>
+        window.__tcfapi = function(command, version, callback, parameter) {
+            if (command === 'addEventListener' || command === 'getTCData') {
+                var tcData = {
+                    gdprApplies: true,
+                    tcString: "CPq4-uOPq4-uOAGABCENAyCgAP_AAH_AAAAAG1wdxgDgYAIQwgA0wEkAQOAAA.YAAAAAAAAAAA",
+                    eventStatus: "tcloaded",
+                    cmpStatus: "loaded",
+                    purpose: {
+                        consents: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true },
+                        legitimateInterests: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true }
+                    },
+                    vendor: {
+                        consents: { 1: true, 52: true, 755: true },
+                        legitimateInterests: { 1: true, 52: true, 755: true }
+                    },
+                    publisher: {
+                        consents: { 1: true, 2: true, 3: true },
+                        legitimateInterests: { 1: true, 2: true, 3: true }
+                    }
+                };
+                setTimeout(function() {
+                    callback(tcData, true);
+                }, 0);
+            }
+        };
+    </script>
+
     <!-- Load Prebid.js -->
     <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     
@@ -121,8 +150,15 @@
         pbjs.que.push(function() {
             pbjs.addAdUnits(videoAdUnit);
             
-            // Set Cache module (required for video)
+            // Set Cache module (required for video) & Consent Management
             pbjs.setConfig({
+                consentManagement: {
+                    gdpr: {
+                        cmpApi: 'iab',
+                        timeout: 500,
+                        defaultGdprScope: true
+                    }
+                },
                 cache: {
                     url: 'https://prebid.adnxs.com/pbc/v1/cache'
                 },
