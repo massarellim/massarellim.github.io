@@ -23,7 +23,7 @@
       #mainContainer {
         position: relative;
         width: 640px;
-        height: 360px;
+        height: 480px;
         background-color: #000;
         border-radius: 8px;
         overflow: hidden;
@@ -165,7 +165,7 @@
         mediaTypes: {
           video: {
             context: "instream",
-            playerSize: [640, 360],
+            playerSize: [640, 480],
             mimes: ["video/mp4"],
             protocols: [1, 2, 3, 4, 5, 6, 7, 8],
             playbackmethod: [2],
@@ -327,7 +327,7 @@
 
         // Specify dimensions
         adsRequest.linearAdSlotWidth = 640;
-        adsRequest.linearAdSlotHeight = 360;
+        adsRequest.linearAdSlotHeight = 480;
         adsRequest.nonLinearAdSlotWidth = 640;
         adsRequest.nonLinearAdSlotHeight = 150;
 
@@ -386,7 +386,7 @@
 
         try {
           log("Initializing Ad Manager Playback...");
-          adsManager.init(640, 360, google.ima.ViewMode.NORMAL);
+          adsManager.init(640, 480, google.ima.ViewMode.NORMAL);
           adsManager.start();
         } catch (adError) {
           log("Ad Manager Start Error: " + adError.getMessage());
