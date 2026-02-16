@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prebid Video + Google IMA SDK Integration</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #mainContainer {
+            position: relative;
+            width: 640px;
+            height: 360px;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        #adContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to video unless ad is active */
+        }
+
+        #playButton {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #playButton:hover {
+            background-color: #45a049;
+        }
+
+        #playButton:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            margin-top: 20px;
+            width: 640px;
+            height: 200px;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    </style>
+
+    <!-- Load Prebid.js -->
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    
+    <!-- Load Google IMA SDK -->
+    <script type="text/javascript" src="//imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+
+    <script>
+        var PREBID_TIMEOUT = 1000;
+        var adTagUrl = "";
+        
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        // Define the Video Ad Unit
+        var videoAdUnit = {
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [640, 360],
+                    mimes: ['video/mp4'],
+                    protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                    playbackmethod: [2],
+                    skip: 1
+                }
+            },
+            bids: [{
+                bidder: 'appnexus',
+                params: {
+                    placementId: 13232361, // AppNexus test video placement
+                    video: {
+                        skippable: true,
+                        playback_method: ['auto_play_sound_off']
+                    }
+                }
+            }]
+        };
+
+        pbjs.que.push(function() {
+            pbjs.addAdUnits(videoAdUnit);
+            
+            // Set Cache module (required for video)
+            pbjs.setConfig({
+                cache: {
+                    url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                },
+                debug: true
+            });
+
+            log("Requesting Prebid bids...");
+            pbjs.requestBids({
+                bidsBackHandler: function(bids) {
+                    log("Bids returned.");
+                    // Build the ad tag video URL via GAM module
+                    adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
+                        adUnit: videoAdUnit,
+                        params: {
+                            // Fallback GAM ad tag / master tag
+                            iu: '/19968336/prebid_cache_video_adunit',
+                            cust_params: {
+                                section: 'blog',
+                                anotherKey: 'anotherValue'
+                            },
+                            output: 'vast'
+                        }
+                    });
+                    
+                    log("Generated Ad Tag: " + adTagUrl.substring(0, 100) + "...");
+                    
+                    // Enable the play button now that we have an ad tag
+                    var playBtn = document.getElementById("playButton");
+                    if(playBtn) {
+                        playBtn.disabled = false;
+                        playBtn.textContent = "Play Video with Ad";
+                    }
+                },
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        // Utility to log to the page
+        function log(message) {
+            console.log(message);
+            window.addEventListener('DOMContentLoaded', () => {
+                var logger = document.getElementById('logArea');
+                if (logger) {
+                    logger.innerHTML += message + "<br>";
+                    logger.scrollTop = logger.scrollHeight;
+                }
+            });
+            // If DOM already loaded
+            var logger = document.getElementById('logArea');
+            if (logger) {
+                logger.innerHTML += message + "<br>";
+                logger.scrollTop = logger.scrollHeight;
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <h1>Prebid Video & IMA SDK Demo</h1>
+
+    <div id="mainContainer">
+        <video id="videoElement" controls preload="auto">
+            <source src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4" type="video/mp4" />
+        </video>
+        <div id="adContainer"></div>
+    </div>
+
+    <button id="playButton" disabled>Loading Ads...</button>
+
+    <div class="log-container" id="logArea"></div>
+
+    <script>
+        var videoElement = document.getElementById("videoElement");
+        var adContainer = document.getElementById("adContainer");
+        var playButton = document.getElementById("playButton");
+
+        var adDisplayContainer;
+        var adsLoader;
+        var adsManager;
+
+        // User action initializes IMA
+        playButton.addEventListener("click", function() {
+            playButton.style.display = "none";
+            log("Play button clicked. Initializing IMA...");
+            initializeIMA();
+        });
+
+        function initializeIMA() {
+            // Step A: Create the AdDisplayContainer
+            adDisplayContainer = new google.ima.AdDisplayContainer(adContainer, videoElement);
+            adDisplayContainer.initialize();
+
+            // Step B: Create the AdsLoader
+            adsLoader = new google.ima.AdsLoader(adDisplayContainer);
+
+            // Listen for the ADS_MANAGER_LOADED event
+            adsLoader.addEventListener(
+                google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+                onAdsManagerLoaded,
+                false
+            );
+
+            // Listen for errors
+            adsLoader.addEventListener(
+                google.ima.AdErrorEvent.Type.AD_ERROR,
+                onAdError,
+                false
+            );
+
+            // Step C: Request Ads
+            var adsRequest = new google.ima.AdsRequest();
+
+            // Set the ad tag URL generated by Prebid
+            if (!adTagUrl) {
+                log("Error: Ad Tag URL is empty. Using fallback.");
+                adsRequest.adTagUrl = "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&correlator=";
+            } else {
+                adsRequest.adTagUrl = adTagUrl;
+            }
+
+            // Specify dimensions
+            adsRequest.linearAdSlotWidth = 640;
+            adsRequest.linearAdSlotHeight = 360;
+            adsRequest.nonLinearAdSlotWidth = 640;
+            adsRequest.nonLinearAdSlotHeight = 150;
+
+            log("Requesting IMA Ads...");
+            adsLoader.requestAds(adsRequest);
+        }
+
+        function onAdsManagerLoaded(adsManagerLoadedEvent) {
+            log("Ads Manager Loaded.");
+            var adsRenderingSettings = new google.ima.AdsRenderingSettings();
+            adsManager = adsManagerLoadedEvent.getAdsManager(videoElement, adsRenderingSettings);
+
+            // Step D: Add Event Listeners for the Ad
+
+            // 1. When the ad needs to pause content
+            adsManager.addEventListener(
+                google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
+                function () {
+                    log("Content pause requested. Starting Ad.");
+                    videoElement.pause();
+                    adContainer.style.pointerEvents = "auto";
+                }
+            );
+
+            // 2. When the ad is done and content should resume
+            adsManager.addEventListener(
+                google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
+                function () {
+                    log("Content resume requested. Ad finished.");
+                    videoElement.play();
+                    adContainer.style.pointerEvents = "none";
+                }
+            );
+
+            // Track standard ad events for logging
+            [google.ima.AdEvent.Type.STARTED, google.ima.AdEvent.Type.FIRST_QUARTILE, 
+             google.ima.AdEvent.Type.MIDPOINT, google.ima.AdEvent.Type.THIRD_QUARTILE, 
+             google.ima.AdEvent.Type.COMPLETE].forEach(function(event) {
+                adsManager.addEventListener(event, function() { log("Ad Event: " + event); });
+            });
+
+
+            // 3. Error handling during playback
+            adsManager.addEventListener(
+                google.ima.AdErrorEvent.Type.AD_ERROR,
+                onAdError
+            );
+
+            try {
+                log("Initializing Ad Manager Playback...");
+                adsManager.init(640, 360, google.ima.ViewMode.NORMAL);
+                adsManager.start();
+            } catch (adError) {
+                log("Ad Manager Start Error: " + adError.getMessage());
+                videoElement.play();
+            }
+        }
+
+        function onAdError(adErrorEvent) {
+            log("AD ERROR: " + adErrorEvent.getError().getMessage());
+            if (adsManager) {
+                adsManager.destroy();
+            }
+            // Start video regardless of ad failure
+            videoElement.play();
+        }
+    </script>
+</body>
+</html>
