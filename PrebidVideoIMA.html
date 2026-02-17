@@ -151,6 +151,11 @@
               url: "https://prebid.adnxs.com/pbc/v1/cache",
             },
             debug: true,
+            bidsControl: {
+              bidderBids: {
+                appnexus: [{ cpm: 5.0, currency: "EUR" }]
+              }
+            }
           });
 
           log("Requesting Prebid bids...");
