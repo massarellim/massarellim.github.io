@@ -35,47 +35,11 @@ const AD_WIDTH = 640;
 const AD_HEIGHT = 480;
 
 
-// Globals
-
-var pbjs = pbjs || {};
-
-pbjs.que = pbjs.que || [];
-
-
-let adsManager;
-
-let adsLoader;
-
-let adDisplayContainer;
-
-let intervalTimer;
-
-
-const videoElement = document.getElementById('videoElement');
-
-const adContainer = document.getElementById('adContainer');
-
-const playButton = document.getElementById('playButton');
-
-
-
-// --- Logger Helper ---
-
-function log(msg) {
-
-console.log(msg);
-
-const logBox = document.getElementById('logArea');
-
-const time = new Date().toLocaleTimeString();
-
-logBox.innerHTML += `[${time}] ${msg}<br>`;
-
-logBox.scrollTop = logBox.scrollHeight;
-
-}
-
-
+// --- Globals & Config ---
+const pbjs = window.pbjs || { que: [] };
+let adsManager, adsLoader, adDisplayContainer;
+const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
+const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
 // --- Prebid Configuration ---
 
