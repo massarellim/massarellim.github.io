@@ -107,50 +107,44 @@
       pbjs.que = pbjs.que || [];
 
       // Define the Video Ad Unit
+
+
+      
       var videoAdUnit = {
-        code: "video1",
-        mediaTypes: {
-          video: {
-            context: "instream",
-            playerSize: [640, 480],
-            mimes: ["video/mp4"],
-            protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-            playbackmethod: [2],
-            skip: 1,
-          },
-        },
-        bids: [
-          {
-            bidder: "appnexus",
-            params: {
-              placementId: 13232361, // AppNexus test video placement
+          code: 'video1',
+          mediaTypes: {
               video: {
-                skippable: true,
-                playback_method: ["auto_play_sound_off"],
-              },
-            },
+                  playerSize: [640, 480],
+                  context: 'instream',
+                  plcmt: 2,
+              }
           },
-        ],
+          bids: [{
+              bidder: 'appnexus',
+              params: {
+                  placementId: 13232361, // Add your own placement id here
+                  video: {
+                      skipppable: true,
+                      playback_method: ['auto_play_sound_off']
+                  }
+              }
+          }]
       };
 
-      function callPrebid() {
-        pbjs.que.push(function () {
-          // 1. Add Ad Units
-          pbjs.addAdUnits([videoAdUnit]);
-
-          // 2. Set Config
+      pbjs.que.push(function() {
+          pbjs.addAdUnits(adUnits);
+          pbjs.addAdUnits(videoAdUnit);
           pbjs.setConfig({
-            consentManagement: {
+              debug: true,
+              cache: {
+              url: "https://prebid.adnxs.com/pbc/v1/cache",
+            },consentManagement: {
               gdpr: {
                 cmpApi: "iab",
                 timeout: 500,
                 defaultGdprScope: true,
               },
-            },
-            cache: {
-              url: "https://prebid.adnxs.com/pbc/v1/cache",
-            },
-            debugging: {
+            },debugging: {
               enabled: true,
               intercept: [
                 {
@@ -173,41 +167,32 @@
               ]
             }
           });
-
-          log("Requesting Prebid bids...");
-
-          // 3. Request Bids
           pbjs.requestBids({
-            bidsBackHandler: function (bids) {
-              log("Bids returned.");
+              bidsBackHandler: initAdserver,
+              timeout: PREBID_TIMEOUT,
+              auctionId: 'auction_1'
+          })
+      });
 
-              // 4. Build the VAST URL with DFP module
-              var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-                adUnit: videoAdUnit,
-                params: {
-                  iu: "/6353/massarellim_prebid_video_test",
+      function initAdserver(bids) {
+
+          if (pbjs.initAdserverSet) return;
+          pbjs.initAdserverSet = true;
+
+          var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+              adUnit: videoAdUnit,
+              params: {
+                  iu: '/6353/massarellim_prebid_video_test',
                   cust_params: {
-                    section: "blog",
-                    anotherKey: "anotherValue",
+                      section: 'blog',
+                      anotherKey: 'anotherValue'
                   },
-                  output: "vast",
-                  vpos: "preroll",
-                  pmad: 3,
-                  max_ad_duration: 90000,
-                },
-              });
-
-              // 5. Mark winning bid as used
-              pbjs.markWinningBidAsUsed({
-                adUnitCode: videoAdUnit.code,
-              });
-
-              // 6. Pass the URL to the player function
-              log("Generated VAST URL: " + videoUrl);
-              invokeVideoPlayer(videoUrl);
-            },
+                  output: 'vmap'
+              }
           });
-        });
+
+          // Pass URL to Video player to make final DFP call
+          invokeVideoPlayer(videoUrl);
       }
 
       function log(message) {
