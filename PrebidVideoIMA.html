@@ -100,10 +100,10 @@
             adsRequest.adTagUrl = adTagUrl;
             
             // Correct dimensions
-            adsRequest.linearAdSlotWidth = AD_WIDTH;
-            adsRequest.linearAdSlotHeight = AD_HEIGHT;
-            adsRequest.nonLinearAdSlotWidth = AD_WIDTH;
-            adsRequest.nonLinearAdSlotHeight = AD_HEIGHT / 3;
+            adsRequest.linearAdSlotWidth = 640;
+            adsRequest.linearAdSlotHeight = 480;
+            adsRequest.nonLinearAdSlotWidth = 640;
+            adsRequest.nonLinearAdSlotHeight = 480 / 3;
 
             log("Requesting ads from IMA SDK...");
             adsLoader.requestAds(adsRequest);
@@ -120,7 +120,7 @@
         adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
             log("Ad end."); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
         });
-        try { adsManager.init(AD_WIDTH, AD_HEIGHT, google.ima.ViewMode.NORMAL); adsManager.start(); } 
+        try { adsManager.init(640, 480, google.ima.ViewMode.NORMAL); adsManager.start(); } 
         catch (e) { log("Init Error: " + e); onAdError(); }
     };
     const onAdError = (e) => {
