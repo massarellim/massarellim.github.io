@@ -26,70 +26,18 @@
   <h1>Prebid Video & IMA SDK Demo</h1><div id="playerContainer"><video id="videoElement" controls playsinline><source src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4" type="video/mp4"></video><div id="adContainer"></div></div><div class="controls"><button id="playButton">Play Video with Ad</button></div><div id="logArea"></div>
 
   <script>
-    // --- Configuration ---
+    // --- Globals & Config ---
+    const pbjs = window.pbjs || { que: [] };
+    let adsManager, adsLoader, adDisplayContainer;
+    const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
+    const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
-const PREBID_TIMEOUT = 2000;
-
-const AD_WIDTH = 640;
-
-const AD_HEIGHT = 480;
-
-
-// --- Globals & Config ---
-const pbjs = window.pbjs || { que: [] };
-let adsManager, adsLoader, adDisplayContainer;
-const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
-const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
-
-// --- Prebid Configuration ---
-
-const videoAdUnit = {
-
-code: 'video1',
-
-mediaTypes: {
-
-video: {
-
-playerSize: [AD_WIDTH, AD_HEIGHT],
-
-context: 'instream',
-
-plcmt: 2,
-
-mimes: ['video/mp4'],
-
-protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-
-playbackmethod: [2]
-
-}
-
-},
-
-bids: [{
-
-bidder: 'appnexus',
-
-params: {
-
-placementId: 13232361,
-
-video: {
-
-skippable: true, // Fixed typo
-
-playback_method: ['auto_play_sound_off']
-
-}
-
-}
-
-}]
-
-};
-
-
+    // --- Prebid Config ---
+    const videoAdUnit = {
+      code: 'video1',
+      mediaTypes: { video: { plcmt: 1, mimes: ['video/mp4'] }},
+      bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
+    };
 
 pbjs.que.push(() => {
 
