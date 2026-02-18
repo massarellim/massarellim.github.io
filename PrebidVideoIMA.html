@@ -32,12 +32,53 @@
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
-    // --- Prebid Config ---
-    const videoAdUnit = {
-        code: 'video1',
-        mediaTypes: { video: { plcmt: 1, mimes: ['video/mp4'] }},
-        bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
-    };
+// --- Prebid Configuration ---
+
+const videoAdUnit = {
+
+code: 'video1',
+
+mediaTypes: {
+
+video: {
+
+playerSize: [AD_WIDTH, AD_HEIGHT],
+
+context: 'instream',
+
+plcmt: 2,
+
+mimes: ['video/mp4'],
+
+protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+
+playbackmethod: [2]
+
+}
+
+},
+
+bids: [{
+
+bidder: 'appnexus',
+
+params: {
+
+placementId: 13232361,
+
+video: {
+
+skippable: true, // Fixed typo
+
+playback_method: ['auto_play_sound_off']
+
+}
+
+}
+
+}]
+
+};
     pbjs.que.push(() => {
         pbjs.addAdUnits(videoAdUnit);
         pbjs.setConfig({
@@ -58,7 +99,7 @@
     // --- 1. Request ads on play button click ---
     playButton.addEventListener('click', () => {
         playButton.disabled = true; log("Initializing IMA");
-        initIMAContainer(); log("Requesting HB bids");
+        initIMAContainer(); log("Calling HB");
         requestBids(); 
     });
 
@@ -79,7 +120,7 @@
 
         // --- 3. Handle Bids & Build Tag ---
         function onBidsBack(bids) {
-            log("Bids received (or timeout).");
+            log("HB bids received" + bids);
             
             const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
                 adUnit: videoAdUnit,
