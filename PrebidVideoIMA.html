@@ -1,25 +1,25 @@
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prebid Video + Google IMA SDK Integration</title>
-    <style>
-        body{font-family:'Segoe UI',sans-serif;background:#f4f4f9;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center}
-        h1{color:#333;margin-bottom:20px}
-        #playerContainer{position:relative;width:640px;height:480px;background:#000;box-shadow:0 10px 25px rgba(0,0,0,.2)}
-        #videoElement,#adContainer{width:100%;height:100%}
-        #videoElement{background:#000}
-        #adContainer{position:absolute;top:0;left:0;pointer-events:none;z-index:10}
-        .controls{margin-top:20px;display:flex;gap:10px}
-        button{padding:10px 20px;font-size:16px;cursor:pointer;background:#007bff;color:#fff;border:0;border-radius:4px;transition:background .2s}
-        button:hover{background:#0056b3}button:disabled{background:#ccc;cursor:not-allowed}
-        #logArea{margin-top:20px;width:640px;height:150px;background:#2d2d2d;color:#0f0;padding:10px;overflow-y:auto;font-family:monospace;font-size:12px;border-radius:4px;border:1px solid #444}
-    </style>
-    <script>
-        window.__tcfapi=(c,v,cb)=>{"addEventListener"===c||"getTCData"===c?cb({tcString:"CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",eventStatus:"tcloaded",cmpStatus:"loaded"},!0):null};
-    </script>
-    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prebid Video + Google IMA SDK Integration</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;background:#f4f4f9;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center}
+    h1{color:#333;margin-bottom:20px}
+    #playerContainer{position:relative;width:640px;height:480px;background:#000;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+    #videoElement,#adContainer{width:100%;height:100%}
+    #videoElement{background:#000}
+    #adContainer{position:absolute;top:0;left:0;pointer-events:none;z-index:10}
+    .controls{margin-top:20px;display:flex;gap:10px}
+    button{padding:10px 20px;font-size:16px;cursor:pointer;background:#007bff;color:#fff;border:0;border-radius:4px;transition:background .2s}
+    button:hover{background:#0056b3}button:disabled{background:#ccc;cursor:not-allowed}
+    #logArea{margin-top:20px;width:640px;height:150px;background:#2d2d2d;color:#0f0;padding:10px;overflow-y:auto;font-family:monospace;font-size:12px;border-radius:4px;border:1px solid #444}
+  </style>
+  <script>
+      window.__tcfapi=(c,v,cb)=>{"addEventListener"===c||"getTCData"===c?cb({tcString:"CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",eventStatus:"tcloaded",cmpStatus:"loaded"},!0):null};
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
 </head>
 
 <body>
@@ -91,22 +91,22 @@
 
     // --- IMA STUFF ---
     const onAdsManagerLoaded = (event) => {
-        log("GAM Responded");
-        adsManager = event.getAdsManager(videoElement, new google.ima.AdsRenderingSettings());
-        adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
-        adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED, () => {
-            log("Ad start"); videoElement.pause(); adContainer.style.pointerEvents = 'auto';
-        });
-        adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
-            log("Ad end"); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
-        });
-        try { adsManager.init(640, 480, google.ima.ViewMode.NORMAL); adsManager.start(); } 
-        catch (e) { log("Init Error: " + e); onAdError(); }
+      log("GAM Responded");
+      adsManager = event.getAdsManager(videoElement, new google.ima.AdsRenderingSettings());
+      adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+      adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED, () => {
+          log("Ad start"); videoElement.pause(); adContainer.style.pointerEvents = 'auto';
+      });
+      adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
+          log("Ad end"); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
+      });
+      try { adsManager.init(640, 480, google.ima.ViewMode.NORMAL); adsManager.start(); } 
+      catch (e) { log("Init Error: " + e); onAdError(); }
     };
     const onAdError = (e) => {
-        log("IMA Error: " + (e ? e.getError() : "Unknown"));
-        if (adsManager) adsManager.destroy();
-        videoElement.play(); playButton.disabled = false;
+      log("IMA Error: " + (e ? e.getError() : "Unknown"));
+      if (adsManager) adsManager.destroy();
+      videoElement.play(); playButton.disabled = false;
     };
     window.addEventListener('resize', () => adsManager && adsManager.resize(videoElement.clientWidth, videoElement.clientHeight, google.ima.ViewMode.NORMAL));
 
