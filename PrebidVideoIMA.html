@@ -103,6 +103,8 @@
     ></script>
 
     <script>
+
+    function callPrebid() {
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
 
@@ -194,7 +196,8 @@
           // Pass URL to Video player to make final DFP call
           invokeVideoPlayer(videoUrl);
       }
-
+    };
+    
       function log(message) {
         console.log(message);
         var logger = document.getElementById("logArea");
