@@ -32,46 +32,12 @@
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
-// --- Prebid Configuration ---
-
-const videoAdUnit = {
-
-code: 'video1',
-
-mediaTypes: {
-
-video: {
-
-w: 640,
-
-h: 480,
-
-context: 'instream'
-
-}
-
-},
-
-bids: [{
-
-bidder: 'appnexus',
-
-params: {
-
-placementId: 13232361,
-
-video: {
-
-
-}
-
-}
-
-}]
-
-};
-
-
+    // --- Prebid Configuration ---
+    const videoAdUnit = {
+      code: 'video1',
+      mediaTypes: { video: {playerSize: [640, 480] }},
+      bids: [{ bidder: 'appnexus', params: { placementId: 13232361, video: {} } }]
+    };
 
 pbjs.que.push(() => {
 
