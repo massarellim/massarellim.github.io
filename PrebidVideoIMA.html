@@ -55,14 +55,12 @@
       });
     });
 
-    // --- 1. Request Ads on Click ---
+    // --- Main Logic ---
     playButton.addEventListener('click', () => {
       playButton.disabled = true; 
       initIMAContainer(); 
       requestBids(); 
     });
-
-    // --- 1.1 Initialize IMA ---
     function initIMAContainer() {
       log("Initializing IMA");
       adsManager?.destroy();
@@ -72,26 +70,20 @@
       adsLoader.addEventListener(I.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, onAdsManagerLoaded);
       adsLoader.addEventListener(I.AdErrorEvent.Type.AD_ERROR, onAdError);
     }
-
-    // --- 1.2 Request Prebid ---
     function requestBids() {
       log("Calling HB");
       pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
     }
-
-    // --- 3. Handle Bids & Build Tag ---
     function onBidsBack(bids) {
-      log("HB responded");
+      log("HB Responded");
       const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
         adUnit: videoAdUnit,
         params: { iu: '/6353/massarellim_prebid_video_test', cust_params: { section: 'blog' }, output: 'vast' }
       });
       requestAdsFromIMA(adTagUrl);
     }
-
-    // --- 4. Request IMA Ads ---
     function requestAdsFromIMA(adTagUrl) {
-      log("Calling IMA");
+      log("Calling GAM");
       const adsRequest = new google.ima.AdsRequest();
       adsRequest.adTagUrl = adTagUrl;
       adsLoader.requestAds(adsRequest);
@@ -99,14 +91,14 @@
 
     // --- IMA STUFF ---
     const onAdsManagerLoaded = (event) => {
-        log("Ads Manager Loaded.");
+        log("GAM Responded");
         adsManager = event.getAdsManager(videoElement, new google.ima.AdsRenderingSettings());
         adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
         adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED, () => {
-            log("Ad start."); videoElement.pause(); adContainer.style.pointerEvents = 'auto';
+            log("Ad start"); videoElement.pause(); adContainer.style.pointerEvents = 'auto';
         });
         adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
-            log("Ad end."); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
+            log("Ad end"); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
         });
         try { adsManager.init(640, 480, google.ima.ViewMode.NORMAL); adsManager.start(); } 
         catch (e) { log("Init Error: " + e); onAdError(); }
