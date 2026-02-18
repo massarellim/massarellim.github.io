@@ -26,34 +26,142 @@
   <h1>Prebid Video & IMA SDK Demo</h1><div id="playerContainer"><video id="videoElement" controls playsinline><source src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4" type="video/mp4"></video><div id="adContainer"></div></div><div class="controls"><button id="playButton">Play Video with Ad</button></div><div id="logArea"></div>
 
   <script>
-    // --- Globals & Config ---
-    const pbjs = window.pbjs || { que: [] };
-    let adsManager, adsLoader, adDisplayContainer;
-    const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
-    const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
+    // --- Configuration ---
 
-    // --- Prebid Config ---
-    const videoAdUnit = {
-        code: 'video1',
-        mediaTypes: { video: { plcmt: 1, mimes: ['video/mp4'] }},
-        bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
-    };
-    pbjs.que.push(() => {
-        pbjs.addAdUnits(videoAdUnit);
-        pbjs.setConfig({
-            cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
-            debugging: {
-                enabled: true,
-                intercept: [{
-                    when: { bidder: "appnexus" },
-                    then: {
-                        cpm: 5.00,
-                        vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
-                    }
-                }]
-            }
-        });
-    });
+const PREBID_TIMEOUT = 2000;
+
+const AD_WIDTH = 640;
+
+const AD_HEIGHT = 480;
+
+
+// Globals
+
+var pbjs = pbjs || {};
+
+pbjs.que = pbjs.que || [];
+
+
+let adsManager;
+
+let adsLoader;
+
+let adDisplayContainer;
+
+let intervalTimer;
+
+
+const videoElement = document.getElementById('videoElement');
+
+const adContainer = document.getElementById('adContainer');
+
+const playButton = document.getElementById('playButton');
+
+
+
+// --- Logger Helper ---
+
+function log(msg) {
+
+console.log(msg);
+
+const logBox = document.getElementById('logArea');
+
+const time = new Date().toLocaleTimeString();
+
+logBox.innerHTML += `[${time}] ${msg}<br>`;
+
+logBox.scrollTop = logBox.scrollHeight;
+
+}
+
+
+
+// --- Prebid Configuration ---
+
+const videoAdUnit = {
+
+code: 'video1',
+
+mediaTypes: {
+
+video: {
+
+playerSize: [AD_WIDTH, AD_HEIGHT],
+
+context: 'instream',
+
+plcmt: 2,
+
+mimes: ['video/mp4'],
+
+protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+
+playbackmethod: [2]
+
+}
+
+},
+
+bids: [{
+
+bidder: 'appnexus',
+
+params: {
+
+placementId: 13232361,
+
+video: {
+
+skippable: true, // Fixed typo
+
+playback_method: ['auto_play_sound_off']
+
+}
+
+}
+
+}]
+
+};
+
+
+
+pbjs.que.push(() => {
+
+pbjs.addAdUnits(videoAdUnit);
+
+pbjs.setConfig({
+
+debug: true,
+
+cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
+
+debugging: {
+
+enabled: true,
+
+intercept: [{
+
+when: { adUnitCode: "video1", bidder: "appnexus" },
+
+then: {
+
+mediaType: "video",
+
+cpm: 5.00,
+
+vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
+
+}
+
+}]
+
+}
+
+});
+
+});
 
     // --- 1. Request ads on play button click ---
     playButton.addEventListener('click', () => {
