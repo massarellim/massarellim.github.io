@@ -36,7 +36,13 @@
     const videoAdUnit = {
       code: 'video1',
       mediaTypes: { video: { plcmt: 1, mimes: ['video/mp4'] }},
-      bids: [{ bidder: 'appnexus', params: { placementId: 13232361, video: { } } }]
+      bids: [{ bidder: 'appnexus', params: { placementId: 13232361,video: {
+
+skippable: true, // Fixed typo
+
+playback_method: ['auto_play_sound_off']
+
+} } }]
     };
 
 pbjs.que.push(() => {
