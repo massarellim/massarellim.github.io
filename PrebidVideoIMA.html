@@ -150,12 +150,18 @@
             cache: {
               url: "https://prebid.adnxs.com/pbc/v1/cache",
             },
-            debug: true,
-            bidsControl: {
-              bidderBids: {
-                appnexus: [{ cpm: 5.0, currency: "EUR" }]
+            debugging: {
+                enabled: true, 
+                intercept: [{
+                  when: {bidder: 'appnexus'}, 
+                  then: {cpm: 9.90},
+                  options: {delay: 1000}
+                },{
+                  when: {bidder: 'criteo'}, 
+                  then: {cpm: 0.50},
+                  options: {delay: 3000}
+                }]
               }
-            }
           });
 
           log("Requesting Prebid bids...");
