@@ -85,7 +85,6 @@
         }
         function requestAdsFromIMA(adTagUrl) {
           log("Calling GAM");
-          log(adTagUrl);
           const adsRequest = new google.ima.AdsRequest();
           adsRequest.adTagUrl = adTagUrl;
           adsLoader.requestAds(adsRequest);
