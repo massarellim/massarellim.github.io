@@ -32,50 +32,30 @@
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
-    // --- Prebid Configuration ---
+    // --- Prebid Config ---
     const videoAdUnit = {
       code: 'video1',
       mediaTypes: { video: {playerSize: [640, 480] }},
       bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
     };
+    pbjs.que.push(() => {
+      pbjs.addAdUnits(videoAdUnit);
+      pbjs.setConfig({
+        cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
+        debugging: {
+        enabled: true,
+          intercept: [{
+            when: { bidder: "appnexus" },
+            then: {
+              cpm: 5.00,
+              vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
+            }
+          }]
+        } 
+      });
+    });
 
-pbjs.que.push(() => {
-
-pbjs.addAdUnits(videoAdUnit);
-
-pbjs.setConfig({
-
-debug: true,
-
-cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
-
-debugging: {
-
-enabled: true,
-
-intercept: [{
-
-when: { adUnitCode: "video1", bidder: "appnexus" },
-
-then: {
-
-mediaType: "video",
-
-cpm: 5.00,
-
-vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
-
-}
-
-}]
-
-}
-
-});
-
-});
-
-    // --- 1. Request ads on play button click ---
+    // --- 1. Request Ads on Click ---
     playButton.addEventListener('click', () => {
         playButton.disabled = true; log("Initializing IMA");
         initIMAContainer(); log("Calling HB");
@@ -92,7 +72,7 @@ vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><
         adsLoader.addEventListener(I.AdErrorEvent.Type.AD_ERROR, onAdError);
     }
 
-    // --- 2. Request Prebid ---
+    // --- 1.2 Request Prebid ---
     function requestBids() {
         pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
     }
