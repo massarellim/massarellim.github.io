@@ -104,7 +104,6 @@
 
     <script>
 
-    function callPrebid() {
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
 
@@ -133,8 +132,8 @@
           }]
       };
 
+      
       pbjs.que.push(function() {
-          pbjs.addAdUnits(adUnits);
           pbjs.addAdUnits(videoAdUnit);
           pbjs.setConfig({
               debug: true,
@@ -169,12 +168,15 @@
               ]
             }
           });
+      });
+
+      function callPrebid() {
           pbjs.requestBids({
               bidsBackHandler: initAdserver,
               timeout: PREBID_TIMEOUT,
               auctionId: 'auction_1'
           })
-      });
+      };
 
       function initAdserver(bids) {
 
@@ -195,8 +197,7 @@
 
           // Pass URL to Video player to make final DFP call
           invokeVideoPlayer(videoUrl);
-      }
-    };
+      };
     
       function log(message) {
         console.log(message);
