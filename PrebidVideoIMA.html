@@ -59,6 +59,8 @@
     playButton.addEventListener('click', () => {
       playButton.disabled = true; 
       initIMAContainer(); 
+            log("Next HB");
+
       pbjs.que.push(() => { requestBids(); });
     });
     function initIMAContainer() {
