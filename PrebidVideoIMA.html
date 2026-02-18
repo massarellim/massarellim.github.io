@@ -72,7 +72,7 @@
     }
     function requestBids() {
       log("Calling HB");
-      pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
+      pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack })
     }
     function onBidsBack(bids) {
       log("HB Responded");
