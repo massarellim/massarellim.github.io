@@ -28,8 +28,7 @@
 
   <script>
     // --- Globals & Config ---
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
+    var pbjs = window.pbjs || {}; pbjs.que = pbjs.que || [];
     let adsManager, adsLoader, adDisplayContainer;
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
