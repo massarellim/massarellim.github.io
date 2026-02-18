@@ -1,368 +1,281 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Prebid Video + Google IMA SDK Integration</title>
-
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f9;
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #333; margin-bottom: 20px; }
+        
+        #playerContainer {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            background-color: #000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
 
-      h1 {
-        color: #333;
-      }
+        #videoElement { width: 100%; height: 100%; background: black; }
+        
+        #adContainer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Allow clicks to pass through when no ad is playing */
+            z-index: 10;
+        }
 
-      #mainContainer {
-        position: relative;
-        width: 640px;
-        height: 480px;
-        background-color: #000;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
 
-      #videoElement {
-        width: 100%;
-        height: 100%;
-        outline: none;
-      }
+        button {
+            padding: 10px 20px; font-size: 16px; cursor: pointer;
+            background-color: #007bff; color: white; border: none; border-radius: 4px;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
 
-      #adContainer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none; /* Let clicks pass through to video unless ad is active */
-      }
-
-      #playButton {
-        margin-top: 20px;
-        padding: 12px 24px;
-        font-size: 16px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-      }
-
-      #playButton:hover {
-        background-color: #45a049;
-      }
-
-      .log-container {
-        margin-top: 20px;
-        width: 640px;
-        height: 200px;
-        background: #fff;
-        border: 1px solid #ddd;
-        padding: 10px;
-        overflow-y: auto;
-        font-family: monospace;
-        font-size: 12px;
-        border-radius: 4px;
-      }
+        #logArea {
+            margin-top: 20px; width: 640px; height: 150px;
+            background: #2d2d2d; color: #0f0; padding: 10px;
+            overflow-y: auto; font-family: monospace; font-size: 12px;
+            border-radius: 4px; border: 1px solid #444;
+        }
     </style>
 
     <script>
-      window.__tcfapi = function (command, version, callback, parameter) {
-        if (command === "addEventListener" || command === "getTCData") {
-          var tcData = {
-            addtlConsent: "1~", // Truncated for brevity
-            tcString:
-              "CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",
-            eventStatus: "tcloaded",
-            cmpStatus: "loaded",
-          };
-          setTimeout(function () {
-            callback(tcData, true);
-          }, 0);
-        }
-      };
+        window.__tcfapi = function (command, version, callback, parameter) {
+            if (command === "addEventListener" || command === "getTCData") {
+                callback({
+                    tcString: "CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",
+                    eventStatus: "tcloaded", cmpStatus: "loaded"
+                }, true);
+            }
+        };
     </script>
 
-    <script
-      async
-      src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
-    ></script>
+    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    <script type="text/javascript" src="//imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+</head>
+<body>
 
-    <script
-      type="text/javascript"
-      src="//imasdk.googleapis.com/js/sdkloader/ima3.js"
-    ></script>
-
-    <script>
-
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
-
-      // Define the Video Ad Unit
-
-
-      
-      var videoAdUnit = {
-          code: 'video1',
-          mediaTypes: {
-              video: {
-                  playerSize: [640, 480],
-                  context: 'instream',
-                  plcmt: 2,
-              }
-          },
-          bids: [{
-              bidder: 'appnexus',
-              params: {
-                  placementId: 13232361, // Add your own placement id here
-                  video: {
-                      skipppable: true,
-                      playback_method: ['auto_play_sound_off']
-                  }
-              }
-          }]
-      };
-
-      
-      pbjs.que.push(function() {
-          pbjs.addAdUnits(videoAdUnit);
-          pbjs.setConfig({
-              debug: true,
-              cache: {
-              url: "https://prebid.adnxs.com/pbc/v1/cache",
-            },consentManagement: {
-              gdpr: {
-                cmpApi: "iab",
-                timeout: 500,
-                defaultGdprScope: true,
-              },
-            },debugging: {
-              enabled: true,
-              intercept: [
-                {
-                  when: {
-                    adUnitCode: "video1",
-                    bidder: "appnexus"
-                  },
-                  then: {
-                    mediaType: "video",
-                    source: "client",
-                    currency: "EUR",
-                    cpm: 5.00,
-                    creativeId: "11111",
-                    width: 640,
-                    height: 480,
-                    ttl: 3000,
-                    vastXml: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\"><Ad id=\"TestAd\"><InLine><AdSystem>Prebid Test</AdSystem><AdTitle>VAST 2.0 Linear Ad</AdTitle><Error><![CDATA[http://myErrorURL/error]]></Error><Impression><![CDATA[]]></Impression><Creatives><Creative id=\"2014\" AdID=\"20150911\" sequence=\"1\"><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event=\"creativeView\"><![CDATA[]]></Tracking><Tracking event=\"start\"><![CDATA[]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[]]></Tracking><Tracking event=\"midpoint\"><![CDATA[]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[]]></Tracking><Tracking event=\"complete\"><![CDATA[]]></Tracking></TrackingEvents><VideoClicks><ClickThrough><![CDATA[http://prebid.org/]]></ClickThrough><ClickTracking><![CDATA[]]></ClickTracking></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"960\" height=\"540\" type=\"video/mp4\"><![CDATA[https://s3.amazonaws.com/files.prebid.org/creatives/PrebidLogo.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
-                  }
-                },
-              ]
-            }
-          });
-      });
-
-      function callPrebid() {
-          pbjs.requestBids({
-              bidsBackHandler: initAdserver,
-              timeout: PREBID_TIMEOUT,
-              auctionId: 'auction_1'
-          })
-      };
-
-      function initAdserver(bids) {
-
-          if (pbjs.initAdserverSet) return;
-          pbjs.initAdserverSet = true;
-
-          var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-              adUnit: videoAdUnit,
-              params: {
-                  iu: '/6353/massarellim_prebid_video_test',
-                  cust_params: {
-                      section: 'blog',
-                      anotherKey: 'anotherValue'
-                  },
-                  output: 'vmap'
-              }
-          });
-
-          // Pass URL to Video player to make final DFP call
-          invokeVideoPlayer(videoUrl);
-      };
-    
-      function log(message) {
-        console.log(message);
-        var logger = document.getElementById("logArea");
-        if (logger) {
-          logger.innerHTML += message + "<br>";
-          logger.scrollTop = logger.scrollHeight;
-        } else {
-          window.addEventListener("DOMContentLoaded", () => {
-            var l = document.getElementById("logArea");
-            if (l) {
-              l.innerHTML += message + "<br>";
-              l.scrollTop = l.scrollHeight;
-            }
-          });
-        }
-      }
-    </script>
-  </head>
-  <body>
     <h1>Prebid Video & IMA SDK Demo</h1>
 
-    <div id="mainContainer">
-      <video id="videoElement" controls preload="auto">
-        <source
-          src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4"
-          type="video/mp4"
-        />
-      </video>
-      <div id="adContainer"></div>
+    <div id="playerContainer">
+        <video id="videoElement" controls playsinline>
+            <source src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4" type="video/mp4" />
+        </video>
+        <div id="adContainer"></div>
     </div>
 
-    <button id="playButton">Play Video with Ad</button>
+    <div class="controls">
+        <button id="playButton">Play Video with Ad</button>
+    </div>
 
-    <div class="log-container" id="logArea"></div>
+    <div id="logArea"></div>
 
     <script>
-      var videoElement = document.getElementById("videoElement");
-      var adContainer = document.getElementById("adContainer");
-      var playButton = document.getElementById("playButton");
+        // --- Configuration ---
+        const PREBID_TIMEOUT = 2000;
+        const AD_WIDTH = 640;
+        const AD_HEIGHT = 480;
+        
+        // Globals
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        
+        let adsManager;
+        let adsLoader;
+        let adDisplayContainer;
+        let intervalTimer;
+        
+        const videoElement = document.getElementById('videoElement');
+        const adContainer = document.getElementById('adContainer');
+        const playButton = document.getElementById('playButton');
 
-      var adDisplayContainer;
-      var adsLoader;
-      var adsManager;
-
-      // User action requests Prebid
-      playButton.addEventListener("click", function () {
-        log("Play button clicked. Requesting bids...");
-        callPrebid();
-      });
-
-      function invokeVideoPlayer(prebidVastUrl) {
-        // Cleanup if user clicks button multiple times
-        if (adsManager) {
-          adsManager.destroy();
-          adsManager = null;
+        // --- Logger Helper ---
+        function log(msg) {
+            console.log(msg);
+            const logBox = document.getElementById('logArea');
+            const time = new Date().toLocaleTimeString();
+            logBox.innerHTML += `[${time}] ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Step A: Create the AdDisplayContainer
-        // Re-creating it is generally safe, or you can check if it exists.
-        // For simplicity/robustness in a demo, we create a fresh one.
-        adDisplayContainer = new google.ima.AdDisplayContainer(
-          adContainer,
-          videoElement,
-        );
-        adDisplayContainer.initialize();
+        // --- Prebid Configuration ---
+        const videoAdUnit = {
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    playerSize: [AD_WIDTH, AD_HEIGHT],
+                    context: 'instream',
+                    plcmt: 2,
+                    mimes: ['video/mp4'],
+                    protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                    playbackmethod: [2]
+                }
+            },
+            bids: [{
+                bidder: 'appnexus',
+                params: {
+                    placementId: 13232361,
+                    video: {
+                        skippable: true, // Fixed typo
+                        playback_method: ['auto_play_sound_off']
+                    }
+                }
+            }]
+        };
 
-        // Step B: Create the AdsLoader
-        adsLoader = new google.ima.AdsLoader(adDisplayContainer);
-
-        // Listen for the ADS_MANAGER_LOADED event
-        adsLoader.addEventListener(
-          google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
-          onAdsManagerLoaded,
-          false,
-        );
-
-        // Listen for errors
-        adsLoader.addEventListener(
-          google.ima.AdErrorEvent.Type.AD_ERROR,
-          onAdError,
-          false,
-        );
-
-        // Step C: Request Ads
-        var adsRequest = new google.ima.AdsRequest();
-
-        if (prebidVastUrl) {
-          log("Using Prebid VAST URL");
-          adsRequest.adTagUrl = prebidVastUrl;
-        } else {
-          log("Warning: Prebid URL was empty. Using Google Fallback.");
-          adsRequest.adTagUrl =
-            "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&vpos=preroll&unviewed_position_start=1&env=vp&pmad=3&max_ad_duration=90000&correlator=";
-        }
-
-        adsRequest.linearAdSlotWidth = 640;
-        adsRequest.linearAdSlotHeight = 480;
-        adsRequest.nonLinearAdSlotWidth = 640;
-        adsRequest.nonLinearAdSlotHeight = 150;
-
-        log("Requesting IMA Ads from SDK...");
-        adsLoader.requestAds(adsRequest);
-      }
-
-      function onAdsManagerLoaded(adsManagerLoadedEvent) {
-        log("Ads Manager Loaded.");
-        var adsRenderingSettings = new google.ima.AdsRenderingSettings();
-        adsManager = adsManagerLoadedEvent.getAdsManager(
-          videoElement,
-          adsRenderingSettings,
-        );
-
-        adsManager.addEventListener(
-          google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
-          function () {
-            log("Content pause requested. Starting Ad.");
-            videoElement.pause();
-            adContainer.style.pointerEvents = "auto";
-          },
-        );
-
-        adsManager.addEventListener(
-          google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
-          function () {
-            log("Content resume requested. Ad finished.");
-            videoElement.play();
-            adContainer.style.pointerEvents = "none";
-          },
-        );
-
-        [
-          google.ima.AdEvent.Type.STARTED,
-          google.ima.AdEvent.Type.FIRST_QUARTILE,
-          google.ima.AdEvent.Type.MIDPOINT,
-          google.ima.AdEvent.Type.THIRD_QUARTILE,
-          google.ima.AdEvent.Type.COMPLETE,
-        ].forEach(function (event) {
-          adsManager.addEventListener(event, function () {
-            log("Ad Event: " + event);
-          });
+        pbjs.que.push(() => {
+            pbjs.addAdUnits(videoAdUnit);
+            pbjs.setConfig({
+                debug: true,
+                cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
+                debugging: {
+                    enabled: true,
+                    intercept: [{
+                        when: { adUnitCode: "video1", bidder: "appnexus" },
+                        then: {
+                            mediaType: "video",
+                            cpm: 5.00,
+                            vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
+                        }
+                    }]
+                }
+            });
         });
 
-        adsManager.addEventListener(
-          google.ima.AdErrorEvent.Type.AD_ERROR,
-          onAdError,
-        );
+        // --- 1. User Interaction ---
+        playButton.addEventListener('click', () => {
+            playButton.disabled = true;
+            log("User clicked Play. Initializing...");
 
-        try {
-          log("Initializing Ad Manager Playback...");
-          adsManager.init(640, 480, google.ima.ViewMode.NORMAL);
-          adsManager.start();
-        } catch (adError) {
-          log("Ad Manager Start Error: " + adError.getMessage());
-          videoElement.play();
-        }
-      }
+            // IMPORTANT: Initialize IMA Container strictly on user click
+            initIMAContainer();
 
-      function onAdError(adErrorEvent) {
-        log("AD ERROR: " + adErrorEvent.getError().getMessage());
-        if (adsManager) {
-          adsManager.destroy();
+            // Request Bids
+            requestBids();
+        });
+
+        function initIMAContainer() {
+            if (adsManager) { adsManager.destroy(); }
+            
+            // Create the AdDisplayContainer
+            adDisplayContainer = new google.ima.AdDisplayContainer(adContainer, videoElement);
+            
+            // Must be called as a result of user action
+            adDisplayContainer.initialize();
+            
+            adsLoader = new google.ima.AdsLoader(adDisplayContainer);
+            
+            // Add Event Listeners
+            adsLoader.addEventListener(
+                google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+                onAdsManagerLoaded,
+                false
+            );
+            adsLoader.addEventListener(
+                google.ima.AdErrorEvent.Type.AD_ERROR,
+                onAdError,
+                false
+            );
         }
-        videoElement.play();
-      }
+
+        // --- 2. Request Prebid ---
+        function requestBids() {
+            log("Requesting Prebid Bids...");
+            pbjs.que.push(() => {
+                pbjs.requestBids({
+                    timeout: PREBID_TIMEOUT,
+                    adUnitCodes: ['video1'],
+                    bidsBackHandler: onBidsBack
+                });
+            });
+        }
+
+        // --- 3. Handle Bids & Build Tag ---
+        function onBidsBack(bids) {
+            log("Bids received (or timeout).");
+            
+            const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
+                adUnit: videoAdUnit,
+                params: {
+                    iu: '/1234/video_demo',
+                    cust_params: { section: 'blog' },
+                    output: 'vast'
+                }
+            });
+
+            log("Generated Ad Tag: " + adTagUrl.substring(0, 50) + "...");
+            requestAdsFromIMA(adTagUrl);
+        }
+
+        // --- 4. Request IMA Ads ---
+        function requestAdsFromIMA(adTagUrl) {
+            const adsRequest = new google.ima.AdsRequest();
+            adsRequest.adTagUrl = adTagUrl;
+            
+            // Correct dimensions
+            adsRequest.linearAdSlotWidth = AD_WIDTH;
+            adsRequest.linearAdSlotHeight = AD_HEIGHT;
+            adsRequest.nonLinearAdSlotWidth = AD_WIDTH;
+            adsRequest.nonLinearAdSlotHeight = AD_HEIGHT / 3;
+
+            log("Requesting ads from IMA SDK...");
+            adsLoader.requestAds(adsRequest);
+        }
+
+        // --- 5. IMA Events ---
+        function onAdsManagerLoaded(adsManagerLoadedEvent) {
+            log("Ads Manager Loaded successfully.");
+            const adsRenderingSettings = new google.ima.AdsRenderingSettings();
+            
+            adsManager = adsManagerLoadedEvent.getAdsManager(videoElement, adsRenderingSettings);
+
+            // Ad Event Listeners
+            adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+            
+            // Handle content pausing/resuming
+            adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED, () => {
+                log("Ad starting. Pausing content.");
+                videoElement.pause();
+                adContainer.style.pointerEvents = 'auto'; // Enable clicks on ad
+            });
+            
+            adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
+                log("Ad finished. Resuming content.");
+                videoElement.play();
+                adContainer.style.pointerEvents = 'none'; // Disable clicks on ad layer
+                playButton.disabled = false;
+            });
+
+            try {
+                adsManager.init(AD_WIDTH, AD_HEIGHT, google.ima.ViewMode.NORMAL);
+                adsManager.start();
+            } catch (adError) {
+                log("Error starting adsManager: " + adError);
+                onAdError(null);
+            }
+        }
+
+        function onAdError(adErrorEvent) {
+            const errorMsg = adErrorEvent ? adErrorEvent.getError().toString() : "Unknown Error";
+            log("IMA Error: " + errorMsg);
+            if (adsManager) adsManager.destroy();
+            
+            // Fallback: Just play the content video
+            videoElement.play();
+            playButton.disabled = false;
+        }
+        
+        // Window Resize Handling
+        window.addEventListener('resize', () => {
+            if(adsManager) {
+                adsManager.resize(videoElement.clientWidth, videoElement.clientHeight, google.ima.ViewMode.NORMAL);
+            }
+        });
+
     </script>
-  </body>
+</body>
 </html>
