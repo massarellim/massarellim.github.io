@@ -32,12 +32,55 @@
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
-    // --- Prebid Config ---
-    const videoAdUnit = {
-      code: 'video1',
-      mediaTypes: { video: { plcmt: 1, mimes: ['video/mp4'] }},
-      bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
-    };
+// --- Prebid Configuration ---
+
+const videoAdUnit = {
+
+code: 'video1',
+
+mediaTypes: {
+
+video: {
+
+playerSize: [640, 480],
+
+context: 'instream',
+
+plcmt: 2,
+
+mimes: ['video/mp4'],
+
+protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+
+playbackmethod: [2]
+
+}
+
+},
+
+bids: [{
+
+bidder: 'appnexus',
+
+params: {
+
+placementId: 13232361,
+
+video: {
+
+skippable: true, // Fixed typo
+
+playback_method: ['auto_play_sound_off']
+
+}
+
+}
+
+}]
+
+};
+
+
 
 pbjs.que.push(() => {
 
