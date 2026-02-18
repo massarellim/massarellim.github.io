@@ -59,9 +59,7 @@
     playButton.addEventListener('click', () => {
       playButton.disabled = true; 
       initIMAContainer(); 
-            log("Next HB");
-
-      pbjs.que.push(() => { requestBids() });
+      requestBids(); 
     });
     function initIMAContainer() {
       log("Initializing IMA");
@@ -74,7 +72,7 @@
     }
     function requestBids() {
       log("Calling HB");
-      pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack })
+      pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
     }
     function onBidsBack(bids) {
       log("HB Responded");
@@ -86,12 +84,13 @@
     }
     function requestAdsFromIMA(adTagUrl) {
       log("Calling GAM");
+      log(adTagUrl);
       const adsRequest = new google.ima.AdsRequest();
       adsRequest.adTagUrl = adTagUrl;
       adsLoader.requestAds(adsRequest);
     }
 
-    // --- IMA Stuff ---
+    // --- IMA STUFF ---
     const onAdsManagerLoaded = (event) => {
       log("GAM Responded");
       adsManager = event.getAdsManager(videoElement, new google.ima.AdsRenderingSettings());
