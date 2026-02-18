@@ -56,8 +56,9 @@
     });
 
     // --- Main Logic ---
-    pbjs.que.push(() => {
-      playButton.addEventListener('click', () => {
+    playButton.addEventListener('click', () => {
+      pbjs.que.push(() => {
+
         playButton.disabled = true; 
         initIMAContainer(); 
         requestBids(); 
