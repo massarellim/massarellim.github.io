@@ -57,57 +57,45 @@
 
     // --- 1. Request Ads on Click ---
     playButton.addEventListener('click', () => {
-        playButton.disabled = true; log("Initializing IMA");
-        initIMAContainer(); log("Calling HB");
-        requestBids(); 
+      playButton.disabled = true; 
+      initIMAContainer(); 
+      requestBids(); 
     });
 
     // --- 1.1 Initialize IMA ---
     function initIMAContainer() {
-        adsManager?.destroy();
-        const I = google.ima;
-        (adDisplayContainer = new I.AdDisplayContainer(adContainer, videoElement)).initialize();
-        adsLoader = new I.AdsLoader(adDisplayContainer);
-        adsLoader.addEventListener(I.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, onAdsManagerLoaded);
-        adsLoader.addEventListener(I.AdErrorEvent.Type.AD_ERROR, onAdError);
+      log("Initializing IMA");
+      adsManager?.destroy();
+      const I = google.ima;
+      (adDisplayContainer = new I.AdDisplayContainer(adContainer, videoElement)).initialize();
+      adsLoader = new I.AdsLoader(adDisplayContainer);
+      adsLoader.addEventListener(I.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, onAdsManagerLoaded);
+      adsLoader.addEventListener(I.AdErrorEvent.Type.AD_ERROR, onAdError);
     }
 
     // --- 1.2 Request Prebid ---
     function requestBids() {
-        pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
+      log("Calling HB");
+      pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1'], bidsBackHandler: onBidsBack }));
     }
 
-        // --- 3. Handle Bids & Build Tag ---
-        function onBidsBack(bids) {
-            log(bids);
-            
-            const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
-                adUnit: videoAdUnit,
-                params: {
-                    iu: '/6353/massarellim_prebid_video_test',
-                    cust_params: { section: 'blog' },
-                    output: 'vast'
-                }
-            });
+    // --- 3. Handle Bids & Build Tag ---
+    function onBidsBack(bids) {
+      log("HB responded");
+      const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
+        adUnit: videoAdUnit,
+        params: { iu: '/6353/massarellim_prebid_video_test', cust_params: { section: 'blog' }, output: 'vast' }
+      });
+      requestAdsFromIMA(adTagUrl);
+    }
 
-            log("Generated Ad Tag: " + adTagUrl.substring(0, 50) + "...");
-            requestAdsFromIMA(adTagUrl);
-        }
-
-        // --- 4. Request IMA Ads ---
-        function requestAdsFromIMA(adTagUrl) {
-            const adsRequest = new google.ima.AdsRequest();
-            adsRequest.adTagUrl = adTagUrl;
-            
-            // Correct dimensions
-            adsRequest.linearAdSlotWidth = 640;
-            adsRequest.linearAdSlotHeight = 480;
-            adsRequest.nonLinearAdSlotWidth = 640;
-            adsRequest.nonLinearAdSlotHeight = 480 / 3;
-
-            log("Requesting ads from IMA SDK...");
-            adsLoader.requestAds(adsRequest);
-        }
+    // --- 4. Request IMA Ads ---
+    function requestAdsFromIMA(adTagUrl) {
+      log("Calling IMA");
+      const adsRequest = new google.ima.AdsRequest();
+      adsRequest.adTagUrl = adTagUrl;
+      adsLoader.requestAds(adsRequest);
+    }
 
     // --- IMA STUFF ---
     const onAdsManagerLoaded = (event) => {
