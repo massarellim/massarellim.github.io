@@ -19,8 +19,8 @@
   <script>
       window.__tcfapi=(c,v,cb)=>{"addEventListener"===c||"getTCData"===c?cb({tcString:"CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",eventStatus:"tcloaded",cmpStatus:"loaded"},!0):null};
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script async src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
 </head>
 
 <body>
@@ -28,7 +28,8 @@
 
   <script>
     // --- Globals & Config ---
-    const pbjs = window.pbjs || { que: [] };
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
     let adsManager, adsLoader, adDisplayContainer;
     const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
