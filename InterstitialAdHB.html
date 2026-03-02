@@ -50,7 +50,7 @@ if (interstitialSlot) {
           googletag.pubads().addEventListener("slotOnload", (event) => {
             if (interstitialSlot === event.slot) {
               document.getElementById("link").style.display = "block";
-              document.getElementById("status").textContent = "Interstitial is loaded. Interstitials are frequency capped at 1 per minute, clear local storage if you want to trigger it again.";
+              document.getElementById("status").textContent = "Interstitial is loaded. Interstitials are frequency capped, remove the #google_vignette fragment from the URL to trigger it again.";
             }
           });
 
