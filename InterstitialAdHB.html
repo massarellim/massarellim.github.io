@@ -28,22 +28,21 @@
 
         // Enable optional interstitial triggers.
         // Change this value to false to disable.
-        const enableTriggers = true;
         interstitialSlot.setConfig({
           interstitial: {
             triggers: {
-              navBar: enableTriggers,
-              unhideWindow: enableTriggers,
-              inactivity: enableTriggers,
-              endOfArticle: enableTriggers,
-              rapidScroll: enableTriggers,
-              prestitial: enableTriggers,
-              backward: enableTriggers,
-              contentPause: enableTriggers,
-              intraDomainLinkClick: enableTriggers,
+              navBar: true,
+              unhideWindow: true,
+              inactivity: true,
+              endOfArticle: true,
+              rapidScroll: true,
+              prestitial: true,
+              backward: true,
+              contentPause: true,
+              intraDomainLinkClick: true,
             },
           },
-        }); 
+        });
 
         if (interstitialSlot) {
           interstitialSlot
