@@ -18,6 +18,7 @@
       window.googletag = window.googletag || { cmd: [] };
       var pbjs = pbjs || {};
       pbjs.cmd = pbjs.cmd || [];
+      
       let interstitialSlot;
 
       googletag.cmd.push(() => {
@@ -26,32 +27,36 @@
           googletag.enums.OutOfPageFormat.INTERSTITIAL
         );
 
-        // Enable optional interstitial triggers.
-        // Change this value to false to disable.
-        interstitialSlot.setConfig({
-          interstitial: {
-            triggers: {
-              navBar: true,
-              unhideWindow: true,
-              inactivity: true,
-              endOfArticle: true,
-              rapidScroll: true,
-              prestitial: true,
-              backward: true,
-              contentPause: true,
-              intraDomainLinkClick: true,
+        // Slot returns null if the page or device does not support interstitials.
+if (interstitialSlot) {
+          // Enable optional interstitial triggers and register the slot.
+          interstitialSlot.addService(googletag.pubads()).setConfig({
+            interstitial: {
+              triggers: {
+                navBar: true,
+                unhideWindow: true,
+              },
             },
-          },
-        });
+          });
 
-        if (interstitialSlot) {
-          interstitialSlot
-            .setTargeting("test", "interstitial")
-            .addService(googletag.pubads());
-          document.getElementById("status").innerText =
-            "Interstitial ad is initialized. Scroll page to activate.";
+          document.getElementById("status").textContent = "Interstitial is loading...";
+
+          // Add event listener to enable navigation once the interstitial loads.
+          // If this event doesn't fire, try clearing local storage and refreshing
+          // the page.
+          googletag.pubads().addEventListener("slotOnload", (event) => {
+            if (interstitialSlot === event.slot) {
+              document.getElementById("link").style.display = "block";
+              document.getElementById("status").textContent = "Interstitial is loaded.";
+            }
+          });
+
+          // By default, the detected language of the current page is used to render
+          // interstitial UI elements. This behavior can be overridden by manually
+          // specifying the document language:
+          // googletag.pubads().set("document_language", "en");
         }
-
+        
         // Define static ad slots.
         googletag
           .defineSlot("/6353/test", [300, 250], "static-ad-1")
@@ -99,13 +104,24 @@
         });
       });
     </script>
-    <style></style>
+    <style>
+      #link {
+        display: none;
+      }
+
+      div.content {
+        position: fixed;
+        top: 50%;
+      }
+    </style>
   </head>
   <body>
-    <div id="page-content" style="height: 900vh">
-      <h1 id="status">
-        Interstitial ads are not supported on this page.
-      </h1>
+    <div class="content">
+      <span id="status">Web interstitial is not supported on this page.</span>
+      <p>
+        <a id="link" href="https://www.example.com/">TRIGGER INTERSTITIAL</a>
+      </p>
+    </div>
       <div id="static-ad-1" style="width: 300px; height: 250px">
         <script>
           googletag.cmd.push(function () {
