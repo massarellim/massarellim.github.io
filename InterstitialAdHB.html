@@ -27,11 +27,8 @@
           googletag.enums.OutOfPageFormat.INTERSTITIAL
         );
 
-        console.log(interstitialSlot.getSizes())
-
-
         // Slot returns null if the page or device does not support interstitials.
-if (interstitialSlot) {
+          if (interstitialSlot) {
           // Enable optional interstitial triggers and register the slot.
           interstitialSlot.addService(googletag.pubads()).setConfig({
             interstitial: {
@@ -89,7 +86,7 @@ if (interstitialSlot) {
               intercept: [
                 {
                   when: { adUnitCode: "/6353/massarellim_test/massarellim_interstitial" },
-                  then: { cpm: 9.9 },
+                  then: { cpm: 9.9, width: 300, height: 250 },
                 },
               ],
             },
