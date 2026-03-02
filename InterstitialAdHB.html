@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Display a GPT-managed anchor ad." />
+    <title>Display an anchor ad</title>
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
+    <script>
+      window.googletag = window.googletag || { cmd: [] };
+      var pbjs = pbjs || {};
+      pbjs.cmd = pbjs.cmd || [];
+      let anchorSlot;
+
+      googletag.cmd.push(() => {
+        anchorSlot = googletag.defineOutOfPageSlot(
+          "/6353/massarellim_test/massarellim_interstitial",
+          googletag.enums.OutOfPageFormat.INTERSTITIAL
+        );
+
+        // Anchor slots return null if the page or device does not support anchors.
+        if (anchorSlot) {
+          anchorSlot
+            .setTargeting("test", "anchor")
+            .addService(googletag.pubads());
+          document.getElementById("status").innerText =
+            "Anchor ad is initialized. Scroll page to activate.";
+        }
+
+        // Define static ad slots.
+        googletag
+          .defineSlot("/6353/test", [300, 250], "static-ad-1")
+          .addService(googletag.pubads());
+
+        // Enable SRA and services.
+        googletag.pubads().enableSingleRequest();
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+
+        //Prebid
+        pbjs.cmd.push(function () {
+          pbjs.addAdUnits([
+            {
+              code: "/6353/massarellim_test/massarellim_interstitial",
+              mediaTypes: { banner: { sizes: [300, 600] } },
+              bids: [{ bidder: "appnexus", params: { placementId: 13144370 } }],
+            },
+          ]);
+
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: { adUnitCode: "/6353/massarellim_test/massarellim_interstitial" },
+                  then: { cpm: 9.9, width: 300, height: 600 },
+                },
+              ],
+            },
+          });
+
+          pbjs.requestBids({
+            bidsBackHandler: function () {
+              pbjs.setTargetingForGPTAsync(undefined, function (slot) {
+                return function (adUnitCode) {
+                  return adUnitCode === slot.getAdUnitPath();
+                };
+              });
+              googletag.pubads().refresh();
+            },
+          });
+        });
+      });
+    </script>
+    <style></style>
+  </head>
+  <body>
+    <div id="page-content" style="height: 900vh">
+      <h1 id="status">
+        Anchor ads are not supported on this page. Reload the page in mobile
+        view!
+      </h1>
+      <div id="static-ad-1" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("static-ad-1");
+          });
+        </script>
+      </div>
+    </div>
+  </body>
+</html>
