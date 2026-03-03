@@ -87,19 +87,49 @@
     }
     function onBidsBack(bids) {
       log("HB Responded");
-      log(bids);
-      const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
-        adUnit: videoAdUnit,
-        params: { iu: '/6353/massarellim_prebid_video_test', cust_params: { section: 'blog' }, ad_rule: 1, output: 'vmap' }
-      });
+      // log(bids);
+      // const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
+      //   adUnit: videoAdUnit,
+      //   params: { iu: '/6353/massarellim_prebid_video_test', cust_params: { section: 'blog' }, ad_rule: 1, output: 'vmap' }
+      // });
       requestAdsFromIMA(adTagUrl);
     }
     function requestAdsFromIMA(adTagUrl) {
       log("Calling GAM");
       log(adTagUrl);
+      const vmapXmlString = `
+      <vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap" version="1.0">
+        <vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+          <vmap:AdSource id="preroll-ad-1" allowMultipleAds="false" followRedirects="true">
+            <vmap:AdTagURI templateType="vast4">
+              <![CDATA[ https://pubads.g.doubleclick.net/gampad/ads?slotname=/6353/massarellim_prebid_video_test&sz=640x480&ciu_szs=&cust_params=hb_uuid%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_id%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_host%3Dprebid.adnxs.com%26hb_format%3Dvideo%26hb_size%3D640x480%26hb_pb%3D5.00%26hb_adid%3D2986a8ed44cdfd%26hb_bidder%3Dappnexus%26hb_cache_host_appnex%3Dprebid.adnxs.com%26hb_uuid_appnexus%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_format_appnexus%3Dvideo%26hb_size_appnexus%3D640x480%26hb_pb_appnexus%3D5.00%26hb_adid_appnexus%3D2986a8ed44cdfd%26hb_bidder_appnexus%3Dappnexus%26hb_ver%3D1.17.2%26hb_source%3Dclient%26hb_adomain%3D%26hb_crid%3Dmock-creative-id%26section%3Dblog&url=https://massarellim.github.io/PrebidVideoIMA.html&unviewed_position_start=1&output=xml_vast4&impl=s&env=vp&gdfp_req=1&ad_rule=0&video_url_to_fetch=https://massarellim.github.io/PrebidVideoIMA.html&useragent=Mozilla/5.0+(Macintosh%3B+Intel+Mac+OS+X+10_15_7)+AppleWebKit/537.36+(KHTML,+like+Gecko)+Chrome/145.0.0.0+Safari/537.36,gzip(gfe)&vad_type=linear&vpos=preroll&pod=1&ppos=1&min_ad_duration=0&max_ad_duration=90000&vrid=1477253&correlator=1772550459816&kfa=0&tfcd=0 ]]>
+            </vmap:AdTagURI>
+          </vmap:AdSource>
+        </vmap:AdBreak>
+        <vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+          <vmap:AdSource id="preroll-ad-2" allowMultipleAds="false" followRedirects="true">
+            <vmap:AdTagURI templateType="vast4">
+              <![CDATA[ https://pubads.g.doubleclick.net/gampad/ads?slotname=/6353/massarellim_prebid_video_test&sz=640x480&ciu_szs=&cust_params=hb_uuid%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_id%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_host%3Dprebid.adnxs.com%26hb_format%3Dvideo%26hb_size%3D640x480%26hb_pb%3D6.00%26hb_adid%3D2986a8ed44cdfd%26hb_bidder%3Dappnexus%26hb_cache_host_appnex%3Dprebid.adnxs.com%26hb_uuid_appnexus%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_format_appnexus%3Dvideo%26hb_size_appnexus%3D640x480%26hb_pb_appnexus%3D5.00%26hb_adid_appnexus%3D2986a8ed44cdfd%26hb_bidder_appnexus%3Dappnexus%26hb_ver%3D1.17.2%26hb_source%3Dclient%26hb_adomain%3D%26hb_crid%3Dmock-creative-id%26section%3Dblog&url=https://massarellim.github.io/PrebidVideoIMA.html&unviewed_position_start=1&output=xml_vast4&impl=s&env=vp&gdfp_req=1&ad_rule=0&video_url_to_fetch=https://massarellim.github.io/PrebidVideoIMA.html&useragent=Mozilla/5.0+(Macintosh%3B+Intel+Mac+OS+X+10_15_7)+AppleWebKit/537.36+(KHTML,+like+Gecko)+Chrome/145.0.0.0+Safari/537.36,gzip(gfe)&vad_type=linear&vpos=preroll&pod=1&ppos=2&min_ad_duration=0&max_ad_duration=90000&vrid=1477253&correlator=1772550459816&kfa=0&tfcd=0 ]]>
+            </vmap:AdTagURI>
+          </vmap:AdSource>
+        </vmap:AdBreak>
+        <vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+          <vmap:AdSource id="preroll-ad-3" allowMultipleAds="false" followRedirects="true">
+            <vmap:AdTagURI templateType="vast4">
+              <![CDATA[ https://pubads.g.doubleclick.net/gampad/ads?slotname=/6353/massarellim_prebid_video_test&sz=640x480&ciu_szs=&cust_params=hb_uuid%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_id%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_cache_host%3Dprebid.adnxs.com%26hb_format%3Dvideo%26hb_size%3D640x480%26hb_pb%3D7.00%26hb_adid%3D2986a8ed44cdfd%26hb_bidder%3Dappnexus%26hb_cache_host_appnex%3Dprebid.adnxs.com%26hb_uuid_appnexus%3D3134c0d5-4cc0-4a48-9828-0cac6cc464f6%26hb_format_appnexus%3Dvideo%26hb_size_appnexus%3D640x480%26hb_pb_appnexus%3D5.00%26hb_adid_appnexus%3D2986a8ed44cdfd%26hb_bidder_appnexus%3Dappnexus%26hb_ver%3D1.17.2%26hb_source%3Dclient%26hb_adomain%3D%26hb_crid%3Dmock-creative-id%26section%3Dblog&url=https://massarellim.github.io/PrebidVideoIMA.html&unviewed_position_start=1&output=xml_vast4&impl=s&env=vp&gdfp_req=1&ad_rule=0&video_url_to_fetch=https://massarellim.github.io/PrebidVideoIMA.html&useragent=Mozilla/5.0+(Macintosh%3B+Intel+Mac+OS+X+10_15_7)+AppleWebKit/537.36+(KHTML,+like+Gecko)+Chrome/145.0.0.0+Safari/537.36,gzip(gfe)&vad_type=linear&vpos=preroll&pod=1&ppos=3&lip=true&min_ad_duration=0&max_ad_duration=90000&vrid=1477253&correlator=1772550459816&kfa=0&tfcd=0 ]]>
+            </vmap:AdTagURI>
+          </vmap:AdSource>
+        </vmap:AdBreak>
+      </vmap:VMAP>
+      `;
       const adsRequest = new google.ima.AdsRequest();
-      adsRequest.adTagUrl = adTagUrl;
-      adsLoader.requestAds(adsRequest);
+      adsRequest.adsResponse = vmapXmlString;
+      adsRequest.linearAdSlotWidth = 640;
+      adsRequest.linearAdSlotHeight = 400;
+      adsLoader.requestAds(adsRequest);      
+      // const adsRequest = new google.ima.AdsRequest();
+      // adsRequest.adTagUrl = adTagUrl;
+      // adsLoader.requestAds(adsRequest);
     }
 
     // --- IMA STUFF ---
