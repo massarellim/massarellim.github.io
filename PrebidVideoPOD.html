@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prebid Video + Google IMA SDK Integration</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;background:#f4f4f9;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center}
+    h1{color:#333;margin-bottom:20px}
+    #playerContainer{position:relative;width:640px;height:480px;background:#000;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+    #videoElement,#adContainer{width:100%;height:100%}
+    #videoElement{background:#000}
+    #adContainer{position:absolute;top:0;left:0;pointer-events:none;z-index:10}
+    .controls{margin-top:20px;display:flex;gap:10px}
+    button{padding:10px 20px;font-size:16px;cursor:pointer;background:#007bff;color:#fff;border:0;border-radius:4px;transition:background .2s}
+    button:hover{background:#0056b3}button:disabled{background:#ccc;cursor:not-allowed}
+    #logArea{margin-top:20px;width:640px;height:150px;background:#2d2d2d;color:#0f0;padding:10px;overflow-y:auto;font-family:monospace;font-size:12px;border-radius:4px;border:1px solid #444}
+  </style>
+  <script>
+      window.__tcfapi=(c,v,cb)=>{"addEventListener"===c||"getTCData"===c?cb({tcString:"CQfDEkAQfDEkAAHABBENCQFsAP_gAEPgABCYJ4EBxC5UQAFCACJyAPoAAAQHQEAIQgAgBAYAASABCJIAAAQEgEAQIAAAICAAAAIAMCQAIAAgAAAAAQAAIIAAIAAAAAAQAAAAIAAAAAAAAQAAAEAAAIAAEAAAgEAEAAAAgAAAAAIACEAAAAAAAAAAAAAAAAAFAAAAAAEAAAAAAAAAACgEAAAAQAAAAAAAABAIBAAAAAAEAAAAAAAAAAAABBPCA-AAsACoAFwAOAAeABAACQAGQANAAmQBcAF0APwAhABOACtAGAAOcAdwBCACLAEcAJMAdsA9oCmwFsALzAZOAywCN4E8AAAA.f_wACHwAAAAA",eventStatus:"tcloaded",cmpStatus:"loaded"},!0):null};
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script async src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+</head>
+
+<body>
+  <h1>Prebid Video & IMA SDK Demo</h1><div id="playerContainer"><video id="videoElement" controls playsinline><source src="https://storage.googleapis.com/gvabox/media/samples/stock.mp4" type="video/mp4"></video><div id="adContainer"></div></div><div class="controls"><button id="playButton">Play Video with Ad</button></div><div id="logArea"></div>
+
+  <script>
+    // --- Globals & Config ---
+    var pbjs = window.pbjs || {}; pbjs.que = pbjs.que || [];
+    let adsManager, adsLoader, adDisplayContainer;
+    const [videoElement, adContainer, playButton, logBox] = ['videoElement', 'adContainer', 'playButton', 'logArea'].map(id => document.getElementById(id));
+    const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
+
+    // --- Prebid Config ---
+    const videoAdUnit1 = {
+      code: 'video1',
+      mediaTypes: { video: {playerSize: [640, 480] }},
+      bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
+    };
+    const videoAdUnit2 = {
+      code: 'video2',
+      mediaTypes: { video: {playerSize: [640, 480] }},
+      bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
+    };
+    pbjs.que.push(() => {
+      pbjs.addAdUnits(videoAdUnit1, videoAdUnit2);
+      pbjs.setConfig({
+        cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
+        debugging: {
+        enabled: true,
+          intercept: [{
+            when: { bidder: "appnexus", adUnitCode: "video1" },
+            then: {
+              cpm: 5.00,
+              vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
+            }
+          },{
+            when: { bidder: "appnexus", adUnitCode: "video2" },
+            then: {
+              cpm: 4.00,
+              vastXml: '<VAST version="2.0"><Ad id="Test"><InLine><AdSystem>Prebid</AdSystem><AdTitle>Test</AdTitle><Creatives><Creative><Linear><Duration>00:00:15</Duration><MediaFiles><MediaFile delivery="progressive" width="640" height="480" type="video/mp4"><![CDATA[https://googleads.github.io/googleads-ima-html5/vsi/videos/android.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
+            }
+          }]
+        } 
+      });
+    });
+
+    // --- Main Logic ---
+    playButton.addEventListener('click', () => {
+      playButton.disabled = true; 
+      initIMAContainer(); 
+      requestBids(); 
+    });
+    function initIMAContainer() {
+      log("Initializing IMA");
+      adsManager?.destroy();
+      const I = google.ima;
+      (adDisplayContainer = new I.AdDisplayContainer(adContainer, videoElement)).initialize();
+      adsLoader = new I.AdsLoader(adDisplayContainer);
+      adsLoader.addEventListener(I.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, onAdsManagerLoaded);
+      adsLoader.addEventListener(I.AdErrorEvent.Type.AD_ERROR, onAdError);
+    }
+    function requestBids() {
+      log("Calling HB");
+      pbjs.que.push(() => pbjs.requestBids({ timeout: 3000, adUnitCodes: ['video1', 'video2'], bidsBackHandler: onBidsBack }));
+    }
+    function onBidsBack(bids) {
+      log("HB Responded");
+      const adTagUrl = pbjs.adServers.dfp.buildVideoUrl({
+        adUnit: videoAdUnit,
+        params: { iu: '/6353/massarellim_prebid_video_test', cust_params: { section: 'blog' }, ad_rule: 1, output: 'vmap' }
+      });
+      requestAdsFromIMA(adTagUrl);
+    }
+    function requestAdsFromIMA(adTagUrl) {
+      log("Calling GAM");
+      log(adTagUrl);
+      const adsRequest = new google.ima.AdsRequest();
+      adsRequest.adTagUrl = adTagUrl;
+      adsLoader.requestAds(adsRequest);
+    }
+
+    // --- IMA STUFF ---
+    const onAdsManagerLoaded = (event) => {
+      log("GAM Responded");
+      adsManager = event.getAdsManager(videoElement, new google.ima.AdsRenderingSettings());
+      adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+      adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED, () => {
+          log("Ad start"); videoElement.pause(); adContainer.style.pointerEvents = 'auto';
+      });
+      adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED, () => {
+          log("Ad end"); videoElement.play(); adContainer.style.pointerEvents = 'none'; playButton.disabled = false;
+      });
+      try { adsManager.init(640, 480, google.ima.ViewMode.NORMAL); adsManager.start(); } 
+      catch (e) { log("Init Error: " + e); onAdError(); }
+    };
+    const onAdError = (e) => {
+      log("IMA Error: " + (e ? e.getError() : "Unknown"));
+      if (adsManager) adsManager.destroy();
+      videoElement.play(); playButton.disabled = false;
+    };
+    window.addEventListener('resize', () => adsManager && adsManager.resize(videoElement.clientWidth, videoElement.clientHeight, google.ima.ViewMode.NORMAL));
+
+  </script>
+</body>
+</html>
