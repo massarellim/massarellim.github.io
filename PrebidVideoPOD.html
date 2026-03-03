@@ -34,18 +34,17 @@
     const log = (msg) => { console.log(msg); logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`; logBox.scrollTop = logBox.scrollHeight; };
 
     // --- Prebid Config ---
-    const videoAdUnit1 = {
+    const videoAdunits = [{
       code: 'video1',
       mediaTypes: { video: {playerSize: [640, 480] }},
       bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
-    };
-    const videoAdUnit2 = {
+    }, {
       code: 'video2',
       mediaTypes: { video: {playerSize: [640, 480] }},
       bids: [{ bidder: 'appnexus', params: { placementId: 13232361 } }]
-    };
+    }];
     pbjs.que.push(() => {
-      pbjs.addAdUnits(videoAdUnit1, videoAdUnit2);
+      pbjs.addAdUnits(videoAdunits);
       pbjs.setConfig({
         cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
         debugging: {
