@@ -34,7 +34,7 @@ function normalizeProviderName(name) {
 }
 
 // Helper to add or reconcile a signal category
-function processIncomingSignal(provider, value, source, warning) {
+function processIncomingSignal(provider, value, source, warning, configParams) {
     const normalizedNewProvider = normalizeProviderName(provider);
 
     // Check if it's already in shared (and we have nothing new to add)
@@ -52,7 +52,8 @@ function processIncomingSignal(provider, value, source, warning) {
                 timestamp: new Date().toISOString(),
                 source: 'gam_matched',
                 prebidValue: secureSignals.prebidOnly[inPrebidIdx].prebidValue || 'Registered in Prebid',
-                warning: warning || secureSignals.prebidOnly[inPrebidIdx].warning
+                warning: warning || secureSignals.prebidOnly[inPrebidIdx].warning,
+                configParams: configParams || secureSignals.prebidOnly[inPrebidIdx].configParams
             });
             secureSignals.prebidOnly.splice(inPrebidIdx, 1);
             return true;
@@ -65,7 +66,8 @@ function processIncomingSignal(provider, value, source, warning) {
                 value: value,
                 timestamp: new Date().toISOString(),
                 source: source,
-                warning: warning
+                warning: warning,
+                configParams: configParams
             });
             return true;
         }
@@ -81,7 +83,8 @@ function processIncomingSignal(provider, value, source, warning) {
                 timestamp: new Date().toISOString(),
                 source: 'prebid_matched',
                 prebidValue: value,
-                warning: existingGamSignal.warning || warning
+                warning: existingGamSignal.warning || warning,
+                configParams: existingGamSignal.configParams || configParams
             });
             secureSignals.gamOnly.splice(inGamIdx, 1);
             return true;
@@ -126,7 +129,8 @@ function processIncomingSignal(provider, value, source, warning) {
                 prebidValue: value,
                 timestamp: new Date().toISOString(),
                 source: source,
-                warning: warning
+                warning: warning,
+                configParams: configParams
             });
             return true;
         }
@@ -196,7 +200,7 @@ window.addEventListener('message', (event) => {
             globalTimeouts = event.data.timeouts;
         }
 
-        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning);
+        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning, event.data.configParams);
         if (isNew) {
             console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider} via ${event.data.source || 'GAM'}`);
             saveSignalsToStorage();

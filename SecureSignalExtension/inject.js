@@ -122,7 +122,8 @@
                             provider: idModule.name,
                             value: 'Configured in userSync',
                             warning: warningMsg,
-                            timeouts: timeouts
+                            timeouts: timeouts,
+                            configParams: idModule.params || {}
                         }, '*');
                         console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
                     });

@@ -194,7 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.appendChild(warningBlock);
             }
 
-            // 1. Prebid EID Payload (if exists)
+            // 1. Prebid Configuration (if exists)
+            if (signal.configParams && Object.keys(signal.configParams).length > 0) {
+                card.appendChild(createPayloadBlock('Prebid Configuration (userSync params)', signal.configParams));
+            }
+
+            // 2. Prebid EID Payload (if exists)
             if (signal.prebidValue) {
                 card.appendChild(createPayloadBlock('Prebid EID (Raw)', signal.prebidValue));
             }
