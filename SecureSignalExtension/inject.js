@@ -1,5 +1,6 @@
 /**
- * This script is injected into the MAIN world to monkey-patch googletag.
+ * This script is injected into the MAIN world to intercept Google Ad Manager secure signals.
+ * It uses aggressive polling and native push overriding to survive GPT wiping the arrays.
  */
 (function() {
   const SCRIPT_ID = 'secure-signal-validator-inject';
@@ -15,6 +16,7 @@
         payload: payload,
         timestamp: Date.now()
       }, '*');
+      console.log(`[Secure Signal Validator] Intercepted ${type} from ${providerId}`);
     } catch (e) {
       console.error('[Secure Signal Validator] Error posting message:', e);
     }
@@ -33,84 +35,75 @@
     }
   }
 
-  function processExistingProviders(arrayName, signalType) {
-    if (window.googletag && window.googletag[arrayName] && Array.isArray(window.googletag[arrayName])) {
-      window.googletag[arrayName].forEach(provider => {
-        if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
-          const originalCollector = provider.collectorFunction;
-          provider.collectorFunction = function() {
-            const result = originalCollector.apply(this, arguments);
-            handlePromiseOrValue(result, signalType, provider.id || 'unknown');
-            return result;
-          };
-          provider.__validatorPatched = true;
-        }
-      });
+  function hookCollector(provider, type) {
+    if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
+      const originalCollector = provider.collectorFunction;
+      provider.collectorFunction = function() {
+        const result = originalCollector.apply(this, arguments);
+        handlePromiseOrValue(result, type, provider.id || 'unknown');
+        return result;
+      };
+      provider.__validatorPatched = true;
     }
   }
 
-  function patchProviderArray(arrayName, signalType) {
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag[arrayName] = window.googletag[arrayName] || [];
+  function hookProviderQueue(arrayName, type) {
+    if (!window.googletag || !window.googletag[arrayName]) return;
+    const queue = window.googletag[arrayName];
 
-    // Process anything that was pushed before we arrived
-    processExistingProviders(arrayName, signalType);
-
-    // Proxy the array to intercept future pushes
-    if (typeof Proxy !== 'undefined' && !window.googletag[arrayName].__isProxied) {
-      window.googletag[arrayName] = new Proxy(window.googletag[arrayName], {
-        get(target, prop) {
-          if (prop === 'push') {
-            return function(...args) {
-              args.forEach(provider => {
-                if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
-                  const originalCollector = provider.collectorFunction;
-                  provider.collectorFunction = function() {
-                    const result = originalCollector.apply(this, arguments);
-                    handlePromiseOrValue(result, signalType, provider.id || 'unknown');
-                    return result;
-                  };
-                  provider.__validatorPatched = true;
-                }
-              });
-              return target.push(...args);
-            };
-          }
-          if (prop === '__isProxied') return true;
-          const value = target[prop];
-          return (typeof value === 'function') ? value.bind(target) : value;
-        }
-      });
-    }
-  }
-
-  // Hook into googletag.cmd to ensure we catch everything even if googletag isn't fully loaded yet
-  let gtInstance = window.googletag;
-  if (!gtInstance) {
-    window.googletag = {};
-    gtInstance = window.googletag;
-  }
-  if (!gtInstance.cmd) {
-    gtInstance.cmd = [];
-  }
-  
-  try {
-      if (typeof gtInstance.cmd.push === 'function') {
-          gtInstance.cmd.push(function() {
-              patchProviderArray('secureSignalProviders', 'secureSignal');
-              patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
-          });
+    // 1. Process anything currently in the queue
+    if (Array.isArray(queue) || typeof queue.forEach === 'function') {
+      try {
+        queue.forEach(p => hookCollector(p, type));
+      } catch(e){}
+    } else if (queue.length > 0) {
+      for (let i = 0; i < queue.length; i++) {
+        hookCollector(queue[i], type);
       }
-  } catch(e) {
-      // Silently catch across safe-frames
-  }
-  
-  // also run immediately just in case cmd queue is already processed
-  try {
-      patchProviderArray('secureSignalProviders', 'secureSignal');
-      patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
-  } catch(e) {}
+    }
 
-  console.log('[Secure Signal Validator] Injection logic executed in frame:', window.location.href);
+    // 2. Monkey-patch the push function natively.
+    if (typeof queue.push === 'function' && !queue.push.__isHooked) {
+      const originalPush = queue.push;
+      queue.push = function(...args) {
+        args.forEach(p => hookCollector(p, type));
+        return originalPush.apply(this, args);
+      };
+      queue.push.__isHooked = true;
+    }
+  }
+
+  function applyAllHooks() {
+    hookProviderQueue('secureSignalProviders', 'secureSignal');
+    hookProviderQueue('encryptedSignalProviders', 'encryptedSignal');
+  }
+
+  // 1. Initialize namespace safely
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+
+  // 2. Hook googletag.cmd.push so we can try patching exactly when publisher tags fire
+  if (typeof window.googletag.cmd.push === 'function' && !window.googletag.cmd.push.__isHooked) {
+    const originalCmdPush = window.googletag.cmd.push;
+    window.googletag.cmd.push = function(...args) {
+      applyAllHooks();
+      const result = originalCmdPush.apply(this, args);
+      applyAllHooks();
+      return result;
+    };
+    window.googletag.cmd.push.__isHooked = true;
+  }
+
+  // 3. Push a function into the cmd queue to run as soon as GPT is ready
+  window.googletag.cmd.push(function() {
+    applyAllHooks();
+  });
+
+  // 4. Initial run
+  applyAllHooks();
+
+  // 5. Bruteforce Polling Loop (Extremely reliable fallback)
+  setInterval(applyAllHooks, 50);
+
+  console.log('[Secure Signal Validator] Native injection logic initialized.');
 })();
