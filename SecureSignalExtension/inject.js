@@ -7,6 +7,40 @@
     const originalSecurePush = window.googletag.secureSignalProviders.push;
     const originalEncryptedPush = window.googletag.encryptedSignalProviders.push;
 
+    // Deep extraction helper
+    const extractRawId = (payload) => {
+        if (!payload) return null;
+        
+        let obj = payload;
+        // 1. If it's a string that looks like JSON, try to parse it
+        if (typeof payload === 'string') {
+            try {
+                const parsed = JSON.parse(payload);
+                if (parsed && typeof parsed === 'object') obj = parsed;
+            } catch (e) {}
+        }
+        
+        // 2. If it is an array, we assume index 1 is the raw ID (e.g. ["provider", "raw_id"])
+        if (Array.isArray(obj)) {
+            if (obj.length >= 2) {
+                return (obj[1] === null || obj[1] === undefined) ? String(obj[1]) : 
+                       typeof obj[1] === 'object' ? JSON.stringify(obj[1]) : String(obj[1]);
+            }
+        }
+        
+        // 3. If it's an object with a uid or id field
+        if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+            if (obj.uid !== undefined) return typeof obj.uid === 'object' ? JSON.stringify(obj.uid) : String(obj.uid);
+            if (obj.id !== undefined) {
+                // Sometimes obj.id is another array!
+                return extractRawId(obj.id);
+            }
+        }
+        
+        // 4. Default stringification
+        return typeof payload === 'object' ? JSON.stringify(payload) : String(payload);
+    };
+
     const processProvider = (provider) => {
         if (!provider || !provider.id || typeof provider.collectorFunction !== 'function') return;
 
@@ -17,11 +51,7 @@
             // Handle both Promise and direct return values
             if (result && typeof result.then === 'function') {
                 return result.then((signal) => {
-                    let extractedSignal = signal;
-                    // If the collector returns an array, extract index 1 (the raw ID value), even if it's null
-                    if (Array.isArray(signal) && signal.length >= 2) {
-                        extractedSignal = signal[1];
-                    }
+                    const extractedSignal = extractRawId(signal);
 
                     window.postMessage({
                         type: 'SECURE_SIGNAL_DETECTED',
@@ -34,10 +64,7 @@
                     throw err; 
                 });
             } else {
-                let extractedSignal = result;
-                if (Array.isArray(result) && result.length >= 2) {
-                    extractedSignal = result[1];
-                }
+                const extractedSignal = extractRawId(result);
                 
                 window.postMessage({
                     type: 'SECURE_SIGNAL_DETECTED',
@@ -287,24 +314,20 @@
                     const eids = window.pbjs.getUserIdsAsEids();
                     if (eids && Array.isArray(eids)) {
                         eids.forEach(eid => {
-                            if (eid && eid.source) {
-                                
-                                // Extract the raw ID string
-                                let rawId = '';
-                                if (eid.uids && eid.uids.length > 0 && eid.uids[0].id) {
-                                    rawId = typeof eid.uids[0].id === 'object' ? JSON.stringify(eid.uids[0].id) : String(eid.uids[0].id);
-                                } else {
-                                    rawId = typeof eid === 'object' ? JSON.stringify(eid) : String(eid);
-                                }
-                                
-                                if (sentEidsCache[eid.source] !== rawId) {
-                                    sentEidsCache[eid.source] = rawId;
-                                    window.postMessage({
-                                        type: 'SECURE_SIGNAL_DETECTED',
-                                        source: 'PREBID_EID',
-                                        provider: eid.source,
-                                        value: rawId
-                                    }, '*');
+                            if (eid && eid.source && eid.uids && Array.isArray(eid.uids)) {
+                                // Some providers put an object in uids, some put a string
+                                if (eid.uids.length > 0) {
+                                    const rawId = extractRawId(eid.uids[0]);
+                                    
+                                    if (sentEidsCache[eid.source] !== rawId) {
+                                        sentEidsCache[eid.source] = rawId;
+                                        window.postMessage({
+                                            type: 'SECURE_SIGNAL_DETECTED',
+                                            source: 'PREBID_EID',
+                                            provider: eid.source,
+                                            value: rawId
+                                        }, '*');
+                                    }
                                 }
                             }
                         });
@@ -317,16 +340,7 @@
                     if (uids && typeof uids === 'object') {
                         Object.keys(uids).forEach(providerName => {
                             // Extract the raw ID string
-                            let rawId = uids[providerName];
-                            if (typeof rawId === 'object') {
-                                if (rawId.id) {
-                                    rawId = typeof rawId.id === 'object' ? JSON.stringify(rawId.id) : String(rawId.id);
-                                } else {
-                                    rawId = JSON.stringify(rawId);
-                                }
-                            } else {
-                                rawId = String(rawId);
-                            }
+                            const rawId = extractRawId(uids[providerName]);
                             
                             if (sentEidsCache[providerName] !== rawId) {
                                 sentEidsCache[providerName] = rawId;

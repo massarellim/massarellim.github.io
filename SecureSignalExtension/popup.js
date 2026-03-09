@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // GAM Payload (Encoded)
             if (signal.isGamDeployed && signal.value) {
-                card.appendChild(createPayloadBlock('GAM Payload (Encoded)', signal.value));
+                card.appendChild(createPayloadBlock(null, signal.value));
 
                 // GAM Payload (Decoded)
                 if (typeof signal.value === 'string') {
