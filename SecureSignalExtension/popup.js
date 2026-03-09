@@ -62,6 +62,55 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSignalGroup(document.getElementById('signals-prebid'), prebidOnly, 'No exclusive Prebid signals.');
     }
 
+    function decodeBase64UrlSafe(str) {
+        if (!str || typeof str !== 'string') return null;
+        try {
+            // Check if it explicitly has spaces or brackets, then it's probably already decoded/JSON
+            if (str.includes('{') || str.includes(' ')) return null;
+            
+            let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (b64.length % 4) {
+                b64 += '=';
+            }
+            const decoded = atob(b64);
+            
+            try {
+                return JSON.stringify(JSON.parse(decoded), null, 2);
+            } catch(e) {
+                return decoded;
+            }
+        } catch(e) {
+            return null;
+        }
+    }
+
+    function createPayloadBlock(label, value) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'payload-block';
+        
+        const labelEl = document.createElement('div');
+        labelEl.className = 'payload-label';
+        labelEl.textContent = label;
+        
+        const valueContainer = document.createElement('div');
+        valueContainer.className = 'signal-value-container';
+        
+        const valueWrap = document.createElement('p');
+        valueWrap.className = 'signal-value';
+        
+        let displayValue = value;
+        if (typeof displayValue === 'object') {
+            try { displayValue = JSON.stringify(displayValue, null, 2); } catch(e) {}
+        }
+        
+        valueWrap.textContent = String(displayValue);
+        valueContainer.appendChild(valueWrap);
+        
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(valueContainer);
+        return wrapper;
+    }
+
     function renderSignalGroup(container, signals, emptyMessage) {
         container.innerHTML = '';
         if (signals.length === 0) {
@@ -95,27 +144,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             providerHeader.appendChild(providerText);
             providerHeader.appendChild(time);
-
-            const valueContainer = document.createElement('div');
-            valueContainer.className = 'signal-value-container';
-
-            const valueWrap = document.createElement('p');
-            valueWrap.className = 'signal-value';
-            
-            // Format as JSON if possible for better display
-            let displayValue = signal.value;
-            if (typeof displayValue === 'object') {
-                try {
-                    displayValue = JSON.stringify(displayValue, null, 2);
-                } catch(e) {}
-            }
-            
-            valueWrap.textContent = String(displayValue);
-
-            valueContainer.appendChild(valueWrap);
-            
             card.appendChild(providerHeader);
-            card.appendChild(valueContainer);
+
+            // 1. Prebid EID Payload (if exists)
+            if (signal.prebidValue) {
+                card.appendChild(createPayloadBlock('Prebid EID (Raw)', signal.prebidValue));
+            }
+
+            // 2. GAM Payload (Encoded)
+            card.appendChild(createPayloadBlock('GAM Payload (Encoded)', signal.value));
+
+            // 3. GAM Payload (Decoded)
+            if (signal.value && typeof signal.value === 'string') {
+                const decoded = decodeBase64UrlSafe(signal.value);
+                if (decoded && decoded !== signal.value) {
+                    card.appendChild(createPayloadBlock('GAM Payload (Decoded)', decoded));
+                }
+            }
             
             container.appendChild(card);
         });

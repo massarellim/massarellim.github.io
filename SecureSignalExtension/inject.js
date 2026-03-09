@@ -135,6 +135,27 @@
         });
     }
 
+    // Poll for generated EID payloads from Prebid
+    setInterval(() => {
+        try {
+            if (window.pbjs && typeof window.pbjs.getUserIdsAsEids === 'function') {
+                const eids = window.pbjs.getUserIdsAsEids();
+                if (eids && Array.isArray(eids)) {
+                    eids.forEach(eid => {
+                        if (eid && eid.source) {
+                            window.postMessage({
+                                type: 'SECURE_SIGNAL_DETECTED',
+                                source: 'PREBID_EID',
+                                provider: eid.source,
+                                value: typeof eid === 'object' ? JSON.stringify(eid) : String(eid)
+                            }, '*');
+                        }
+                    });
+                }
+            }
+        } catch(e) {}
+    }, 2000);
+
     // Ping the content script that the inject script is ready, just in case
     window.postMessage({ type: 'SECURE_SIGNAL_INJECT_READY' }, '*');
 })();

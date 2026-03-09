@@ -22,15 +22,23 @@ function saveSignalsToStorage() {
     chrome.storage.local.set({ [pageUrl]: flatList });
 }
 
+// Helper to normalize provider names since Prebid often appends .pbjs or similar suffixes to GAM
+function normalizeProviderName(name) {
+    if (!name) return '';
+    return name.replace(/\.pbjs$/, '').replace(/^_+/, '').toLowerCase();
+}
+
 // Helper to add or reconcile a signal category
 function processIncomingSignal(provider, value, source) {
-    // Check if it's already in shared
-    if (secureSignals.shared.some(s => s.provider === provider)) {
+    const normalizedNewProvider = normalizeProviderName(provider);
+
+    // Check if it's already in shared (and we have nothing new to add)
+    if (source !== 'PREBID_EID' && secureSignals.shared.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
         return false; // Already perfectly mapped
     }
 
     if (source === 'GAM' || source === 'localStorage') {
-        const inPrebidIdx = secureSignals.prebidOnly.findIndex(s => s.provider === provider);
+        const inPrebidIdx = secureSignals.prebidOnly.findIndex(s => normalizeProviderName(s.provider) === normalizedNewProvider);
         if (inPrebidIdx !== -1) {
             // It was in Prebid, now it's in GAM -> Move to Shared!
             secureSignals.shared.push({
@@ -44,7 +52,7 @@ function processIncomingSignal(provider, value, source) {
         }
 
         // Not in Prebid yet, must be GAM Only for now
-        if (!secureSignals.gamOnly.some(s => s.provider === provider && s.value === value)) {
+        if (!secureSignals.gamOnly.some(s => normalizeProviderName(s.provider) === normalizedNewProvider && s.value === value)) {
             secureSignals.gamOnly.push({
                 provider: provider,
                 value: value,
@@ -54,13 +62,13 @@ function processIncomingSignal(provider, value, source) {
             return true;
         }
     } else if (source === 'PREBID' || source === 'PREBID_USERSYNC') {
-        const inGamIdx = secureSignals.gamOnly.findIndex(s => s.provider === provider);
+        const inGamIdx = secureSignals.gamOnly.findIndex(s => normalizeProviderName(s.provider) === normalizedNewProvider);
         if (inGamIdx !== -1) {
             // It was in GAM, now we see it's also in Prebid -> Move to Shared!
             // keep the GAM value since it has the actual payload
             const existingGamSignal = secureSignals.gamOnly[inGamIdx];
             secureSignals.shared.push({
-                provider: provider,
+                provider: existingGamSignal.provider, // Prefer GAM's name
                 value: existingGamSignal.value,
                 timestamp: new Date().toISOString(),
                 source: 'prebid_matched'
@@ -70,10 +78,41 @@ function processIncomingSignal(provider, value, source) {
         }
 
         // Not in GAM yet, must be Prebid Only for now
-        if (!secureSignals.prebidOnly.some(s => s.provider === provider)) {
+        if (!secureSignals.prebidOnly.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
             secureSignals.prebidOnly.push({
                 provider: provider,
                 value: value,
+                timestamp: new Date().toISOString(),
+                source: source
+            });
+            return true;
+        }
+    } else if (source === 'PREBID_EID') {
+        let updated = false;
+
+        const inSharedIdx = secureSignals.shared.findIndex(s => normalizeProviderName(s.provider) === normalizedNewProvider);
+        if (inSharedIdx !== -1) {
+            if (secureSignals.shared[inSharedIdx].prebidValue !== value) {
+                secureSignals.shared[inSharedIdx].prebidValue = value;
+                updated = true;
+            }
+        }
+
+        const inPrebidIdx = secureSignals.prebidOnly.findIndex(s => normalizeProviderName(s.provider) === normalizedNewProvider);
+        if (inPrebidIdx !== -1) {
+            if (secureSignals.prebidOnly[inPrebidIdx].prebidValue !== value) {
+                secureSignals.prebidOnly[inPrebidIdx].prebidValue = value;
+                updated = true;
+            }
+        }
+
+        if (updated) return true;
+
+        if (!secureSignals.prebidOnly.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
+            secureSignals.prebidOnly.push({
+                provider: provider,
+                value: 'Generated EID Payload',
+                prebidValue: value,
                 timestamp: new Date().toISOString(),
                 source: source
             });
