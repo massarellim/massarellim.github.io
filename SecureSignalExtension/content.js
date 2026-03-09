@@ -16,42 +16,53 @@ function saveSignalsToStorage() {
 
 // 1. Scrape existing localStorage for _GESPSK keys
 try {
+    // Copy keys first to avoid iterating over a mutating storage object
+    const storageKeys = [];
     for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('_GESPSK-')) {
-            const providerName = key.replace('_GESPSK-', '');
-            let rawValue = localStorage.getItem(key);
-            let parsedValue = rawValue;
+        storageKeys.push(localStorage.key(i));
+    }
 
-            // Many Secure Signal providers store a JSON object in localStorage
-            // e.g. {"signal":"<the_actual_signal>","timestamp":123456789}
-            // We should attempt to parse it and extract the inner signal to look cleaner.
+    for (const key of storageKeys) {
+        if (key && key.startsWith('_GESPSK-')) {
             try {
-                const jsonObj = JSON.parse(rawValue);
-                if (jsonObj && typeof jsonObj === 'object') {
-                    // Try common keys if it's an object
-                    if (jsonObj.signal) {
-                        parsedValue = jsonObj.signal;
-                    } else if (jsonObj.v) {
-                        parsedValue = jsonObj.v;
+                const providerName = key.replace('_GESPSK-', '');
+                // NOTE: We MUST just READ the value safely.
+                const rawValue = localStorage.getItem(key);
+                let parsedValue = rawValue;
+
+                if (rawValue) {
+                    try {
+                        const jsonObj = JSON.parse(rawValue);
+                        if (jsonObj && typeof jsonObj === 'object') {
+                            if (jsonObj.signal !== undefined) {
+                                parsedValue = jsonObj.signal;
+                            } else if (jsonObj.v !== undefined) {
+                                parsedValue = jsonObj.v;
+                            }
+                        }
+                    } catch(e) { 
+                        // It's just a raw string, use as is 
                     }
                 }
-            } catch(e) { /* It's just a raw string, use as is */ }
-            
-            secureSignals.push({
-                provider: providerName,
-                value: parsedValue,
-                timestamp: new Date().toISOString(),
-                source: 'localStorage'
-            });
-            console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
+                
+                secureSignals.push({
+                    provider: providerName,
+                    value: typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue),
+                    timestamp: new Date().toISOString(),
+                    source: 'localStorage'
+                });
+                console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
+            } catch(e) {
+                console.warn('[SecureSignal Extension] Error parsing specific key', key, e);
+            }
         }
     }
+    
     if (secureSignals.length > 0) {
         saveSignalsToStorage();
     }
 } catch (e) {
-    console.warn('[SecureSignal Extension] Could not access localStorage', e);
+    console.warn('[SecureSignal Extension] Could not access localStorage at all', e);
 }
 
 // 2. Listen for messages from the injected script

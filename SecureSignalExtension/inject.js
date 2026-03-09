@@ -44,8 +44,16 @@
                         return target.push(...args);
                     };
                 }
-                // Forward everything else to original array/object (like clearAllCache)
-                return typeof target[prop] === 'function' ? target[prop].bind(target) : target[prop];
+                
+                // For other array/object properties, bind functions to the original array 
+                // to maintain correct "this" context (crucial for native GPT methods like clearAllCache)
+                const value = target[prop];
+                if (typeof value === 'function') {
+                    return function(...args) {
+                        return value.apply(target, args);
+                    };
+                }
+                return value;
             }
         });
     } else {
