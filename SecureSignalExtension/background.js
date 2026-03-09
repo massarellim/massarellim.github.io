@@ -7,19 +7,60 @@
 function decodeBase64UrlSafe(str) {
   if (!str || typeof str !== 'string') return null;
   try {
-    if (str.includes('{') || str.includes(' ')) return null;
-    const cleanStr = str.replace(/[^a-zA-Z0-9\-_]/g, '');
-    if (cleanStr.length !== str.length) return null;
-
     let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
     while (b64.length % 4) b64 += '=';
     
-    const decoded = atob(b64);
+    let decodedStr = atob(b64);
+    
+    // GAM often URL-encodes the JSON before base64 encoding it
     try {
-      return JSON.parse(decoded);
+        decodedStr = decodeURIComponent(decodedStr);
+    } catch(e) {}
+    
+    // Parse the outer array
+    let parsedArr = null;
+    try {
+      parsedArr = JSON.parse(decodedStr);
     } catch(e) {
-      return /^[\x20-\x7E]*$/.test(decoded) ? decoded : null;
+      // Fallback: The string might just be text
+      return /^[\x20-\x7E]*$/.test(decodedStr) ? decodedStr : null;
     }
+    
+    // Check if it's the expected GAM array format [ [1, "id", 1], [domain, "id", 1] ]
+    if (Array.isArray(parsedArr)) {
+        return parsedArr.map(signalObj => {
+            if (Array.isArray(signalObj) && signalObj.length >= 2) {
+               let providerValue = signalObj[0];
+               let payloadValue = signalObj[1];
+               
+               // Attempt to map numeric integer provider IDs back to recognizable string names
+               // if they are standard Prebid ones. If it is already a string (like a domain), use it.
+               let providerName = String(providerValue);
+               
+               // Attempt to deep-decode nested JSON payloads inside the array
+               let finalPayload = payloadValue;
+               if (typeof payloadValue === 'string') {
+                   try {
+                       // Try to see if this inner string is itself also URL-safe base64 / regular base64
+                       let innerB64 = payloadValue.replace(/-/g, '+').replace(/_/g, '/');
+                       while (innerB64.length % 4) innerB64 += '=';
+                       let innerDecoded = atob(innerB64);
+                       finalPayload = JSON.parse(innerDecoded);
+                   } catch(e) {
+                       // Not valid base64 JSON, just keep the raw string
+                   }
+               }
+               
+               return {
+                   provider: providerName,
+                   payload: finalPayload
+               };
+            }
+            return signalObj; // Return raw if structure is unknown
+        });
+    }
+
+    return parsedArr; // Return raw JSON if it's not the GAM array
   } catch(e) {
     return null;
   }
@@ -118,7 +159,7 @@ chrome.webRequest.onBeforeRequest.addListener(
           if (!paramValue) return;
           
           let decoded = decodeBase64UrlSafe(paramValue);
-          let assignedAdUnit = adUnitsList[index] || adUnitsList[0] || 'Unknown AdUnit';
+          let assignedAdUnit = adUnitsList.length > 0 ? adUnitsList.join(', ') : 'Unknown AdUnit';
           
           if (decoded) {
              tabData.network.push({
