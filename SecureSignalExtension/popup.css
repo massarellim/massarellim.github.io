@@ -172,3 +172,68 @@ body {
   color: #d8b4fe;
   border: 1px solid rgba(167, 139, 250, 0.4);
 }
+
+/* Collapsible HTML5 Details */
+.raw-details summary {
+  list-style: none; /* Hide default arrow */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  outline: none;
+}
+.raw-details summary::-webkit-details-marker {
+  display: none;
+}
+.raw-details .expand-icon {
+  font-size: 10px;
+  transition: transform 0.2s;
+  color: var(--accent);
+}
+.raw-details[open] .expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Extracted Identifiers Layout */
+.provider-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.provider-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.provider-name {
+  font-weight: 600;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.provider-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  word-break: break-all;
+  background: rgba(0,0,0,0.2);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.provider-pill {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: monospace;
+}
