@@ -33,26 +33,9 @@
     }
   }
 
-  function hookArray(arr, signalType) {
-    if (!arr || arr.__validatorHooked) return;
-    
-    // Process existing elements
-    arr.forEach(provider => {
-      if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
-        const originalCollector = provider.collectorFunction;
-        provider.collectorFunction = function() {
-          const result = originalCollector.apply(this, arguments);
-          handlePromiseOrValue(result, signalType, provider.id || 'unknown');
-          return result;
-        };
-        provider.__validatorPatched = true;
-      }
-    });
-
-    // Hook array push method
-    const originalPush = arr.push;
-    arr.push = function(...args) {
-      args.forEach(provider => {
+  function processExistingProviders(arrayName, signalType) {
+    if (window.googletag && window.googletag[arrayName] && Array.isArray(window.googletag[arrayName])) {
+      window.googletag[arrayName].forEach(provider => {
         if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
           const originalCollector = provider.collectorFunction;
           provider.collectorFunction = function() {
@@ -63,62 +46,44 @@
           provider.__validatorPatched = true;
         }
       });
-      return originalPush.apply(this, args);
-    };
-    
-    arr.__validatorHooked = true;
+    }
   }
 
   function patchProviderArray(arrayName, signalType) {
-    let gt = window.googletag;
-    if (!gt) {
-      window.googletag = {};
-      gt = window.googletag;
-    }
-    if (!gt.cmd) {
-      gt.cmd = [];
-    }
-    
-    let currentArray = gt[arrayName] || [];
-    hookArray(currentArray, signalType);
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag[arrayName] = window.googletag[arrayName] || [];
 
-    try {
-      Object.defineProperty(gt, arrayName, {
-        get: function() {
-          return currentArray;
-        },
-        set: function(newArray) {
-          if (newArray === currentArray) return;
-          if (Array.isArray(newArray)) {
-            currentArray = newArray;
-            hookArray(currentArray, signalType);
+    // Process anything that was pushed before we arrived
+    processExistingProviders(arrayName, signalType);
+
+    // Proxy the array to intercept future pushes
+    if (typeof Proxy !== 'undefined' && !window.googletag[arrayName].__isProxied) {
+      window.googletag[arrayName] = new Proxy(window.googletag[arrayName], {
+        get(target, prop) {
+          if (prop === 'push') {
+            return function(...args) {
+              args.forEach(provider => {
+                if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
+                  const originalCollector = provider.collectorFunction;
+                  provider.collectorFunction = function() {
+                    const result = originalCollector.apply(this, arguments);
+                    handlePromiseOrValue(result, signalType, provider.id || 'unknown');
+                    return result;
+                  };
+                  provider.__validatorPatched = true;
+                }
+              });
+              return target.push(...args);
+            };
           }
-        },
-        enumerable: true,
-        configurable: true
+          if (prop === '__isProxied') return true;
+          const value = target[prop];
+          return (typeof value === 'function') ? value.bind(target) : value;
+        }
       });
-    } catch (e) {
-      console.warn('[Secure Signal Validator] Could not defineProperty for', arrayName, e);
     }
   }
-
-  // Intercept the entire window.googletag object in case a synchronous publisher tag brutally overwrites it
-  let _googletag = window.googletag || {};
-  try {
-    Object.defineProperty(window, 'googletag', {
-      get: function() { return _googletag; },
-      set: function(val) {
-        if (val === _googletag) return;
-        _googletag = val;
-        if (_googletag) {
-            patchProviderArray('secureSignalProviders', 'secureSignal');
-            patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
-        }
-      },
-      enumerable: true,
-      configurable: true
-    });
-  } catch (e) {}
 
   // Hook into googletag.cmd to ensure we catch everything even if googletag isn't fully loaded yet
   let gtInstance = window.googletag;
