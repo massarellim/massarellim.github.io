@@ -102,16 +102,26 @@ document.addEventListener('DOMContentLoaded', () => {
           let paramName = net.type === 'secureSignal' ? 'a3p' : 'ssj';
           
           let adUnitHtml = Array.isArray(net.adUnits) 
-             ? net.adUnits.map(u => `<div style="font-weight: 600; color: var(--accent); margin-bottom: 4px;">${u}</div>`).join('')
+             ? net.adUnits.map(u => `<div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">${u}</div>`).join('')
              : `<div style="font-weight: 600; color: var(--accent);">${net.adUnits || net.adUnit}</div>`;
             
           card.innerHTML = `
-            <div class="data-row">
-              <div class="data-label">AdUnits</div>
-              <div class="data-value">${adUnitHtml}</div>
+            <div class="data-row" style="margin-bottom: 12px;">
+              <details class="raw-details">
+                <summary class="data-label raw-summary" style="cursor: pointer; margin-bottom: 0; align-items: flex-start;">
+                   <div style="display: flex; flex-direction: column; width: 100%;">
+                     <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="text-transform: uppercase; letter-spacing: 0.05em;">AdUnits</span>
+                        <span style="display: flex; align-items: center; gap: 4px;">View Raw (${paramName}) <span class="expand-icon" style="margin-left: 2px;">▼</span></span>
+                     </div>
+                     ${adUnitHtml}
+                   </div>
+                </summary>
+                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
+              </details>
             </div>
             
-            <div class="data-row" style="margin-top: 12px;">
+            <div class="data-row">
               <div class="data-label">Extracted Providers & IDs</div>
               <div class="provider-grid">
                 ${
@@ -140,16 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   })()
                 }
               </div>
-            </div>
-
-            <div class="data-row" style="margin-top: 12px;">
-              <details class="raw-details">
-                <summary class="data-label raw-summary" style="cursor: pointer; margin-bottom: 0;">
-                   <span>View Raw Value (${paramName})</span>
-                   <span class="expand-icon">▼</span>
-                </summary>
-                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
-              </details>
             </div>
           `;
           
