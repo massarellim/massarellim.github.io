@@ -2,8 +2,10 @@
     window.googletag = window.googletag || {cmd: []};
     window.pbjs = window.pbjs || {que: []};
     window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+    window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
 
-    const originalPush = window.googletag.secureSignalProviders.push;
+    const originalSecurePush = window.googletag.secureSignalProviders.push;
+    const originalEncryptedPush = window.googletag.encryptedSignalProviders.push;
 
     const processProvider = (provider) => {
         if (!provider || !provider.id || typeof provider.collectorFunction !== 'function') return;
@@ -37,9 +39,9 @@
         };
     };
 
-    // Override push safely to intercept new providers added dynamically
-    if (typeof Proxy !== 'undefined') {
-        window.googletag.secureSignalProviders = new Proxy(window.googletag.secureSignalProviders, {
+    // Helper to create a proxy for provider arrays
+    const createProviderProxy = (targetArray) => {
+        return new Proxy(targetArray, {
             get(target, prop) {
                 if (prop === 'push') {
                     return function(...args) {
@@ -59,17 +61,32 @@
                 return value;
             }
         });
+    };
+
+    // Override push safely to intercept new providers added dynamically
+    if (typeof Proxy !== 'undefined') {
+        window.googletag.secureSignalProviders = createProviderProxy(window.googletag.secureSignalProviders);
+        window.googletag.encryptedSignalProviders = createProviderProxy(window.googletag.encryptedSignalProviders);
     } else {
         // Fallback if Proxy is not supported
         window.googletag.secureSignalProviders.push = function(...args) {
             args.forEach(provider => processProvider(provider));
-            return originalPush.apply(this, args);
+            return originalSecurePush.apply(this, args);
+        };
+        window.googletag.encryptedSignalProviders.push = function(...args) {
+            args.forEach(provider => processProvider(provider));
+            return originalEncryptedPush.apply(this, args);
         };
     }
 
     // Process providers that might have been pushed before our script ran
     if (window.googletag.secureSignalProviders.length > 0) {
         window.googletag.secureSignalProviders.forEach(provider => {
+            processProvider(provider);
+        });
+    }
+    if (window.googletag.encryptedSignalProviders.length > 0) {
+        window.googletag.encryptedSignalProviders.forEach(provider => {
             processProvider(provider);
         });
     }
