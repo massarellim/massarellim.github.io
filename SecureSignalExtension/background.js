@@ -80,11 +80,12 @@ chrome.webRequest.onBeforeRequest.addListener(
     if (details.tabId === -1) return;
     
     const url = new URL(details.url);
-    const a3p = url.searchParams.get('a3p');
-    const ssj = url.searchParams.get('ssj');
-    const iuParts = url.searchParams.get('iu_parts') || 'Unknown AdUnit';
+    const a3ps = url.searchParams.getAll('a3p');
+    const ssjs = url.searchParams.getAll('ssj');
+    const iuPartsVal = url.searchParams.get('iu_parts') || 'Unknown AdUnit';
+    // SRA requests might have multiple iu_parts separated by comma, but we'll store the raw string
     
-    if (a3p || ssj) {
+    if (a3ps.length > 0 || ssjs.length > 0) {
       const tabId = details.tabId;
       const key = `tab_${tabId}`;
       
@@ -102,7 +103,7 @@ chrome.webRequest.onBeforeRequest.addListener(
                type: type,
                rawParams: paramValue,
                decoded: decoded,
-               adUnit: iuParts,
+               adUnit: iuPartsVal,
                timestamp: Date.now()
              });
           } else {
@@ -110,18 +111,21 @@ chrome.webRequest.onBeforeRequest.addListener(
                type: type,
                rawParams: paramValue,
                decoded: "Failed to decode Base64",
-               adUnit: iuParts,
+               adUnit: iuPartsVal,
                timestamp: Date.now()
              });
           }
         };
 
-        processParam(a3p, 'secureSignal');
-        processParam(ssj, 'encryptedSignal');
+        a3ps.forEach(val => processParam(val, 'secureSignal'));
+        ssjs.forEach(val => processParam(val, 'encryptedSignal'));
         
         await chrome.storage.local.set({ [key]: tabData });
       });
     }
   },
-  { urls: ["*://securepubads.g.doubleclick.net/gampad/ads*"] }
+  { urls: [
+    "*://securepubads.g.doubleclick.net/gampad/ads*",
+    "*://*.doubleclick.net/gampad/ads*"
+  ] }
 );
