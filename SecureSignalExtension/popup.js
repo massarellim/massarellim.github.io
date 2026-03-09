@@ -10,18 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const activeTabId = tabs[0].id;
 
-        // Ensure we can safely message the content script
-        chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (response) => {
-            if (chrome.runtime.lastError) {
-                // Content script might not be loaded if it's an internal chrome page
-                showError('Content script not loaded.', chrome.runtime.lastError.message);
-                return;
-            }
-
-            if (response && response.signals && response.signals.length > 0) {
-                renderSignals(response.signals);
+        // Try to get from storage first, then fallback to message passing
+        chrome.storage.local.get(['secureSignals'], function(result) {
+            if (result.secureSignals && result.secureSignals.length > 0) {
+                renderSignals(result.secureSignals);
             } else {
-                showEmptyState('No secure signals detected on this page.');
+                // If storage is empty, try messaging the content script directly
+                chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        showError('No active content script detected for this page.', chrome.runtime.lastError.message);
+                        return;
+                    }
+
+                    if (response && response.signals && response.signals.length > 0) {
+                        renderSignals(response.signals);
+                    } else {
+                        showEmptyState('No secure signals detected on this page.');
+                    }
+                });
             }
         });
     });
@@ -96,5 +102,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${details ? \`<div class="error-message">\${details}</div>\` : ''}
             </div>
         `;
-    }
-});
+    });

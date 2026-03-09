@@ -14,12 +14,18 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data && event.data.type === 'SECURE_SIGNAL_DETECTED') {
-        secureSignals.push({
+        const newSignal = {
             provider: event.data.provider,
             value: event.data.value,
             timestamp: new Date().toISOString()
-        });
+        };
+        
+        secureSignals.push(newSignal);
         console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider}`);
+        
+        // Save to chrome local storage mapped by the URL or tab ID for the popup to read
+        // For simplicity across all frames on a page, we just save the latest signals array globally
+        chrome.storage.local.set({ secureSignals: secureSignals });
     }
 });
 
