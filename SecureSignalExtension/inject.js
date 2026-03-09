@@ -9,36 +9,33 @@
 
     // Deep extraction helper
     const extractRawId = (payload) => {
-        if (!payload) return null;
+        if (payload === null || payload === undefined) return String(payload);
         
         let obj = payload;
         // 1. If it's a string that looks like JSON, try to parse it
         if (typeof payload === 'string') {
             try {
                 const parsed = JSON.parse(payload);
-                if (parsed && typeof parsed === 'object') obj = parsed;
+                if (parsed !== null && typeof parsed === 'object') obj = parsed;
             } catch (e) {}
         }
         
         // 2. If it is an array, we assume index 1 is the raw ID (e.g. ["provider", "raw_id"])
         if (Array.isArray(obj)) {
-            if (obj.length >= 2) {
-                return (obj[1] === null || obj[1] === undefined) ? String(obj[1]) : 
-                       typeof obj[1] === 'object' ? JSON.stringify(obj[1]) : String(obj[1]);
-            }
+            if (obj.length >= 2) return extractRawId(obj[1]);
+            if (obj.length === 1) return extractRawId(obj[0]);
+            return '[]';
         }
         
         // 3. If it's an object with a uid or id field
         if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
-            if (obj.uid !== undefined) return typeof obj.uid === 'object' ? JSON.stringify(obj.uid) : String(obj.uid);
-            if (obj.id !== undefined) {
-                // Sometimes obj.id is another array!
-                return extractRawId(obj.id);
-            }
+            if (obj.uid !== undefined) return extractRawId(obj.uid);
+            if (obj.id !== undefined) return extractRawId(obj.id);
+            if (obj.value !== undefined) return extractRawId(obj.value);
         }
         
         // 4. Default stringification
-        return typeof payload === 'object' ? JSON.stringify(payload) : String(payload);
+        return typeof obj === 'object' ? JSON.stringify(obj) : String(obj);
     };
 
     const processProvider = (provider) => {

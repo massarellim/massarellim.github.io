@@ -17,6 +17,18 @@ function saveSignalsToStorage() {
     chrome.storage.local.set({ [pageUrl]: secureSignals.all });
 }
 
+chrome.storage.local.get([pageUrl], (result) => {
+    if (result[pageUrl]) {
+        // v2.4 Cleanup: Purge any legacy stringified array/object ghost data from local storage
+        secureSignals.all = result[pageUrl].filter(s => {
+            if (typeof s.value === 'string' && (s.value.startsWith('[') || s.value.startsWith('{'))) return false;
+            if (typeof s.prebidValue === 'string' && (s.prebidValue.startsWith('[') || s.prebidValue.startsWith('{'))) return false;
+            return true;
+        });
+        saveSignalsToStorage();
+    }
+});
+
 // Helper to normalize provider names since Prebid often appends .pbjs or similar suffixes to GAM
 function normalizeProviderName(name) {
     if (!name) return '';
@@ -53,13 +65,20 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
     // 1. Look for an existing signal with this normalized name
     let existingMatch = secureSignals.all.find(s => normalizeProviderName(s.provider) === normalizedNewProvider);
 
-    // 2. Exact Value Deduplication (v2.3)
+    // 2. Exact Value Deduplication (v2.3 refined)
     // If we couldn't find it by name, but we find the EXACT SAME payload already registered
-    // under a different alias, we merge the names rather than creating a duplicate UI card
+    // under a different alias, we merge ONLY IF the names are somewhat similar (e.g. id5-sync.com vs id5Id)
+    // We don't want to merge completely unrelated providers (amazon and id5) just because they both yielded null
     if (!existingMatch && value && value !== 'Registered in Prebid' && value !== 'Configured in userSync') {
         const valueMatch = secureSignals.all.find(s => {
             // Check both raw and encoded values
-             return s.value === value || s.prebidValue === value || encodeBase64UrlSafe(s.prebidValue) === value;
+             const valMatches = s.value === value || s.prebidValue === value || encodeBase64UrlSafe(s.prebidValue) === value;
+             if (!valMatches) return false;
+             
+             // Check string similarity (one includes the other, or they share first 3 characters)
+             const p1 = String(s.provider).toLowerCase();
+             const p2 = String(provider).toLowerCase();
+             return p1.includes(p2) || p2.includes(p1) || (p1.length >= 3 && p2.length >= 3 && p1.substring(0, 3) === p2.substring(0, 3));
         });
         
         if (valueMatch) {
