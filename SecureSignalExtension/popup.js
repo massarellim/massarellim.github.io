@@ -42,17 +42,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 1. Render Diagnostics Panel
                 const diagPanel = document.getElementById('diagnosticsPanel');
-                if (response.timeouts) {
-                    diagPanel.innerHTML = `
-                        <div class="diagnostic-item">
-                            <span>Prebid syncDelay:</span>
-                            <span class="diagnostic-value">${response.timeouts.syncDelay}</span>
-                        </div>
-                        <div class="diagnostic-item">
-                            <span>Prebid auctionDelay:</span>
-                            <span class="diagnostic-value">${response.timeouts.auctionDelay}</span>
-                        </div>
-                    `;
+                if (response.timeouts || response.globalFilterSettings) {
+                    let diagHtml = '';
+                    if (response.timeouts) {
+                        diagHtml += `
+                            <div class="diagnostic-item">
+                                <span>Prebid syncDelay:</span>
+                                <span class="diagnostic-value">${response.timeouts.syncDelay}</span>
+                            </div>
+                            <div class="diagnostic-item">
+                                <span>Prebid auctionDelay:</span>
+                                <span class="diagnostic-value">${response.timeouts.auctionDelay}</span>
+                            </div>
+                        `;
+                    }
+                    if (response.globalFilterSettings) {
+                        diagHtml += `
+                            <div class="diagnostic-item">
+                                <span>Global filterSettings:</span>
+                                <span class="diagnostic-value">Active</span>
+                            </div>
+                        `;
+                    }
+                    diagPanel.innerHTML = diagHtml;
                     diagPanel.style.display = 'flex';
                 } else {
                     diagPanel.style.display = 'none';
@@ -197,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Prebid Configuration (if exists)
             if (signal.configParams && Object.keys(signal.configParams).length > 0) {
                 card.appendChild(createPayloadBlock('Prebid Configuration (userSync params)', signal.configParams));
+            }
+
+            // 1.5 Prebid Bidders Allowlist (if exists)
+            if (signal.bidders && Array.isArray(signal.bidders) && signal.bidders.length > 0) {
+                card.appendChild(createPayloadBlock('Prebid Bidder Allowlist', signal.bidders));
             }
 
             // 2. Prebid EID Payload (if exists)

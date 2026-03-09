@@ -17,6 +17,8 @@ let globalTimeouts = {
     auctionDelay: 'Unknown'
 };
 
+let globalFilterSettings = null;
+
 function saveSignalsToStorage() {
     const pageUrl = window.location.href.split('?')[0].split('#')[0];
     const flatList = [
@@ -34,7 +36,7 @@ function normalizeProviderName(name) {
 }
 
 // Helper to add or reconcile a signal category
-function processIncomingSignal(provider, value, source, warning, configParams) {
+function processIncomingSignal(provider, value, source, warning, configParams, bidders) {
     const normalizedNewProvider = normalizeProviderName(provider);
 
     // Check if it's already in shared (and we have nothing new to add)
@@ -53,7 +55,8 @@ function processIncomingSignal(provider, value, source, warning, configParams) {
                 source: 'gam_matched',
                 prebidValue: secureSignals.prebidOnly[inPrebidIdx].prebidValue || 'Registered in Prebid',
                 warning: warning || secureSignals.prebidOnly[inPrebidIdx].warning,
-                configParams: configParams || secureSignals.prebidOnly[inPrebidIdx].configParams
+                configParams: configParams || secureSignals.prebidOnly[inPrebidIdx].configParams,
+                bidders: bidders || secureSignals.prebidOnly[inPrebidIdx].bidders
             });
             secureSignals.prebidOnly.splice(inPrebidIdx, 1);
             return true;
@@ -67,7 +70,8 @@ function processIncomingSignal(provider, value, source, warning, configParams) {
                 timestamp: new Date().toISOString(),
                 source: source,
                 warning: warning,
-                configParams: configParams
+                configParams: configParams,
+                bidders: bidders
             });
             return true;
         }
@@ -84,7 +88,8 @@ function processIncomingSignal(provider, value, source, warning, configParams) {
                 source: 'prebid_matched',
                 prebidValue: value,
                 warning: existingGamSignal.warning || warning,
-                configParams: existingGamSignal.configParams || configParams
+                configParams: existingGamSignal.configParams || configParams,
+                bidders: existingGamSignal.bidders || bidders
             });
             secureSignals.gamOnly.splice(inGamIdx, 1);
             return true;
@@ -97,7 +102,9 @@ function processIncomingSignal(provider, value, source, warning, configParams) {
                 value: value,
                 timestamp: new Date().toISOString(),
                 source: source,
-                warning: warning
+                warning: warning,
+                configParams: configParams,
+                bidders: bidders
             });
             return true;
         }
@@ -130,7 +137,8 @@ function processIncomingSignal(provider, value, source, warning, configParams) {
                 timestamp: new Date().toISOString(),
                 source: source,
                 warning: warning,
-                configParams: configParams
+                configParams: configParams,
+                bidders: bidders
             });
             return true;
         }
@@ -171,7 +179,7 @@ try {
                     }
                 }
                 
-                const isNew = processIncomingSignal(providerName, typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue), 'localStorage', null);
+                const isNew = processIncomingSignal(providerName, typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue), 'localStorage', null, null, null);
                 if (isNew) {
                     console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
                     didFindLocal = true;
@@ -195,12 +203,15 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data && event.data.type === 'SECURE_SIGNAL_DETECTED') {
-        // Cache global timeouts if provided
+        // Cache global timeouts and filterSettings if provided
         if (event.data.timeouts) {
             globalTimeouts = event.data.timeouts;
         }
+        if (event.data.globalFilterSettings) {
+            globalFilterSettings = event.data.globalFilterSettings;
+        }
 
-        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning, event.data.configParams);
+        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning, event.data.configParams, event.data.bidders);
         if (isNew) {
             console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider} via ${event.data.source || 'GAM'}`);
             saveSignalsToStorage();
@@ -213,7 +224,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GET_SECURE_SIGNALS') {
         sendResponse({ 
             signals: secureSignals,
-            timeouts: globalTimeouts
+            timeouts: globalTimeouts,
+            globalFilterSettings: globalFilterSettings
         });
     }
     return true; // Keeps the sendResponse channel open if needed

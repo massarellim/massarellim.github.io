@@ -101,11 +101,13 @@
             if (window.pbjs && typeof window.pbjs.getConfig === 'function') {
                 const config = window.pbjs.getConfig();
                 
-                // Extract global timeouts
+                // Extract global timeouts and filterSettings
                 const timeouts = {
                     syncDelay: (config && config.userSync && config.userSync.syncDelay) || 'Not set',
                     auctionDelay: (config && config.userSync && config.userSync.auctionDelay) || 'Not set'
                 };
+                
+                const globalFilterSettings = (config && config.userSync && config.userSync.filterSettings) || null;
 
                 if (config && config.userSync && Array.isArray(config.userSync.userIds)) {
                     config.userSync.userIds.forEach(idModule => {
@@ -115,6 +117,15 @@
                         if (!idModule.params || Object.keys(idModule.params).length === 0) {
                             warningMsg = "Warning: Configured without required 'params'. The provider may fail to generate an ID.";
                         }
+                        
+                        // Validate bidders allowlist against GAM
+                        const gamBidders = ['gam', 'gpad', 'google'];
+                        if (idModule.bidders && Array.isArray(idModule.bidders)) {
+                            const isGamAllowed = idModule.bidders.some(bidder => gamBidders.includes(bidder.toLowerCase()));
+                            if (!isGamAllowed) {
+                                warningMsg = "Warning: Blocked from GAM by Prebid ID module 'bidders' allowlist.";
+                            }
+                        }
 
                         window.postMessage({
                             type: 'SECURE_SIGNAL_DETECTED',
@@ -123,7 +134,9 @@
                             value: 'Configured in userSync',
                             warning: warningMsg,
                             timeouts: timeouts,
-                            configParams: idModule.params || {}
+                            globalFilterSettings: globalFilterSettings,
+                            configParams: idModule.params || {},
+                            bidders: idModule.bidders || null
                         }, '*');
                         console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
                     });
