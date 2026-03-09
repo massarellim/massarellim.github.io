@@ -70,18 +70,25 @@
   }
 
   function patchProviderArray(arrayName, signalType) {
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
+    let gt = window.googletag;
+    if (!gt) {
+      window.googletag = {};
+      gt = window.googletag;
+    }
+    if (!gt.cmd) {
+      gt.cmd = [];
+    }
     
-    let currentArray = window.googletag[arrayName] || [];
+    let currentArray = gt[arrayName] || [];
     hookArray(currentArray, signalType);
 
     try {
-      Object.defineProperty(window.googletag, arrayName, {
+      Object.defineProperty(gt, arrayName, {
         get: function() {
           return currentArray;
         },
         set: function(newArray) {
+          if (newArray === currentArray) return;
           if (Array.isArray(newArray)) {
             currentArray = newArray;
             hookArray(currentArray, signalType);
@@ -101,6 +108,7 @@
     Object.defineProperty(window, 'googletag', {
       get: function() { return _googletag; },
       set: function(val) {
+        if (val === _googletag) return;
         _googletag = val;
         if (_googletag) {
             patchProviderArray('secureSignalProviders', 'secureSignal');
