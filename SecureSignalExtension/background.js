@@ -25,13 +25,23 @@ function decodeBase64UrlSafe(str) {
   }
 }
 
+// Mutex lock to prevent async storage race conditions
+const tabLocks = {};
+function runWithLock(tabId, asyncFn) {
+  if (!tabLocks[tabId]) tabLocks[tabId] = Promise.resolve();
+  tabLocks[tabId] = tabLocks[tabId].then(async () => {
+    try { await asyncFn(); } catch (e) { console.error(e); }
+  });
+}
+
 // 1. Listen for messages from content.js (injected signals)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'log_injected_signal' && sender.tab) {
     const tabId = sender.tab.id;
     const key = `tab_${tabId}`;
     
-    chrome.storage.local.get([key], (res) => {
+    runWithLock(tabId, async () => {
+      const res = await chrome.storage.local.get([key]);
       let tabData = res[key] || { injected: [], network: [] };
       const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
       
@@ -48,7 +58,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         tabData.injected.push(signalData);
       }
       
-      chrome.storage.local.set({ [key]: tabData });
+      await chrome.storage.local.set({ [key]: tabData });
     });
   }
 });
@@ -58,7 +68,9 @@ chrome.webNavigation.onCommitted.addListener((details) => {
   if (details.frameId === 0) { // Main frame
     const tabId = details.tabId;
     const key = `tab_${tabId}`;
-    chrome.storage.local.set({ [key]: { injected: [], network: [] } });
+    runWithLock(tabId, async () => {
+      await chrome.storage.local.set({ [key]: { injected: [], network: [] } });
+    });
   }
 });
 
@@ -75,7 +87,8 @@ chrome.webRequest.onBeforeRequest.addListener(
       const tabId = details.tabId;
       const key = `tab_${tabId}`;
       
-      chrome.storage.local.get([key], (res) => {
+      runWithLock(tabId, async () => {
+        const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
         
         const processParam = (paramValue, type) => {
@@ -103,7 +116,7 @@ chrome.webRequest.onBeforeRequest.addListener(
         processParam(a3p, 'secureSignal');
         processParam(ssj, 'encryptedSignal');
         
-        chrome.storage.local.set({ [key]: tabData });
+        await chrome.storage.local.set({ [key]: tabData });
       });
     }
   },

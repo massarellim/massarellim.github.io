@@ -90,6 +90,37 @@ document.addEventListener('DOMContentLoaded', () => {
         
         listEl.appendChild(card);
       });
+      
+      // Render all raw network signals
+      const networkListEl = document.getElementById('network-list');
+      if (network.length === 0) {
+        networkListEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No network signals intercepted.</p>';
+      } else {
+        network.forEach((net, index) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          
+          let typeBadge = net.type === 'secureSignal' 
+            ? '<span class="badge badge-secure">Secure Signal (a3p)</span>' 
+            : '<span class="badge badge-encrypted">Encrypted Signal (ssj)</span>';
+            
+          card.innerHTML = `
+            <h3 class="signal-provider-name">${typeBadge} Request #${index + 1}</h3>
+            
+            <div class="data-row">
+              <div class="data-label">Decoded Parameter JSON</div>
+              <div class="data-value">${JSON.stringify(net.decoded, null, 2)}</div>
+            </div>
+            
+            <div class="data-row" style="margin-top: 12px;">
+              <div class="data-label">Raw Base64 Value</div>
+              <div class="data-value" style="opacity: 0.7; font-size: 10px;">${net.rawParams}</div>
+            </div>
+          `;
+          
+          networkListEl.appendChild(card);
+        });
+      }
     });
   });
 });
