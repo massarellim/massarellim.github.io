@@ -82,8 +82,29 @@ chrome.webRequest.onBeforeRequest.addListener(
     const url = new URL(details.url);
     const a3ps = url.searchParams.getAll('a3p');
     const ssjs = url.searchParams.getAll('ssj');
-    const iuPartsVal = url.searchParams.get('iu_parts') || 'Unknown AdUnit';
-    // SRA requests might have multiple iu_parts separated by comma, but we'll store the raw string
+    
+    // Check for iu compression
+    const iuPartsRaw = url.searchParams.get('iu_parts');
+    const encPrevIusRaw = url.searchParams.get('enc_prev_ius');
+    const prevIusRaw = url.searchParams.get('prev_ius'); // Sometimes GAM uses prev_ius without enc
+    const singleIu = url.searchParams.get('iu');
+    
+    // Build the ad units list
+    let adUnitsList = [];
+    if (singleIu) {
+      adUnitsList.push(singleIu);
+    } else if (iuPartsRaw && (encPrevIusRaw || prevIusRaw)) {
+      const parts = iuPartsRaw.split(',');
+      const prevs = (encPrevIusRaw || prevIusRaw).split(',');
+      
+      prevs.forEach(prev => {
+        const indices = prev.split('/').filter(Boolean).map(Number);
+        const reconstructed = indices.map(idx => parts[idx]).join('/');
+        adUnitsList.push(reconstructed);
+      });
+    } else if (iuPartsRaw) {
+       adUnitsList.push(iuPartsRaw);
+    }
     
     if (a3ps.length > 0 || ssjs.length > 0) {
       const tabId = details.tabId;
@@ -93,17 +114,18 @@ chrome.webRequest.onBeforeRequest.addListener(
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
         
-        const processParam = (paramValue, type) => {
+        const processParam = (paramValue, type, index) => {
           if (!paramValue) return;
           
           let decoded = decodeBase64UrlSafe(paramValue);
+          let assignedAdUnit = adUnitsList[index] || adUnitsList[0] || 'Unknown AdUnit';
           
           if (decoded) {
              tabData.network.push({
                type: type,
                rawParams: paramValue,
                decoded: decoded,
-               adUnit: iuPartsVal,
+               adUnit: assignedAdUnit,
                timestamp: Date.now()
              });
           } else {
@@ -111,14 +133,14 @@ chrome.webRequest.onBeforeRequest.addListener(
                type: type,
                rawParams: paramValue,
                decoded: "Failed to decode Base64",
-               adUnit: iuPartsVal,
+               adUnit: assignedAdUnit,
                timestamp: Date.now()
              });
           }
         };
 
-        a3ps.forEach(val => processParam(val, 'secureSignal'));
-        ssjs.forEach(val => processParam(val, 'encryptedSignal'));
+        a3ps.forEach((val, idx) => processParam(val, 'secureSignal', idx));
+        ssjs.forEach((val, idx) => processParam(val, 'encryptedSignal', idx));
         
         await chrome.storage.local.set({ [key]: tabData });
       });
