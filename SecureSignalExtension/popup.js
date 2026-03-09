@@ -9,11 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const activeTabId = tabs[0].id;
+        const pageUrl = tabs[0].url.split('?')[0].split('#')[0]; // match content.js logic
 
         // Try to get from storage first, then fallback to message passing
-        chrome.storage.local.get(['secureSignals'], function(result) {
-            if (result.secureSignals && result.secureSignals.length > 0) {
-                renderSignals(result.secureSignals);
+        chrome.storage.local.get([pageUrl], function(result) {
+            if (result[pageUrl] && result[pageUrl].length > 0) {
+                renderSignals(result[pageUrl]);
             } else {
                 // If storage is empty, try messaging the content script directly
                 chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (response) => {

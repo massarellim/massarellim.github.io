@@ -23,9 +23,9 @@ window.addEventListener('message', (event) => {
         secureSignals.push(newSignal);
         console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider}`);
         
-        // Save to chrome local storage mapped by the URL or tab ID for the popup to read
-        // For simplicity across all frames on a page, we just save the latest signals array globally
-        chrome.storage.local.set({ secureSignals: secureSignals });
+        // Save to chrome local storage mapped by the URL so pages don't bleed into each other
+        const pageUrl = window.location.href.split('?')[0].split('#')[0]; // simple base URL
+        chrome.storage.local.set({ [pageUrl]: secureSignals });
     }
 });
 
