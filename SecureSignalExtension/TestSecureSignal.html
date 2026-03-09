@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Secure Signal Extension</title>
+</head>
+<body>
+    <h1>Testing Secure Signals</h1>
+    <p>Check the extension popup to see if the secure signals below were intercepted.</p>
+    <script>
+        window.googletag = window.googletag || {cmd: []};
+        window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+        
+        // 1. Push a test provider returning a Promise
+        window.googletag.secureSignalProviders.push({
+            id: 'mock_uid_provider_promise',
+            collectorFunction: () => {
+                return new Promise(resolve => {
+                    setTimeout(() => resolve('mock_signal_promise_12345'), 500);
+                });
+            }
+        });
+
+        // 2. Push another test provider returning a direct value
+        window.googletag.secureSignalProviders.push({
+            id: 'mock_uid_provider_direct',
+            collectorFunction: () => {
+                return 'mock_signal_direct_67890';
+            }
+        });
+
+        // Simulate GPT evaluating them:
+        setTimeout(() => {
+            window.googletag.secureSignalProviders.forEach(provider => {
+                if (typeof provider.collectorFunction === 'function') {
+                    const result = provider.collectorFunction();
+                    if (result && typeof result.then === 'function') {
+                        result.then(val => { console.log("GPT collected (promise):", val); });
+                    } else {
+                        console.log("GPT collected (direct):", result);
+                    }
+                }
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
