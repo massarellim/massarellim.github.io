@@ -208,6 +208,21 @@ body {
   background: rgba(59, 130, 246, 0.2);
 }
 
+.raw-summary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.raw-summary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 /* Extracted Identifiers Layout */
 .provider-grid {
   display: flex;

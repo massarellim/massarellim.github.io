@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <div class="data-row" style="margin-top: 12px;">
               <details class="raw-details">
-                <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                <summary class="data-label raw-summary" style="cursor: pointer; margin-bottom: 0;">
                    <span>View Raw Value (${paramName})</span>
                    <span class="expand-icon">▼</span>
                 </summary>
