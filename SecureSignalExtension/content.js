@@ -19,13 +19,33 @@ function saveSignalsToStorage() {
 
 chrome.storage.local.get([pageUrl], (result) => {
     if (result[pageUrl]) {
-        // v2.4 Cleanup: Purge any legacy stringified array/object ghost data from local storage
+        // v2.7 Cleanup: Arrays were saved as objects in v1.19 cache! We must extract them or purge them.
+        let hasUpdates = false;
         secureSignals.all = result[pageUrl].filter(s => {
-            if (typeof s.value === 'string' && (s.value.startsWith('[') || s.value.startsWith('{'))) return false;
-            if (typeof s.prebidValue === 'string' && (s.prebidValue.startsWith('[') || s.prebidValue.startsWith('{'))) return false;
+            // If the cached value is an actual Object/Array (from v1.19), delete the card entirely so we can re-harvest it cleanly
+            if (s.value !== null && typeof s.value === 'object') {
+                hasUpdates = true;
+                return false; 
+            }
+            if (s.prebidValue !== null && typeof s.prebidValue === 'object') {
+                hasUpdates = true;
+                return false;
+            }
+            // If the cached value is a stringified Array/Object (from v2.1/2.2)
+            if (typeof s.value === 'string' && (s.value.startsWith('[') || s.value.startsWith('{'))) {
+                hasUpdates = true;
+                return false;
+            }
+            if (typeof s.prebidValue === 'string' && (s.prebidValue.startsWith('[') || s.prebidValue.startsWith('{'))) {
+                hasUpdates = true;
+                return false;
+            }
             return true;
         });
-        saveSignalsToStorage();
+        
+        if (hasUpdates) {
+            saveSignalsToStorage();
+        }
     }
 });
 
