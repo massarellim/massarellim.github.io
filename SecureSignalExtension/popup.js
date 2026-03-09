@@ -112,16 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             
             <div class="data-row" style="margin-top: 12px;">
-              <details class="raw-details">
-                <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
-                   <span>View Raw Value (${paramName})</span>
-                   <span class="expand-icon">▼</span>
-                </summary>
-                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
-              </details>
-            </div>
-            
-            <div class="data-row" style="margin-top: 12px;">
               <div class="data-label">Extracted Providers & IDs</div>
               <div class="provider-grid">
                 ${
@@ -134,8 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
                                 return `
                                   <details class="raw-details provider-card">
-                                    <summary class="provider-summary" style="cursor: pointer;">
-                                      <span class="provider-title"><span class="provider-name">${s.provider}</span></span>
+                                    <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                                      <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${s.provider}</span></span>
                                       <span class="expand-icon">▼</span>
                                     </summary>
                                     <div class="provider-id" title="${valString}">${valString}</div>
@@ -150,6 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
                   })()
                 }
               </div>
+            </div>
+
+            <div class="data-row" style="margin-top: 12px;">
+              <details class="raw-details">
+                <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                   <span>View Raw Value (${paramName})</span>
+                   <span class="expand-icon">▼</span>
+                </summary>
+                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
+              </details>
             </div>
           `;
           

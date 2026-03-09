@@ -217,13 +217,8 @@ body {
 }
 
 .provider-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .provider-name {
