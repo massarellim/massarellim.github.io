@@ -113,7 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             <div class="data-row" style="margin-top: 12px;">
               <details class="raw-details">
-                <summary class="data-label" style="cursor: pointer; margin-bottom: 0;">View Raw Value (${paramName}) <span class="expand-icon">▼</span></summary>
+                <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                   <span>View Raw Value (${paramName})</span>
+                   <span class="expand-icon">▼</span>
+                </summary>
                 <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
               </details>
             </div>
@@ -124,18 +127,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${
                   (function() {
                      if (net.decoded && net.decoded.format === 'protobuf/binary' && net.decoded.extracted_strings) {
-                         // It's a binary dump, just list the strings
                          return net.decoded.extracted_strings.map(s => `<div class="provider-pill">${s}</div>`).join('');
                      } else if (Array.isArray(net.decoded)) {
-                         // It's a mapped array of {provider, payload}
                          return net.decoded.map(s => {
                             if (s && s.provider) {
                                 let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
                                 return `
-                                  <div class="provider-card">
-                                    <div class="provider-name">${s.provider}</div>
+                                  <details class="raw-details provider-card">
+                                    <summary class="provider-summary" style="cursor: pointer;">
+                                      <span class="provider-title"><span class="provider-name">${s.provider}</span></span>
+                                      <span class="expand-icon">▼</span>
+                                    </summary>
                                     <div class="provider-id" title="${valString}">${valString}</div>
-                                  </div>
+                                  </details>
                                 `;
                             }
                             return `<div class="provider-pill">${JSON.stringify(s)}</div>`;

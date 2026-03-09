@@ -39,6 +39,7 @@ body {
   font-weight: 600;
   background: linear-gradient(to right, #60a5fa, #a78bfa);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -189,8 +190,22 @@ body {
   transition: transform 0.2s;
   color: var(--accent);
 }
-.raw-details[open] .expand-icon {
+.raw-details[open] > summary .expand-icon {
   transform: rotate(180deg);
+}
+
+.prominent-summary {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #93c5fd;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.prominent-summary:hover {
+  background: rgba(59, 130, 246, 0.2);
 }
 
 /* Extracted Identifiers Layout */
@@ -217,14 +232,24 @@ body {
   font-size: 13px;
 }
 
+.provider-summary {
+  padding: 4px 0;
+}
+
+.provider-summary:hover .provider-name {
+  color: #93c5fd;
+}
+
 .provider-id {
   font-family: monospace;
   font-size: 11px;
   color: #94a3b8;
   word-break: break-all;
   background: rgba(0,0,0,0.2);
-  padding: 4px 6px;
+  padding: 6px 8px;
   border-radius: 4px;
+  margin-top: 6px;
+  border-left: 2px solid var(--accent);
 }
 
 .provider-pill {
