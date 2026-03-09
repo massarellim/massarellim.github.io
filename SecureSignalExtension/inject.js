@@ -392,11 +392,23 @@
                         
                         // Iterate through each provider in the network payload and beam it back to content.js
                         Object.keys(payloadJson).forEach(providerId => {
+                            const rawNetworkValue = payloadJson[providerId];
+                            let finalValue = rawNetworkValue;
+                            
+                            // v2.6 Fix: Network values (like in a3p or ssj) are almost always Base64 encoded strings!
+                            // We MUST decode them first before extractRawId can hunt for the JSON arrays inside them.
+                            if (typeof rawNetworkValue === 'string') {
+                                const decodedInner = decodeUrlSafeBase64(rawNetworkValue);
+                                if (decodedInner) {
+                                    finalValue = decodedInner;
+                                }
+                            }
+                            
                             window.postMessage({
                                 type: 'SECURE_SIGNAL_DETECTED',
                                 source: 'GAM_NETWORK_REQUEST',
                                 provider: providerId,
-                                value: extractRawId(payloadJson[providerId]), // MUST EXTRACT OR WE SEND FULL ARRAYS
+                                value: extractRawId(finalValue), // Now extract from the decoded plaintext array
                                 networkParam: sourceName // 'a3p' or 'ssj'
                             }, '*');
                         });
