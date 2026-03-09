@@ -1,29 +1,44 @@
 {
   "manifest_version": 3,
-  "name": "Secure Signal Monitor",
-  "version": "2.7",
-  "description": "Monitors and displays GPT Secure Signals.",
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "name": "Secure Signal Validator",
+  "version": "1.0.0",
+  "description": "Intercepts and validates Secure Signals and Encrypted Signals sent to Google Ad Manager.",
   "permissions": [
-    "activeTab",
+    "webRequest",
+    "storage",
     "scripting",
-    "storage"
+    "activeTab"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start",
-      "all_frames": true
-    },
-    {
-      "matches": ["<all_urls>"],
-      "js": ["inject.js"],
-      "run_at": "document_start",
-      "world": "MAIN",
       "all_frames": true
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "inject.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Secure Signal Validator"
+  }
 }

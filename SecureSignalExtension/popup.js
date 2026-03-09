@@ -1,273 +1,95 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Removed tab logic for single view
-
-    // Query the active tab to send a message
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (!tabs || tabs.length === 0) {
-            showError('Cannot access the current tab.');
-            return;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
+    const tabId = tabs[0].id;
+    const key = `tab_${tabId}`;
+    
+    chrome.storage.local.get([key], (res) => {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('results').classList.remove('hidden');
+      
+      const data = res[key] || { injected: [], network: [] };
+      const injected = data.injected || [];
+      const network = data.network || [];
+      
+      document.getElementById('stat-injected').textContent = injected.length;
+      document.getElementById('stat-network').textContent = network.length;
+      
+      const listEl = document.getElementById('reconciled-list');
+      
+      if (injected.length === 0) {
+        listEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No secure or encrypted signals intercepted on this page yet.</p>';
+        return;
+      }
+      
+      // We will render each injected signal
+      injected.forEach(signal => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        let typeBadge = '';
+        if (signal.type === 'secureSignal') {
+          typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
+        } else {
+          typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
         }
-
-        const activeTabId = tabs[0].id;
-        const pageUrl = tabs[0].url.split('?')[0].split('#')[0]; // match content.js logic
-
-        // Try to get from storage first, then fallback to message passing
-        chrome.storage.local.get([pageUrl], function(result) {
-            if (result[pageUrl] && result[pageUrl].length > 0) {
-                renderAllSignals(result[pageUrl]);
-            } else {
-                // If storage is empty, message content script just in case
-                renderSignals();
-            }
-        });
-    });
-
-    function renderSignals() {
-        chrome.runtime.sendMessage({ type: 'GET_SECURE_SIGNALS' }, (response) => {
-            if (response && response.signals) {
-                const signals = response.signals;
-
-                // 1. Render Diagnostics Panel
-                const diagPanel = document.getElementById('diagnosticsPanel');
-                if (response.timeouts || response.globalFilterSettings) {
-                    let diagHtml = '';
-                    if (response.timeouts) {
-                        diagHtml += `
-                            <div class="diagnostic-item">
-                                <span>Prebid syncDelay:</span>
-                                <span class="diagnostic-value">${response.timeouts.syncDelay}</span>
-                            </div>
-                            <div class="diagnostic-item">
-                                <span>Prebid auctionDelay:</span>
-                                <span class="diagnostic-value">${response.timeouts.auctionDelay}</span>
-                            </div>
-                        `;
-                    }
-                    if (response.globalFilterSettings) {
-                        diagHtml += `
-                            <div class="diagnostic-item">
-                                <span>Global filterSettings:</span>
-                                <span class="diagnostic-value">Active</span>
-                            </div>
-                        `;
-                    }
-                    diagPanel.innerHTML = diagHtml;
-                    diagPanel.style.display = 'flex';
-                } else {
-                    diagPanel.style.display = 'none';
-                }
-                chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (tabResponse) => {
-                    if (chrome.runtime.lastError) {
-                        showErrorAll('No active content script detected for this page.', chrome.runtime.lastError.message);
-                        return;
-                    }
-
-                    if (tabResponse && tabResponse.signals && tabResponse.signals.length > 0) {
-                        renderAllSignals(tabResponse.signals);
-                    } else {
-                        showEmptyStateAll();
-                    }
-                });
-            }
-        });
-    }
-
-    function renderAllSignals(signals) {
-        renderSignalGroup(document.getElementById('signals-all'), signals, 'No secure signals detected on this page.');
-    }
-
-    function decodeBase64UrlSafe(str) {
-        if (!str || typeof str !== 'string') return null;
+        
+        // Find if this signal exists in the decoded network stream
+        let sentInNetwork = false;
+        let matchedNetworkPayload = null;
+        
+        // We do a naive substring search for the primitive payload representation in the whole network stream
+        // This is highly resilient to GAM base64 schema variations.
+        let stringifiedInjectedPayload = "";
         try {
-            // Check if it explicitly has spaces or brackets, then it's probably already decoded/JSON
-            if (str.includes('{') || str.includes(' ')) return null;
-            
-            // Validate it only contains URL-safe base64 characters
-            const cleanStr = str.replace(/[^a-zA-Z0-9\-_]/g, '');
-            if (cleanStr.length !== str.length) return null;
-
-            let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-            while (b64.length % 4) {
-                b64 += '=';
-            }
-            const decoded = atob(b64);
-            
-            try {
-                return JSON.stringify(JSON.parse(decoded), null, 2);
-            } catch(e) {
-                // If not JSON but successfully decoded, check if it's readable ASCII
-                if (/^[\x20-\x7E]*$/.test(decoded)) {
-                    return decoded;
-                }
-                return null;
-            }
+            stringifiedInjectedPayload = typeof signal.payload === 'object' ? JSON.stringify(signal.payload) : String(signal.payload);
         } catch(e) {
-            return null;
-        }
-    }
-
-    function createPayloadBlock(label, value) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'payload-block';
-        
-        const labelEl = document.createElement('div');
-        if (label) {
-            labelEl.className = 'payload-label';
-            labelEl.textContent = label;
-            wrapper.appendChild(labelEl);
-        }
-        
-        const valueContainer = document.createElement('div');
-        valueContainer.className = 'signal-value-container';
-        
-        const valueWrap = document.createElement('p');
-        valueWrap.className = 'signal-value';
-        
-        let displayValue = value;
-        if (typeof displayValue === 'object') {
-            try { displayValue = JSON.stringify(displayValue, null, 2); } catch(e) {}
-        }
-        
-        valueWrap.textContent = String(displayValue);
-        valueContainer.appendChild(valueWrap);
-        
-        wrapper.appendChild(valueContainer);
-        return wrapper;
-    }
-
-    function renderSignalGroup(container, signals, emptyMessage) {
-        container.innerHTML = '';
-        if (signals.length === 0) {
-            container.innerHTML = `
-                <div class="message">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.5; margin-bottom: 8px;">
-                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    ${emptyMessage}
-                </div>
-            `;
-            return;
+            stringifiedInjectedPayload = String(signal.payload);
         }
 
-        signals.slice().reverse().forEach(signal => {
-            const card = document.createElement('div');
-            card.className = `signal-card`;
+        // Just use the bare actual identity string since JSON formatting spaces might differ
+        let rawIDToSearch = stringifiedInjectedPayload;
+        // If it looks like a prebid array payload, pull out the string ID
+        if (typeof signal.payload === 'string') rawIDToSearch = signal.payload;
+        else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
 
-            const providerHeader = document.createElement('div');
-            providerHeader.className = 'provider-name';
-            
-            const providerText = document.createElement('span');
-            providerText.textContent = signal.provider;
+        for (const net of network) {
+           const netStr = JSON.stringify(net.decoded);
+           if (netStr && netStr.includes(rawIDToSearch)) {
+             sentInNetwork = true;
+             matchedNetworkPayload = net;
+             break;
+           }
+        }
+        
+        const payloadClass = sentInNetwork ? 'match' : 'mismatch';
+        const matchLabel = sentInNetwork ? 'SUCCESS: Verified in Network Request' : 'FAILED: Not Sent in Network';
 
-            const time = document.createElement('span');
-            time.className = 'timestamp';
-            if (signal.timestamp) {
-                const date = new Date(signal.timestamp);
-                time.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            }
-
-            providerHeader.appendChild(providerText);
-            
-            // Render Deployment Origin Badges
-            const tagsContainer = document.createElement('div');
-            tagsContainer.className = 'deployment-tags';
-            if (signal.isGamDeployed) {
-                const gamTag = document.createElement('span');
-                gamTag.className = 'tag tag-gam';
-                gamTag.textContent = 'GAM Deployed';
-                tagsContainer.appendChild(gamTag);
-            }
-            if (signal.isPrebidDeployed) {
-                const prebidTag = document.createElement('span');
-                prebidTag.className = 'tag tag-prebid';
-                prebidTag.textContent = 'Prebid Deployed';
-                tagsContainer.appendChild(prebidTag);
-            }
-            
-            // Render highly visible Network Verified badge
-            if (signal.isNetworkVerified) {
-                const verifiedTag = document.createElement('span');
-                verifiedTag.className = 'tag tag-verified';
-                verifiedTag.innerHTML = `
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px; margin-bottom: -1px;">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                    Network Verified (${signal.networkParam || 'a3p'})
-                `;
-                tagsContainer.appendChild(verifiedTag);
-            }
-            
-            providerHeader.appendChild(tagsContainer);
-            
-            providerHeader.appendChild(time);
-            card.appendChild(providerHeader);
-
-            // 0. Warning Block (if exists)
-            if (signal.warning) {
-                const warningBlock = document.createElement('div');
-                warningBlock.className = 'warning-block';
-                warningBlock.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    <span>${signal.warning}</span>
-                `;
-                card.appendChild(warningBlock);
-            }
-
-            // 1. Prebid Configuration (if exists)
-            if (signal.configParams && Object.keys(signal.configParams).length > 0) {
-                card.appendChild(createPayloadBlock('Prebid Configuration (userSync params)', signal.configParams));
-            }
-
-            // 1.5 Prebid Bidders Allowlist (if exists)
-            if (signal.bidders && Array.isArray(signal.bidders) && signal.bidders.length > 0) {
-                card.appendChild(createPayloadBlock('Prebid Bidder Allowlist', signal.bidders));
-            }
-
-            // Render raw identifier if it isn't encoded yet or was intercepted purely from Prebid
-            if (signal.prebidValue && (!signal.value || signal.prebidValue !== signal.value)) {
-                card.appendChild(createPayloadBlock(null, signal.prebidValue));
-            } else if (!signal.isGamDeployed && signal.value) {
-                // Prebid-only signals without a GAM counterpart technically hold the raw value in the 'value' block 
-                // because it hasn't actually been routed through GAM's encoder yet
-                card.appendChild(createPayloadBlock(null, signal.value));
-            }
-
-            // GAM Payload (Encoded)
-            if (signal.isGamDeployed && signal.value) {
-                card.appendChild(createPayloadBlock(null, signal.value));
-
-                // GAM Payload (Decoded)
-                if (typeof signal.value === 'string') {
-                    const decoded = decodeBase64UrlSafe(signal.value);
-                    if (decoded && decoded !== signal.value) {
-                        card.appendChild(createPayloadBlock('GAM Payload (Decoded)', decoded));
-                    }
-                }
-            }
-            
-            container.appendChild(card);
-        });
-    }
-
-    function showEmptyStateAll() {
-        renderAllSignals([]);
-    }
-
-    function showErrorAll(message, details = '') {
-        const errorHtml = `
-            <div class="message">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="var(--danger)" style="margin-bottom: 8px;">
-                    <path d="M12 9V12M12 16.01L12.01 15.9989M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                ${message}
-                ${details ? `<div class="error-message">${details}</div>` : ''}
+        card.innerHTML = `
+          <h3 class="signal-provider-name">${typeBadge} ${signal.providerId}</h3>
+          
+          <div class="data-row">
+            <div class="data-label">Injected Payload (Monkey-patched)</div>
+            <div class="data-value">${JSON.stringify(signal.payload, null, 2)}</div>
+          </div>
+          
+          <div class="data-row" style="margin-top: 12px;">
+            <div class="data-label">Network Verification</div>
+            <div class="data-value ${payloadClass}">${matchLabel}</div>
+          </div>
+          
+          ${sentInNetwork ? `
+          <div class="data-row" style="margin-top: 8px;">
+            <div class="data-label">Full Decoded Network Parameter</div>
+            <div class="data-value" style="opacity: 0.7; font-size: 10px;">
+              ${JSON.stringify(matchedNetworkPayload.decoded, null, 2)}
             </div>
+          </div>
+          ` : ''}
         `;
-        document.getElementById('signals-all').innerHTML = errorHtml;
-    }
+        
+        listEl.appendChild(card);
+      });
+    });
+  });
 });
