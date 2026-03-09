@@ -45,7 +45,8 @@ function processIncomingSignal(provider, value, source) {
                 provider: provider,
                 value: value,
                 timestamp: new Date().toISOString(),
-                source: 'gam_matched'
+                source: 'gam_matched',
+                prebidValue: secureSignals.prebidOnly[inPrebidIdx].prebidValue || 'Registered in Prebid'
             });
             secureSignals.prebidOnly.splice(inPrebidIdx, 1);
             return true;
@@ -71,7 +72,8 @@ function processIncomingSignal(provider, value, source) {
                 provider: existingGamSignal.provider, // Prefer GAM's name
                 value: existingGamSignal.value,
                 timestamp: new Date().toISOString(),
-                source: 'prebid_matched'
+                source: 'prebid_matched',
+                prebidValue: value
             });
             secureSignals.gamOnly.splice(inGamIdx, 1);
             return true;

@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if it explicitly has spaces or brackets, then it's probably already decoded/JSON
             if (str.includes('{') || str.includes(' ')) return null;
             
+            // Validate it only contains URL-safe base64 characters
+            const cleanStr = str.replace(/[^a-zA-Z0-9\-_]/g, '');
+            if (cleanStr.length !== str.length) return null;
+
             let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
             while (b64.length % 4) {
                 b64 += '=';
@@ -77,7 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 return JSON.stringify(JSON.parse(decoded), null, 2);
             } catch(e) {
-                return decoded;
+                // If not JSON but successfully decoded, check if it's readable ASCII
+                if (/^[\x20-\x7E]*$/.test(decoded)) {
+                    return decoded;
+                }
+                return null;
             }
         } catch(e) {
             return null;
