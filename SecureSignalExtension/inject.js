@@ -121,16 +121,24 @@
   } catch (e) {}
 
   // Hook into googletag.cmd to ensure we catch everything even if googletag isn't fully loaded yet
-  window.googletag = window.googletag || { cmd: [] };
+  let gtInstance = window.googletag;
+  if (!gtInstance) {
+    window.googletag = {};
+    gtInstance = window.googletag;
+  }
+  if (!gtInstance.cmd) {
+    gtInstance.cmd = [];
+  }
   
   try {
-      window.googletag.cmd.push(function() {
-          patchProviderArray('secureSignalProviders', 'secureSignal');
-          patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
-          console.log('[Secure Signal Validator] Monkey-patched googletag signal providers from cmd queue.');
-      });
+      if (typeof gtInstance.cmd.push === 'function') {
+          gtInstance.cmd.push(function() {
+              patchProviderArray('secureSignalProviders', 'secureSignal');
+              patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
+          });
+      }
   } catch(e) {
-      console.warn('[Secure Signal Validator] Could not hook googletag.cmd', e);
+      // Silently catch across safe-frames
   }
   
   // also run immediately just in case cmd queue is already processed
@@ -139,5 +147,5 @@
       patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
   } catch(e) {}
 
-  console.log('[Secure Signal Validator] Injection logic executed.');
+  console.log('[Secure Signal Validator] Injection logic executed in frame:', window.location.href);
 })();
