@@ -81,56 +81,14 @@ h2 {
   animation: pulse 2s infinite ease-in-out;
 }
 
-.tabs {
-  display: flex;
-  background: rgba(15, 23, 42, 0.8);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: 12px 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  background: rgba(74, 222, 128, 0.05);
-}
-
-.tab[data-tab="prebid"].active {
-  color: #fb923c;
-  border-bottom-color: #fb923c;
-  background: rgba(251, 146, 60, 0.05);
-}
-
-.tab[data-tab="gam"].active {
-  color: #60a5fa;
-  border-bottom-color: #60a5fa;
-  background: rgba(96, 165, 250, 0.05);
-}
-
+/* Removed traditional tabs because we are using a single signals-all container */
 .container {
-  padding: 16px 20px;
-  max-height: 400px;
-  overflow-y: auto;
-  display: none;
+    display: none;
+    padding: 16px;
+    padding-top: 0;
 }
-
 .container.active {
-  display: block;
+    display: block;
 }
 
 /* Custom Scrollbar */
@@ -186,78 +144,46 @@ h2 {
 }
 
 .provider-name {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--accent);
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-color);
+    flex-wrap: wrap; /* allow tags to wrap */
+    gap: 8px; /* space between title and tags */
 }
-
-.signal-card.status-PREBID_ONLY {
-  border-left: 3px solid #f97316;
-}
-
-.warning-block {
-  margin-top: 12px;
-  margin-bottom: 4px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 6px;
-  padding: 8px 10px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  color: #fbbf24;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.warning-block svg {
-  flex-shrink: 0;
-  stroke: #f59e0b;
-  margin-top: 1px;
-}
-
-.signal-card.status-GAM_ONLY .provider-name {
-  color: #60a5fa;
-}
-
-.payload-block {
-  margin-top: 12px;
-}
-
-.payload-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.signal-value-container {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 8px;
-  padding: 12px;
-  position: relative;
-}
-
-.signal-value {
-  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  word-break: break-all;
-  margin: 0;
-}
-
 .timestamp {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-weight: 500;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: auto; /* push to the right */
+}
+
+/* Deployment Tags */
+.deployment-tags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.tag-gam {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.tag-prebid {
+    background-color: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
 .message {

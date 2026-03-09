@@ -1,18 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab elements
-    const tabs = document.querySelectorAll('.tab');
-    const containers = document.querySelectorAll('.container');
-
-    // Setup tab clicking
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            containers.forEach(c => c.classList.remove('active'));
-            
-            tab.classList.add('active');
-            document.getElementById(`signals-${tab.dataset.tab}`).classList.add('active');
-        });
-    });
+    // Removed tab logic for single view
 
     // Query the active tab to send a message
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -86,17 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAllSignals(signals) {
-        const shared = signals.filter(s => s.status === 'SHARED');
-        const gamOnly = signals.filter(s => s.status === 'GAM_ONLY');
-        const prebidOnly = signals.filter(s => s.status === 'PREBID_ONLY');
-
-        document.getElementById('count-shared').textContent = shared.length;
-        document.getElementById('count-gam').textContent = gamOnly.length;
-        document.getElementById('count-prebid').textContent = prebidOnly.length;
-
-        renderSignalGroup(document.getElementById('signals-shared'), shared, 'No shared signals found.');
-        renderSignalGroup(document.getElementById('signals-gam'), gamOnly, 'No exclusive GAM signals.');
-        renderSignalGroup(document.getElementById('signals-prebid'), prebidOnly, 'No exclusive Prebid signals.');
+        renderSignalGroup(document.getElementById('signals-all'), signals, 'No secure signals detected on this page.');
     }
 
     function decodeBase64UrlSafe(str) {
@@ -172,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         signals.slice().reverse().forEach(signal => {
             const card = document.createElement('div');
-            card.className = `signal-card status-${signal.status}`;
+            card.className = `signal-card`;
 
             const providerHeader = document.createElement('div');
             providerHeader.className = 'provider-name';
@@ -188,6 +165,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             providerHeader.appendChild(providerText);
+            
+            // Render Deployment Origin Badges
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'deployment-tags';
+            if (signal.isGamDeployed) {
+                const gamTag = document.createElement('span');
+                gamTag.className = 'tag tag-gam';
+                gamTag.textContent = 'GAM Deployed';
+                tagsContainer.appendChild(gamTag);
+            }
+            if (signal.isPrebidDeployed) {
+                const prebidTag = document.createElement('span');
+                prebidTag.className = 'tag tag-prebid';
+                prebidTag.textContent = 'Prebid Deployed';
+                tagsContainer.appendChild(prebidTag);
+            }
+            providerHeader.appendChild(tagsContainer);
+            
             providerHeader.appendChild(time);
             card.appendChild(providerHeader);
 
@@ -216,19 +211,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.appendChild(createPayloadBlock('Prebid Bidder Allowlist', signal.bidders));
             }
 
-            if (signal.status === 'PREBID_ONLY') {
-                card.appendChild(createPayloadBlock('Prebid ID (Raw)', signal.value || signal.prebidValue));
-            } else {
-                // 2. Prebid EID Payload (if exists)
-                if (signal.prebidValue) {
-                    card.appendChild(createPayloadBlock('Prebid ID (Raw)', signal.prebidValue));
-                }
+            // Render raw identifier if it isn't encoded yet or was intercepted purely from Prebid
+            if (signal.prebidValue && (!signal.value || signal.prebidValue !== signal.value)) {
+                card.appendChild(createPayloadBlock('ID Value (Raw)', signal.prebidValue));
+            } else if (!signal.isGamDeployed && signal.value) {
+                // Prebid-only signals without a GAM counterpart technically hold the raw value in the 'value' block 
+                // because it hasn't actually been routed through GAM's encoder yet
+                card.appendChild(createPayloadBlock('ID Value (Raw)', signal.value));
+            }
 
-                // 2. GAM Payload (Encoded)
+            // GAM Payload (Encoded)
+            if (signal.isGamDeployed && signal.value) {
                 card.appendChild(createPayloadBlock('GAM Payload (Encoded)', signal.value));
 
-                // 3. GAM Payload (Decoded)
-                if (signal.value && typeof signal.value === 'string') {
+                // GAM Payload (Decoded)
+                if (typeof signal.value === 'string') {
                     const decoded = decodeBase64UrlSafe(signal.value);
                     if (decoded && decoded !== signal.value) {
                         card.appendChild(createPayloadBlock('GAM Payload (Decoded)', decoded));
@@ -254,8 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${details ? `<div class="error-message">${details}</div>` : ''}
             </div>
         `;
-        document.getElementById('signals-shared').innerHTML = errorHtml;
-        document.getElementById('signals-gam').innerHTML = errorHtml;
-        document.getElementById('signals-prebid').innerHTML = errorHtml;
+        document.getElementById('signals-all').innerHTML = errorHtml;
     }
 });
