@@ -251,3 +251,23 @@ h2 {
   background: rgba(255,255,255,0.1);
   color: var(--text-primary);
 }
+.signal-value-container {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+}
+
+.signal-value {
+  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  /* Force long text to wrap to the next line */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+  margin: 0;
+}

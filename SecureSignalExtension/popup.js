@@ -111,8 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.className = 'payload-block';
         
         const labelEl = document.createElement('div');
-        labelEl.className = 'payload-label';
-        labelEl.textContent = label;
+        if (label) {
+            labelEl.className = 'payload-label';
+            labelEl.textContent = label;
+            wrapper.appendChild(labelEl);
+        }
         
         const valueContainer = document.createElement('div');
         valueContainer.className = 'signal-value-container';
@@ -128,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         valueWrap.textContent = String(displayValue);
         valueContainer.appendChild(valueWrap);
         
-        wrapper.appendChild(labelEl);
         wrapper.appendChild(valueContainer);
         return wrapper;
     }
@@ -228,11 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Render raw identifier if it isn't encoded yet or was intercepted purely from Prebid
             if (signal.prebidValue && (!signal.value || signal.prebidValue !== signal.value)) {
-                card.appendChild(createPayloadBlock('ID Value (Raw)', signal.prebidValue));
+                card.appendChild(createPayloadBlock(null, signal.prebidValue));
             } else if (!signal.isGamDeployed && signal.value) {
                 // Prebid-only signals without a GAM counterpart technically hold the raw value in the 'value' block 
                 // because it hasn't actually been routed through GAM's encoder yet
-                card.appendChild(createPayloadBlock('ID Value (Raw)', signal.value));
+                card.appendChild(createPayloadBlock(null, signal.value));
             }
 
             // GAM Payload (Encoded)

@@ -18,8 +18,8 @@
             if (result && typeof result.then === 'function') {
                 return result.then((signal) => {
                     let extractedSignal = signal;
-                    // If the collector returns an array (like ["criteo.com", "actual_id"]), extract the raw ID string
-                    if (Array.isArray(signal) && signal.length >= 2 && typeof signal[1] === 'string') {
+                    // If the collector returns an array, extract index 1 (the raw ID value), even if it's null
+                    if (Array.isArray(signal) && signal.length >= 2) {
                         extractedSignal = signal[1];
                     }
 
@@ -35,7 +35,7 @@
                 });
             } else {
                 let extractedSignal = result;
-                if (Array.isArray(result) && result.length >= 2 && typeof result[1] === 'string') {
+                if (Array.isArray(result) && result.length >= 2) {
                     extractedSignal = result[1];
                 }
                 

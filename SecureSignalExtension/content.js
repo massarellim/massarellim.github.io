@@ -50,8 +50,27 @@ function encodeBase64UrlSafe(str) {
 function processIncomingSignal(provider, value, source, warning, configParams, bidders) {
     const normalizedNewProvider = normalizeProviderName(provider);
 
-    // Look for an existing signal with this normalized name
+    // 1. Look for an existing signal with this normalized name
     let existingMatch = secureSignals.all.find(s => normalizeProviderName(s.provider) === normalizedNewProvider);
+
+    // 2. Exact Value Deduplication (v2.3)
+    // If we couldn't find it by name, but we find the EXACT SAME payload already registered
+    // under a different alias, we merge the names rather than creating a duplicate UI card
+    if (!existingMatch && value && value !== 'Registered in Prebid' && value !== 'Configured in userSync') {
+        const valueMatch = secureSignals.all.find(s => {
+            // Check both raw and encoded values
+             return s.value === value || s.prebidValue === value || encodeBase64UrlSafe(s.prebidValue) === value;
+        });
+        
+        if (valueMatch) {
+            // Merge the provider names if they are different and not already included
+            if (!valueMatch.provider.toLowerCase().includes(provider.toLowerCase()) && 
+                !provider.toLowerCase().includes(valueMatch.provider.toLowerCase())) {
+                valueMatch.provider = `${valueMatch.provider} / ${provider}`;
+            }
+            existingMatch = valueMatch; // Treat as if we found it normally so it gets the status flags updated below
+        }
+    }
 
     if (source === 'GAM' || source === 'localStorage' || source === 'GAM_KVP') {
         if (existingMatch) {
