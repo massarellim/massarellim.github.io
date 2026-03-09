@@ -30,23 +30,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAllSignals(result[pageUrl]);
             } else {
                 // If storage is empty, message content script just in case
-                chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (response) => {
+                renderSignals();
+            }
+        });
+    });
+
+    function renderSignals() {
+        chrome.runtime.sendMessage({ type: 'GET_SECURE_SIGNALS' }, (response) => {
+            if (response && response.signals) {
+                const signals = response.signals;
+
+                // 1. Render Diagnostics Panel
+                const diagPanel = document.getElementById('diagnosticsPanel');
+                if (response.timeouts) {
+                    diagPanel.innerHTML = `
+                        <div class="diagnostic-item">
+                            <span>Prebid syncDelay:</span>
+                            <span class="diagnostic-value">${response.timeouts.syncDelay}</span>
+                        </div>
+                        <div class="diagnostic-item">
+                            <span>Prebid auctionDelay:</span>
+                            <span class="diagnostic-value">${response.timeouts.auctionDelay}</span>
+                        </div>
+                    `;
+                    diagPanel.style.display = 'flex';
+                } else {
+                    diagPanel.style.display = 'none';
+                }
+                chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (tabResponse) => {
                     if (chrome.runtime.lastError) {
                         showErrorAll('No active content script detected for this page.', chrome.runtime.lastError.message);
                         return;
                     }
 
-                    if (response && response.signals && response.signals.length > 0) {
-                        // Note: If content script hasn't updated to flat list in its response, it might be nested
-                        // But since we rely heavily on storage now, this is a fallback
-                        renderAllSignals(response.signals);
+                    if (tabResponse && tabResponse.signals && tabResponse.signals.length > 0) {
+                        renderAllSignals(tabResponse.signals);
                     } else {
                         showEmptyStateAll();
                     }
                 });
             }
         });
-    });
+    }
 
     function renderAllSignals(signals) {
         const shared = signals.filter(s => s.status === 'SHARED');

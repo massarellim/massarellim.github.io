@@ -100,6 +100,13 @@
         try {
             if (window.pbjs && typeof window.pbjs.getConfig === 'function') {
                 const config = window.pbjs.getConfig();
+                
+                // Extract global timeouts
+                const timeouts = {
+                    syncDelay: (config && config.userSync && config.userSync.syncDelay) || 'Not set',
+                    auctionDelay: (config && config.userSync && config.userSync.auctionDelay) || 'Not set'
+                };
+
                 if (config && config.userSync && Array.isArray(config.userSync.userIds)) {
                     config.userSync.userIds.forEach(idModule => {
                         let warningMsg = null;
@@ -114,7 +121,8 @@
                             source: 'PREBID_USERSYNC',
                             provider: idModule.name,
                             value: 'Configured in userSync',
-                            warning: warningMsg
+                            warning: warningMsg,
+                            timeouts: timeouts
                         }, '*');
                         console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
                     });

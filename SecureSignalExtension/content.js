@@ -12,6 +12,11 @@ let secureSignals = {
     prebidOnly: []
 };
 
+let globalTimeouts = {
+    syncDelay: 'Unknown',
+    auctionDelay: 'Unknown'
+};
+
 function saveSignalsToStorage() {
     const pageUrl = window.location.href.split('?')[0].split('#')[0];
     const flatList = [
@@ -186,6 +191,11 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data && event.data.type === 'SECURE_SIGNAL_DETECTED') {
+        // Cache global timeouts if provided
+        if (event.data.timeouts) {
+            globalTimeouts = event.data.timeouts;
+        }
+
         const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning);
         if (isNew) {
             console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider} via ${event.data.source || 'GAM'}`);
@@ -197,7 +207,10 @@ window.addEventListener('message', (event) => {
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GET_SECURE_SIGNALS') {
-        sendResponse({ signals: secureSignals });
+        sendResponse({ 
+            signals: secureSignals,
+            timeouts: globalTimeouts
+        });
     }
     return true; // Keeps the sendResponse channel open if needed
 });
