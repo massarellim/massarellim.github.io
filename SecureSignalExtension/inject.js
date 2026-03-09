@@ -41,6 +41,7 @@
 
     // Helper to create a proxy for provider arrays
     const createProviderProxy = (targetArray) => {
+        if (!targetArray) targetArray = [];
         return new Proxy(targetArray, {
             get(target, prop) {
                 if (prop === 'push') {
@@ -50,8 +51,6 @@
                     };
                 }
                 
-                // For other array/object properties, bind functions to the original array 
-                // to maintain correct "this" context (crucial for native GPT methods like clearAllCache)
                 const value = target[prop];
                 if (typeof value === 'function') {
                     return function(...args) {
@@ -65,8 +64,33 @@
 
     // Override push safely to intercept new providers added dynamically
     if (typeof Proxy !== 'undefined') {
-        window.googletag.secureSignalProviders = createProviderProxy(window.googletag.secureSignalProviders);
-        window.googletag.encryptedSignalProviders = createProviderProxy(window.googletag.encryptedSignalProviders);
+        // Protect against GPT re-initializing and overwriting the arrays by using Object.defineProperty
+        let _secureProviders = createProviderProxy(window.googletag.secureSignalProviders);
+        let _encryptedProviders = createProviderProxy(window.googletag.encryptedSignalProviders);
+
+        Object.defineProperty(window.googletag, 'secureSignalProviders', {
+            get: () => _secureProviders,
+            set: (newArray) => {
+                if (newArray && Array.isArray(newArray)) {
+                    newArray.forEach(provider => processProvider(provider));
+                }
+                _secureProviders = createProviderProxy(newArray);
+            },
+            configurable: true,
+            enumerable: true
+        });
+
+        Object.defineProperty(window.googletag, 'encryptedSignalProviders', {
+            get: () => _encryptedProviders,
+            set: (newArray) => {
+                if (newArray && Array.isArray(newArray)) {
+                    newArray.forEach(provider => processProvider(provider));
+                }
+                _encryptedProviders = createProviderProxy(newArray);
+            },
+            configurable: true,
+            enumerable: true
+        });
     } else {
         // Fallback if Proxy is not supported
         window.googletag.secureSignalProviders.push = function(...args) {
