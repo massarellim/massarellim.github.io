@@ -112,13 +112,33 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             
             <div class="data-row" style="margin-top: 12px;">
-              <div class="data-label">Decoded Parameter JSON</div>
-              <div class="data-value">${JSON.stringify(net.decoded, null, 2)}</div>
+              <div class="data-label">Raw Value (${paramName})</div>
+              <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all;">${net.rawParams}</div>
             </div>
             
             <div class="data-row" style="margin-top: 12px;">
-              <div class="data-label">Raw Value (${paramName})</div>
-              <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all;">${net.rawParams}</div>
+              <div class="data-label">Providers & IDs</div>
+              <div class="data-value">
+                ${
+                  (function() {
+                     if (net.decoded && net.decoded.format === 'protobuf/binary' && net.decoded.extracted_strings) {
+                         // It's a binary dump, just list the strings
+                         return net.decoded.extracted_strings.map(s => `<div>• ${s}</div>`).join('');
+                     } else if (Array.isArray(net.decoded)) {
+                         // It's a mapped array of {provider, payload}
+                         return net.decoded.map(s => {
+                            if (s && s.provider) {
+                                let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
+                                return `<div style="margin-bottom: 6px;"><strong>${s.provider}</strong>: <span style="font-family: monospace; font-size: 11px;">${valString}</span></div>`;
+                            }
+                            return `<div>• ${JSON.stringify(s)}</div>`;
+                         }).join('');
+                     } else {
+                         return typeof net.decoded === 'object' ? JSON.stringify(net.decoded, null, 2) : String(net.decoded);
+                     }
+                  })()
+                }
+              </div>
             </div>
           `;
           
