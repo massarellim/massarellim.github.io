@@ -16,11 +16,20 @@
         <h2>Secure Signals</h2>
     </div>
     
-    <div class="container" id="signals-list">
-        <div class="message">
-            <div class="loader"></div>
-            Searching for signals...
-        </div>
+    <div class="tabs">
+        <div class="tab active" data-tab="shared">Shared (<span id="count-shared">0</span>)</div>
+        <div class="tab" data-tab="gam">GAM Only (<span id="count-gam">0</span>)</div>
+        <div class="tab" data-tab="prebid">Prebid Only (<span id="count-prebid">0</span>)</div>
+    </div>
+    
+    <div class="container active" id="signals-shared">
+        <div class="message"><div class="loader"></div>Searching...</div>
+    </div>
+    <div class="container" id="signals-gam">
+        <div class="message"><div class="loader"></div>Searching...</div>
+    </div>
+    <div class="container" id="signals-prebid">
+        <div class="message"><div class="loader"></div>Searching...</div>
     </div>
 
     <script src="popup.js"></script>

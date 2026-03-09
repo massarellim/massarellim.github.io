@@ -1,5 +1,6 @@
 (function() {
     window.googletag = window.googletag || {cmd: []};
+    window.pbjs = window.pbjs || {que: []};
     window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
 
     const originalPush = window.googletag.secureSignalProviders.push;
@@ -16,6 +17,7 @@
                 return result.then((signal) => {
                     window.postMessage({
                         type: 'SECURE_SIGNAL_DETECTED',
+                        source: 'GAM',
                         provider: provider.id,
                         value: signal
                     }, '*');
@@ -26,6 +28,7 @@
             } else {
                 window.postMessage({
                     type: 'SECURE_SIGNAL_DETECTED',
+                    source: 'GAM',
                     provider: provider.id,
                     value: result
                 }, '*');
@@ -68,6 +71,67 @@
     if (window.googletag.secureSignalProviders.length > 0) {
         window.googletag.secureSignalProviders.forEach(provider => {
             processProvider(provider);
+        });
+    }
+
+    // ==========================================
+    // PREBID INTERCEPTION LOGIC
+    // ==========================================
+
+    const processPrebidSources = (sources) => {
+        if (!Array.isArray(sources)) {
+            sources = [sources];
+        }
+        sources.forEach(source => {
+            if (source && source.name) {
+                window.postMessage({
+                    type: 'SECURE_SIGNAL_DETECTED',
+                    source: 'PREBID',
+                    provider: source.name,
+                    value: 'Registered in Prebid'
+                }, '*');
+                console.log(`[SecureSignal Extension] Prebid registered source: ${source.name}`);
+            }
+        });
+    };
+
+    // Intercept pbjs.registerSignalSources
+    const originalRegister = window.pbjs.registerSignalSources;
+    if (typeof originalRegister === 'function') {
+        window.pbjs.registerSignalSources = function() {
+            if (arguments.length > 0) {
+                processPrebidSources(arguments[0]);
+            }
+            return originalRegister.apply(this, arguments);
+        };
+    } else {
+        // If pbjs isn't fully loaded yet, we can try to intercept its creation or queue
+        window.pbjs.que.push(() => {
+            const innerOriginalRegister = window.pbjs.registerSignalSources;
+            if (typeof innerOriginalRegister === 'function') {
+                window.pbjs.registerSignalSources = function() {
+                    if (arguments.length > 0) {
+                        processPrebidSources(arguments[0]);
+                    }
+                    return innerOriginalRegister.apply(this, arguments);
+                };
+            }
+            
+            // Also check getConfig().userSync in case they were already configured
+            try {
+                const config = window.pbjs.getConfig();
+                if (config && config.userSync && Array.isArray(config.userSync.userIds)) {
+                    config.userSync.userIds.forEach(idModule => {
+                        window.postMessage({
+                            type: 'SECURE_SIGNAL_DETECTED',
+                            source: 'PREBID_USERSYNC',
+                            provider: idModule.name,
+                            value: 'Configured in userSync'
+                        }, '*');
+                        console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
+                    });
+                }
+            } catch(e) { /* ignore if config fails */ }
         });
     }
 

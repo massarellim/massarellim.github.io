@@ -1,5 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const signalsList = document.getElementById('signals-list');
+    // Tab elements
+    const tabs = document.querySelectorAll('.tab');
+    const containers = document.querySelectorAll('.container');
+
+    // Setup tab clicking
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            containers.forEach(c => c.classList.remove('active'));
+            
+            tab.classList.add('active');
+            document.getElementById(`signals-${tab.dataset.tab}`).classList.add('active');
+        });
+    });
 
     // Query the active tab to send a message
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -14,32 +27,58 @@ document.addEventListener('DOMContentLoaded', () => {
         // Try to get from storage first, then fallback to message passing
         chrome.storage.local.get([pageUrl], function(result) {
             if (result[pageUrl] && result[pageUrl].length > 0) {
-                renderSignals(result[pageUrl]);
+                renderAllSignals(result[pageUrl]);
             } else {
-                // If storage is empty, try messaging the content script directly
+                // If storage is empty, message content script just in case
                 chrome.tabs.sendMessage(activeTabId, { type: 'GET_SECURE_SIGNALS' }, (response) => {
                     if (chrome.runtime.lastError) {
-                        showError('No active content script detected for this page.', chrome.runtime.lastError.message);
+                        showErrorAll('No active content script detected for this page.', chrome.runtime.lastError.message);
                         return;
                     }
 
                     if (response && response.signals && response.signals.length > 0) {
-                        renderSignals(response.signals);
+                        // Note: If content script hasn't updated to flat list in its response, it might be nested
+                        // But since we rely heavily on storage now, this is a fallback
+                        renderAllSignals(response.signals);
                     } else {
-                        showEmptyState('No secure signals detected on this page.');
+                        showEmptyStateAll();
                     }
                 });
             }
         });
     });
 
-    function renderSignals(signals) {
-        signalsList.innerHTML = ''; 
+    function renderAllSignals(signals) {
+        const shared = signals.filter(s => s.status === 'SHARED');
+        const gamOnly = signals.filter(s => s.status === 'GAM_ONLY');
+        const prebidOnly = signals.filter(s => s.status === 'PREBID_ONLY');
 
-        // Reverse to show newest first
+        document.getElementById('count-shared').textContent = shared.length;
+        document.getElementById('count-gam').textContent = gamOnly.length;
+        document.getElementById('count-prebid').textContent = prebidOnly.length;
+
+        renderSignalGroup(document.getElementById('signals-shared'), shared, 'No shared signals found.');
+        renderSignalGroup(document.getElementById('signals-gam'), gamOnly, 'No exclusive GAM signals.');
+        renderSignalGroup(document.getElementById('signals-prebid'), prebidOnly, 'No exclusive Prebid signals.');
+    }
+
+    function renderSignalGroup(container, signals, emptyMessage) {
+        container.innerHTML = '';
+        if (signals.length === 0) {
+            container.innerHTML = `
+                <div class="message">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.5; margin-bottom: 8px;">
+                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    ${emptyMessage}
+                </div>
+            `;
+            return;
+        }
+
         signals.slice().reverse().forEach(signal => {
             const card = document.createElement('div');
-            card.className = 'signal-card';
+            card.className = `signal-card status-${signal.status}`;
 
             const providerHeader = document.createElement('div');
             providerHeader.className = 'provider-name';
@@ -78,23 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.appendChild(providerHeader);
             card.appendChild(valueContainer);
             
-            signalsList.appendChild(card);
+            container.appendChild(card);
         });
     }
 
-    function showEmptyState(message) {
-        signalsList.innerHTML = `
-            <div class="message">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.5; margin-bottom: 8px;">
-                    <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                ${message}
-            </div>
-        `;
+    function showEmptyStateAll() {
+        renderAllSignals([]);
     }
 
-    function showError(message, details = '') {
-        signalsList.innerHTML = `
+    function showErrorAll(message, details = '') {
+        const errorHtml = `
             <div class="message">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="var(--danger)" style="margin-bottom: 8px;">
                     <path d="M12 9V12M12 16.01L12.01 15.9989M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -103,5 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${details ? `<div class="error-message">${details}</div>` : ''}
             </div>
         `;
+        document.getElementById('signals-shared').innerHTML = errorHtml;
+        document.getElementById('signals-gam').innerHTML = errorHtml;
+        document.getElementById('signals-prebid').innerHTML = errorHtml;
     }
 });

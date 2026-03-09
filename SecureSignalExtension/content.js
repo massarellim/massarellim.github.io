@@ -6,12 +6,82 @@ script.onload = function() {
 };
 (document.head || document.documentElement).appendChild(script);
 
-let secureSignals = [];
+let secureSignals = {
+    shared: [],
+    gamOnly: [],
+    prebidOnly: []
+};
 
-// Helper to save to chrome storage
 function saveSignalsToStorage() {
     const pageUrl = window.location.href.split('?')[0].split('#')[0];
-    chrome.storage.local.set({ [pageUrl]: secureSignals });
+    const flatList = [
+        ...secureSignals.shared.map(s => ({ ...s, status: 'SHARED' })),
+        ...secureSignals.gamOnly.map(s => ({ ...s, status: 'GAM_ONLY' })),
+        ...secureSignals.prebidOnly.map(s => ({ ...s, status: 'PREBID_ONLY' }))
+    ];
+    chrome.storage.local.set({ [pageUrl]: flatList });
+}
+
+// Helper to add or reconcile a signal category
+function processIncomingSignal(provider, value, source) {
+    // Check if it's already in shared
+    if (secureSignals.shared.some(s => s.provider === provider)) {
+        return false; // Already perfectly mapped
+    }
+
+    if (source === 'GAM' || source === 'localStorage') {
+        const inPrebidIdx = secureSignals.prebidOnly.findIndex(s => s.provider === provider);
+        if (inPrebidIdx !== -1) {
+            // It was in Prebid, now it's in GAM -> Move to Shared!
+            secureSignals.shared.push({
+                provider: provider,
+                value: value,
+                timestamp: new Date().toISOString(),
+                source: 'gam_matched'
+            });
+            secureSignals.prebidOnly.splice(inPrebidIdx, 1);
+            return true;
+        }
+
+        // Not in Prebid yet, must be GAM Only for now
+        if (!secureSignals.gamOnly.some(s => s.provider === provider && s.value === value)) {
+            secureSignals.gamOnly.push({
+                provider: provider,
+                value: value,
+                timestamp: new Date().toISOString(),
+                source: source
+            });
+            return true;
+        }
+    } else if (source === 'PREBID' || source === 'PREBID_USERSYNC') {
+        const inGamIdx = secureSignals.gamOnly.findIndex(s => s.provider === provider);
+        if (inGamIdx !== -1) {
+            // It was in GAM, now we see it's also in Prebid -> Move to Shared!
+            // keep the GAM value since it has the actual payload
+            const existingGamSignal = secureSignals.gamOnly[inGamIdx];
+            secureSignals.shared.push({
+                provider: provider,
+                value: existingGamSignal.value,
+                timestamp: new Date().toISOString(),
+                source: 'prebid_matched'
+            });
+            secureSignals.gamOnly.splice(inGamIdx, 1);
+            return true;
+        }
+
+        // Not in GAM yet, must be Prebid Only for now
+        if (!secureSignals.prebidOnly.some(s => s.provider === provider)) {
+            secureSignals.prebidOnly.push({
+                provider: provider,
+                value: value,
+                timestamp: new Date().toISOString(),
+                source: source
+            });
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // 1. Scrape existing localStorage for _GESPSK keys
@@ -22,6 +92,7 @@ try {
         storageKeys.push(localStorage.key(i));
     }
 
+    let didFindLocal = false;
     for (const key of storageKeys) {
         if (key && key.startsWith('_GESPSK-')) {
             try {
@@ -45,20 +116,18 @@ try {
                     }
                 }
                 
-                secureSignals.push({
-                    provider: providerName,
-                    value: typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue),
-                    timestamp: new Date().toISOString(),
-                    source: 'localStorage'
-                });
-                console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
+                const isNew = processIncomingSignal(providerName, typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue), 'localStorage');
+                if (isNew) {
+                    console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
+                    didFindLocal = true;
+                }
             } catch(e) {
                 console.warn('[SecureSignal Extension] Error parsing specific key', key, e);
             }
         }
     }
     
-    if (secureSignals.length > 0) {
+    if (didFindLocal) {
         saveSignalsToStorage();
     }
 } catch (e) {
@@ -71,19 +140,9 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data && event.data.type === 'SECURE_SIGNAL_DETECTED') {
-        const newSignal = {
-            provider: event.data.provider,
-            value: event.data.value,
-            timestamp: new Date().toISOString(),
-            source: 'injected_push'
-        };
-        
-        // Prevent exact duplicates if they were already found in localStorage
-        const isDuplicate = secureSignals.some(s => s.provider === newSignal.provider && s.value === newSignal.value);
-        
-        if (!isDuplicate) {
-            secureSignals.push(newSignal);
-            console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider}`);
+        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM');
+        if (isNew) {
+            console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider} via ${event.data.source || 'GAM'}`);
             saveSignalsToStorage();
         }
     }
