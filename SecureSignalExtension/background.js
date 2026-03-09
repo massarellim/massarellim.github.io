@@ -82,6 +82,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     const url = new URL(details.url);
     const a3p = url.searchParams.get('a3p');
     const ssj = url.searchParams.get('ssj');
+    const iuParts = url.searchParams.get('iu_parts') || 'Unknown AdUnit';
     
     if (a3p || ssj) {
       const tabId = details.tabId;
@@ -101,6 +102,7 @@ chrome.webRequest.onBeforeRequest.addListener(
                type: type,
                rawParams: paramValue,
                decoded: decoded,
+               adUnit: iuParts,
                timestamp: Date.now()
              });
           } else {
@@ -108,6 +110,7 @@ chrome.webRequest.onBeforeRequest.addListener(
                type: type,
                rawParams: paramValue,
                decoded: "Failed to decode Base64",
+               adUnit: iuParts,
                timestamp: Date.now()
              });
           }

@@ -108,6 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3 class="signal-provider-name">${typeBadge} Request #${index + 1}</h3>
             
             <div class="data-row">
+              <div class="data-label">AdUnit (iu_parts)</div>
+              <div class="data-value" style="font-weight: 600; color: var(--accent);">${net.adUnit}</div>
+            </div>
+            
+            <div class="data-row" style="margin-top: 12px;">
               <div class="data-label">Decoded Parameter JSON</div>
               <div class="data-value">${JSON.stringify(net.decoded, null, 2)}</div>
             </div>
