@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           
           <div class="data-row" style="margin-top: 12px;">
-            <div class="data-label">Network Verification</div>
+            <div class="data-label">Network Verification (a3p/ssj)</div>
             <div class="data-value ${payloadClass}">${matchLabel}</div>
           </div>
           

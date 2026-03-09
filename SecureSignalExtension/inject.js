@@ -33,25 +33,44 @@
     }
   }
 
+  function processExistingProviders(arrayName, signalType) {
+    if (window.googletag && window.googletag[arrayName] && Array.isArray(window.googletag[arrayName])) {
+      window.googletag[arrayName].forEach(provider => {
+        if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
+          const originalCollector = provider.collectorFunction;
+          provider.collectorFunction = function() {
+            const result = originalCollector.apply(this, arguments);
+            handlePromiseOrValue(result, signalType, provider.id || 'unknown');
+            return result;
+          };
+          provider.__validatorPatched = true;
+        }
+      });
+    }
+  }
+
   function patchProviderArray(arrayName, signalType) {
-    // Ensure googletag and the array exist
     window.googletag = window.googletag || { cmd: [] };
     window.googletag[arrayName] = window.googletag[arrayName] || [];
 
-    // Proxy the array to intercept pushes
+    // Process anything that was pushed before we arrived
+    processExistingProviders(arrayName, signalType);
+
+    // Proxy the array to intercept future pushes
     if (typeof Proxy !== 'undefined') {
       window.googletag[arrayName] = new Proxy(window.googletag[arrayName], {
         get(target, prop) {
           if (prop === 'push') {
             return function(...args) {
               args.forEach(provider => {
-                if (provider && typeof provider.collectorFunction === 'function') {
+                if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
                   const originalCollector = provider.collectorFunction;
                   provider.collectorFunction = function() {
                     const result = originalCollector.apply(this, arguments);
                     handlePromiseOrValue(result, signalType, provider.id || 'unknown');
                     return result;
                   };
+                  provider.__validatorPatched = true;
                 }
               });
               return target.push(...args);
@@ -64,9 +83,17 @@
     }
   }
 
-  // Patch both arrays
+  // Hook into googletag.cmd to ensure we catch everything even if googletag isn't fully loaded yet
+  window.googletag = window.googletag || { cmd: [] };
+  window.googletag.cmd.unshift(function() {
+      patchProviderArray('secureSignalProviders', 'secureSignal');
+      patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
+      console.log('[Secure Signal Validator] Monkey-patched googletag signal providers from cmd queue.');
+  });
+  
+  // also run immediately just in case cmd queue is already processed
   patchProviderArray('secureSignalProviders', 'secureSignal');
   patchProviderArray('encryptedSignalProviders', 'encryptedSignal');
 
-  console.log('[Secure Signal Validator] Monkey-patched googletag signal providers.');
+  console.log('[Secure Signal Validator] Injection logic executed.');
 })();

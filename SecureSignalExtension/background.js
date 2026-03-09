@@ -80,10 +80,10 @@ chrome.webRequest.onBeforeRequest.addListener(
     if (details.tabId === -1) return;
     
     const url = new URL(details.url);
-    const a3c = url.searchParams.get('a3c');
+    const a3p = url.searchParams.get('a3p');
     const ssj = url.searchParams.get('ssj');
     
-    if (a3c || ssj) {
+    if (a3p || ssj) {
       const tabData = getTabData(details.tabId);
       
       const processParam = (paramValue, type) => {
@@ -111,7 +111,7 @@ chrome.webRequest.onBeforeRequest.addListener(
         }
       };
 
-      processParam(a3c, 'secureSignal');
+      processParam(a3p, 'secureSignal');
       processParam(ssj, 'encryptedSignal');
       
       flushToStorage(details.tabId);
