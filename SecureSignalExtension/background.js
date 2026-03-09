@@ -158,39 +158,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const tabId = sender.tab.id;
     const key = `tab_${tabId}`;
     
-    runWithLock(tabId, async () => {
-      const res = await chrome.storage.local.get([key]);
-      let tabData = res[key] || { injected: [], network: [] };
-      const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
-      
-      const signalData = {
-        type: request.type,
-        providerId: request.providerId,
-        payload: request.payload,
-        timestamp: request.timestamp
-      };
-      
-      if (existingIndex > -1) {
-        tabData.injected[existingIndex] = signalData;
-      } else {
-        tabData.injected.push(signalData);
-      }
-      
-      await chrome.storage.local.set({ [key]: tabData });
+    // Process completely synchronously locally, then await the single set.
+    chrome.storage.local.get([key]).then(res => {
+        let tabData = res[key] || { injected: [], network: [] };
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+        
+        const signalData = {
+            type: request.type,
+            providerId: request.providerId,
+            payload: request.payload,
+            timestamp: request.timestamp
+        };
+        
+        if (existingIndex > -1) {
+            tabData.injected[existingIndex] = signalData;
+        } else {
+            tabData.injected.push(signalData);
+        }
+        
+        chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
     });
   }
 });
 
-// 2. Clear data on navigation
-chrome.webNavigation.onCommitted.addListener((details) => {
-  if (details.frameId === 0) { // Main frame
-    const tabId = details.tabId;
-    const key = `tab_${tabId}`;
-    runWithLock(tabId, async () => {
-      await chrome.storage.local.set({ [key]: { injected: [], network: [] } });
-    });
-  }
-});
+// We removed chrome.webNavigation.onCommitted clearing storage because "document_start" inject.js 
+// often fires BEFORE onCommitted (e.g. while head is still parsing). If onCommitted fires immediately
+// after, it brutally wipes out all the signals that inject.js just correctly captured!
+// To keep things clean, users should rely on manual clear or the native tab destruction.
 
 // 3. Intercept Network Requests
 chrome.webRequest.onBeforeRequest.addListener(
