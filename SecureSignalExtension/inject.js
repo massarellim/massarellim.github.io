@@ -95,6 +95,34 @@
         });
     };
 
+    // Function to check UserSync config and validate params
+    const checkUserSyncConfig = () => {
+        try {
+            if (window.pbjs && typeof window.pbjs.getConfig === 'function') {
+                const config = window.pbjs.getConfig();
+                if (config && config.userSync && Array.isArray(config.userSync.userIds)) {
+                    config.userSync.userIds.forEach(idModule => {
+                        let warningMsg = null;
+                        
+                        // Validate params
+                        if (!idModule.params || Object.keys(idModule.params).length === 0) {
+                            warningMsg = "Warning: Configured without required 'params'. The provider may fail to generate an ID.";
+                        }
+
+                        window.postMessage({
+                            type: 'SECURE_SIGNAL_DETECTED',
+                            source: 'PREBID_USERSYNC',
+                            provider: idModule.name,
+                            value: 'Configured in userSync',
+                            warning: warningMsg
+                        }, '*');
+                        console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
+                    });
+                }
+            }
+        } catch(e) { /* ignore if config fails */ }
+    };
+
     // Intercept pbjs.registerSignalSources
     const originalRegister = window.pbjs.registerSignalSources;
     if (typeof originalRegister === 'function') {
@@ -102,8 +130,10 @@
             if (arguments.length > 0) {
                 processPrebidSources(arguments[0]);
             }
+            checkUserSyncConfig(); // Check config whenever sources are registered
             return originalRegister.apply(this, arguments);
         };
+        checkUserSyncConfig(); // Also check immediately
     } else {
         // If pbjs isn't fully loaded yet, we can try to intercept its creation or queue
         window.pbjs.que.push(() => {
@@ -113,25 +143,11 @@
                     if (arguments.length > 0) {
                         processPrebidSources(arguments[0]);
                     }
+                    checkUserSyncConfig();
                     return innerOriginalRegister.apply(this, arguments);
                 };
             }
-            
-            // Also check getConfig().userSync in case they were already configured
-            try {
-                const config = window.pbjs.getConfig();
-                if (config && config.userSync && Array.isArray(config.userSync.userIds)) {
-                    config.userSync.userIds.forEach(idModule => {
-                        window.postMessage({
-                            type: 'SECURE_SIGNAL_DETECTED',
-                            source: 'PREBID_USERSYNC',
-                            provider: idModule.name,
-                            value: 'Configured in userSync'
-                        }, '*');
-                        console.log(`[SecureSignal Extension] Prebid userSync configured: ${idModule.name}`);
-                    });
-                }
-            } catch(e) { /* ignore if config fails */ }
+            checkUserSyncConfig();
         });
     }
 

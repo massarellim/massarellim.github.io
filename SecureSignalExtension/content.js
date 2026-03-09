@@ -29,7 +29,7 @@ function normalizeProviderName(name) {
 }
 
 // Helper to add or reconcile a signal category
-function processIncomingSignal(provider, value, source) {
+function processIncomingSignal(provider, value, source, warning) {
     const normalizedNewProvider = normalizeProviderName(provider);
 
     // Check if it's already in shared (and we have nothing new to add)
@@ -46,7 +46,8 @@ function processIncomingSignal(provider, value, source) {
                 value: value,
                 timestamp: new Date().toISOString(),
                 source: 'gam_matched',
-                prebidValue: secureSignals.prebidOnly[inPrebidIdx].prebidValue || 'Registered in Prebid'
+                prebidValue: secureSignals.prebidOnly[inPrebidIdx].prebidValue || 'Registered in Prebid',
+                warning: warning || secureSignals.prebidOnly[inPrebidIdx].warning
             });
             secureSignals.prebidOnly.splice(inPrebidIdx, 1);
             return true;
@@ -58,7 +59,8 @@ function processIncomingSignal(provider, value, source) {
                 provider: provider,
                 value: value,
                 timestamp: new Date().toISOString(),
-                source: source
+                source: source,
+                warning: warning
             });
             return true;
         }
@@ -73,7 +75,8 @@ function processIncomingSignal(provider, value, source) {
                 value: existingGamSignal.value,
                 timestamp: new Date().toISOString(),
                 source: 'prebid_matched',
-                prebidValue: value
+                prebidValue: value,
+                warning: existingGamSignal.warning || warning
             });
             secureSignals.gamOnly.splice(inGamIdx, 1);
             return true;
@@ -85,7 +88,8 @@ function processIncomingSignal(provider, value, source) {
                 provider: provider,
                 value: value,
                 timestamp: new Date().toISOString(),
-                source: source
+                source: source,
+                warning: warning
             });
             return true;
         }
@@ -116,7 +120,8 @@ function processIncomingSignal(provider, value, source) {
                 value: 'Generated EID Payload',
                 prebidValue: value,
                 timestamp: new Date().toISOString(),
-                source: source
+                source: source,
+                warning: warning
             });
             return true;
         }
@@ -157,7 +162,7 @@ try {
                     }
                 }
                 
-                const isNew = processIncomingSignal(providerName, typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue), 'localStorage');
+                const isNew = processIncomingSignal(providerName, typeof parsedValue === 'object' ? JSON.stringify(parsedValue) : String(parsedValue), 'localStorage', null);
                 if (isNew) {
                     console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
                     didFindLocal = true;
@@ -181,7 +186,7 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data && event.data.type === 'SECURE_SIGNAL_DETECTED') {
-        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM');
+        const isNew = processIncomingSignal(event.data.provider, event.data.value, event.data.source || 'GAM', event.data.warning);
         if (isNew) {
             console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider} via ${event.data.source || 'GAM'}`);
             saveSignalsToStorage();

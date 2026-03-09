@@ -160,8 +160,29 @@ h2 {
   align-items: center;
 }
 
-.signal-card.status-PREBID_ONLY .provider-name {
-  color: #fb923c;
+.signal-card.status-PREBID_ONLY {
+  border-left: 3px solid #f97316;
+}
+
+.warning-block {
+  margin-top: 12px;
+  margin-bottom: 4px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #fbbf24;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.warning-block svg {
+  flex-shrink: 0;
+  stroke: #f59e0b;
+  margin-top: 1px;
 }
 
 .signal-card.status-GAM_ONLY .provider-name {
