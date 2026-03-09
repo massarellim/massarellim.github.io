@@ -34,11 +34,27 @@
         };
     };
 
-    // Override push to intercept new providers added dynamically
-    window.googletag.secureSignalProviders.push = function(...args) {
-        args.forEach(provider => processProvider(provider));
-        return originalPush.apply(this, args);
-    };
+    // Override push safely to intercept new providers added dynamically
+    if (typeof Proxy !== 'undefined') {
+        window.googletag.secureSignalProviders = new Proxy(window.googletag.secureSignalProviders, {
+            get(target, prop) {
+                if (prop === 'push') {
+                    return function(...args) {
+                        args.forEach(provider => processProvider(provider));
+                        return target.push(...args);
+                    };
+                }
+                // Forward everything else to original array/object (like clearAllCache)
+                return typeof target[prop] === 'function' ? target[prop].bind(target) : target[prop];
+            }
+        });
+    } else {
+        // Fallback if Proxy is not supported
+        window.googletag.secureSignalProviders.push = function(...args) {
+            args.forEach(provider => processProvider(provider));
+            return originalPush.apply(this, args);
+        };
+    }
 
     // Process providers that might have been pushed before our script ran
     if (window.googletag.secureSignalProviders.length > 0) {
@@ -46,4 +62,7 @@
             processProvider(provider);
         });
     }
+
+    // Ping the content script that the inject script is ready, just in case
+    window.postMessage({ type: 'SECURE_SIGNAL_INJECT_READY' }, '*');
 })();
