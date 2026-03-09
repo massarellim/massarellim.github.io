@@ -5,6 +5,7 @@
   "description": "Intercepts and validates Secure Signals and Encrypted Signals sent to Google Ad Manager.",
   "permissions": [
     "webRequest",
+    "webNavigation",
     "storage",
     "scripting",
     "activeTab"
@@ -21,20 +22,21 @@
         "<all_urls>"
       ],
       "js": [
+        "inject.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "content.js"
       ],
       "run_at": "document_start",
       "all_frames": true
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "inject.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
     }
   ],
   "action": {

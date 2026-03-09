@@ -25,43 +25,31 @@ function decodeBase64UrlSafe(str) {
   }
 }
 
-// In-memory store before flushing to storage, keyed by tabId
-const sessionData = {};
-
-function getTabData(tabId) {
-  if (!sessionData[tabId]) {
-    sessionData[tabId] = { injected: [], network: [] };
-  }
-  return sessionData[tabId];
-}
-
-function flushToStorage(tabId) {
-  const data = getTabData(tabId);
-  chrome.storage.local.set({ [`tab_${tabId}`]: data });
-}
-
 // 1. Listen for messages from content.js (injected signals)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'log_injected_signal' && sender.tab) {
     const tabId = sender.tab.id;
-    const tabData = getTabData(tabId);
+    const key = `tab_${tabId}`;
     
-    const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
-    
-    const signalData = {
-      type: request.type,
-      providerId: request.providerId,
-      payload: request.payload,
-      timestamp: request.timestamp
-    };
-    
-    if (existingIndex > -1) {
-      tabData.injected[existingIndex] = signalData;
-    } else {
-      tabData.injected.push(signalData);
-    }
-    
-    flushToStorage(tabId);
+    chrome.storage.local.get([key], (res) => {
+      let tabData = res[key] || { injected: [], network: [] };
+      const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+      
+      const signalData = {
+        type: request.type,
+        providerId: request.providerId,
+        payload: request.payload,
+        timestamp: request.timestamp
+      };
+      
+      if (existingIndex > -1) {
+        tabData.injected[existingIndex] = signalData;
+      } else {
+        tabData.injected.push(signalData);
+      }
+      
+      chrome.storage.local.set({ [key]: tabData });
+    });
   }
 });
 
@@ -69,8 +57,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.webNavigation.onCommitted.addListener((details) => {
   if (details.frameId === 0) { // Main frame
     const tabId = details.tabId;
-    sessionData[tabId] = { injected: [], network: [] };
-    chrome.storage.local.set({ [`tab_${tabId}`]: sessionData[tabId] });
+    const key = `tab_${tabId}`;
+    chrome.storage.local.set({ [key]: { injected: [], network: [] } });
   }
 });
 
@@ -84,37 +72,39 @@ chrome.webRequest.onBeforeRequest.addListener(
     const ssj = url.searchParams.get('ssj');
     
     if (a3p || ssj) {
-      const tabData = getTabData(details.tabId);
+      const tabId = details.tabId;
+      const key = `tab_${tabId}`;
       
-      const processParam = (paramValue, type) => {
-        if (!paramValue) return;
+      chrome.storage.local.get([key], (res) => {
+        let tabData = res[key] || { injected: [], network: [] };
         
-        let decoded = decodeBase64UrlSafe(paramValue);
-        
-        if (decoded) {
-           // Decoded value is often an array or object containing multiple signals.
-           // Usually { "providers": [ ... ] } or [ ... ]
-           // We will store the raw decoded object. The UI will flatten it for comparison.
-           tabData.network.push({
-             type: type,
-             rawParams: paramValue,
-             decoded: decoded,
-             timestamp: Date.now()
-           });
-        } else {
-           tabData.network.push({
-             type: type,
-             rawParams: paramValue,
-             decoded: "Failed to decode Base64",
-             timestamp: Date.now()
-           });
-        }
-      };
+        const processParam = (paramValue, type) => {
+          if (!paramValue) return;
+          
+          let decoded = decodeBase64UrlSafe(paramValue);
+          
+          if (decoded) {
+             tabData.network.push({
+               type: type,
+               rawParams: paramValue,
+               decoded: decoded,
+               timestamp: Date.now()
+             });
+          } else {
+             tabData.network.push({
+               type: type,
+               rawParams: paramValue,
+               decoded: "Failed to decode Base64",
+               timestamp: Date.now()
+             });
+          }
+        };
 
-      processParam(a3p, 'secureSignal');
-      processParam(ssj, 'encryptedSignal');
-      
-      flushToStorage(details.tabId);
+        processParam(a3p, 'secureSignal');
+        processParam(ssj, 'encryptedSignal');
+        
+        chrome.storage.local.set({ [key]: tabData });
+      });
     }
   },
   { urls: ["*://securepubads.g.doubleclick.net/gampad/ads*"] }

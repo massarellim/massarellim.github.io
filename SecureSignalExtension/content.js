@@ -1,13 +1,7 @@
 /**
- * Content script to inject inject.js and pass signals to the background worker.
+ * Content script to relay messages.
+ * We no longer inject manually since manifest.json handles it via `world: "MAIN"`.
  */
-
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
-script.onload = function() {
-    this.remove();
-};
-(document.head || document.documentElement).appendChild(script);
 
 window.addEventListener('message', function(event) {
   if (event.source !== window || !event.data || event.data.source !== 'secure-signal-validator') {
