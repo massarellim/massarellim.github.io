@@ -57,46 +57,6 @@ function encodeBase64UrlSafe(str) {
 function processIncomingSignal(provider, value, source, warning, configParams, bidders) {
     const normalizedNewProvider = normalizeProviderName(provider);
 
-    // EXACT VALUE DEDUPLICATION:
-    // If we have an existing signal with the exact same ID value, they represent the same user identity.
-    // We merge the provider names to reduce UI clutter and stop duplicates.
-    const strValue = String(value).trim();
-    if (strValue && strValue !== 'null' && strValue !== 'undefined') {
-        let existingMatch = secureSignals.shared.find(s => s.value === strValue || s.prebidValue === strValue) ||
-                            secureSignals.gamOnly.find(s => s.value === strValue) ||
-                            secureSignals.prebidOnly.find(s => s.value === strValue || s.prebidValue === strValue);
-                            
-        if (existingMatch) {
-            // Just append this provider name as an alias if it's not already listed
-            const currentNames = existingMatch.provider.toLowerCase();
-            if (!currentNames.includes(provider.toLowerCase())) {
-                existingMatch.provider += ` / ${provider}`;
-            }
-            
-            // Merge important metadata so nothing is lost
-            if (warning && !existingMatch.warning) existingMatch.warning = warning;
-            if (configParams && !existingMatch.configParams && Object.keys(configParams).length > 0) existingMatch.configParams = configParams;
-            if (bidders && !existingMatch.bidders && bidders.length > 0) existingMatch.bidders = bidders;
-            
-            // Promote to Shared if it crosses boundaries
-            if ((source === 'GAM' || source === 'GAM_KVP' || source === 'localStorage') && secureSignals.prebidOnly.includes(existingMatch)) {
-                secureSignals.prebidOnly = secureSignals.prebidOnly.filter(s => s !== existingMatch);
-                existingMatch.source = 'gam_matched';
-                // the gam value takes precedence in value, prebid moves to prebidValue
-                if (!existingMatch.prebidValue) existingMatch.prebidValue = existingMatch.value;
-                existingMatch.value = strValue; 
-                secureSignals.shared.push(existingMatch);
-            } else if ((source === 'PREBID' || source === 'PREBID_USERSYNC' || source === 'PREBID_EID') && secureSignals.gamOnly.includes(existingMatch)) {
-                secureSignals.gamOnly = secureSignals.gamOnly.filter(s => s !== existingMatch);
-                existingMatch.source = 'prebid_matched';
-                existingMatch.prebidValue = strValue;
-                secureSignals.shared.push(existingMatch);
-            }
-            
-            return true; // Stop processing, duplicate handled
-        }
-    }
-
     // Check if it's already in shared (and we have nothing new to add)
     if (source !== 'PREBID_EID' && secureSignals.shared.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
         return false; // Already perfectly mapped
