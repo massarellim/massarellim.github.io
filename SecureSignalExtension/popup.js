@@ -95,20 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (network.length === 0) {
         networkListEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No network signals intercepted.</p>';
       } else {
-        network.forEach((net, index) => {
+        network.forEach((net) => {
           const card = document.createElement('div');
           card.className = 'card';
           
-          let typeBadge = net.type === 'secureSignal' 
-            ? '<span class="badge badge-secure">Secure Signal (a3p)</span>' 
-            : '<span class="badge badge-encrypted">Encrypted Signal (ssj)</span>';
+          let paramName = net.type === 'secureSignal' ? 'a3p' : 'ssj';
+          
+          let adUnitHtml = Array.isArray(net.adUnits) 
+             ? net.adUnits.map(u => `<div style="font-weight: 600; color: var(--accent); margin-bottom: 4px;">${u}</div>`).join('')
+             : `<div style="font-weight: 600; color: var(--accent);">${net.adUnits || net.adUnit}</div>`;
             
           card.innerHTML = `
-            <h3 class="signal-provider-name">${typeBadge} Request #${index + 1}</h3>
-            
             <div class="data-row">
-              <div class="data-label">AdUnit (iu_parts)</div>
-              <div class="data-value" style="font-weight: 600; color: var(--accent);">${net.adUnit}</div>
+              <div class="data-label">AdUnits</div>
+              <div class="data-value">${adUnitHtml}</div>
             </div>
             
             <div class="data-row" style="margin-top: 12px;">
@@ -117,8 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             
             <div class="data-row" style="margin-top: 12px;">
-              <div class="data-label">Raw Base64 Value</div>
-              <div class="data-value" style="opacity: 0.7; font-size: 10px;">${net.rawParams}</div>
+              <div class="data-label">Raw Value (${paramName})</div>
+              <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all;">${net.rawParams}</div>
             </div>
           `;
           

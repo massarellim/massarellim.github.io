@@ -22,8 +22,15 @@ function decodeBase64UrlSafe(str) {
     try {
       parsedArr = JSON.parse(decodedStr);
     } catch(e) {
-      // Fallback: The string might just be text
-      return /^[\x20-\x7E]*$/.test(decodedStr) ? decodedStr : null;
+      // Fallback: The string might be Protobuf/Binary. Extract printable ASCII strings >= 4 chars.
+      const printableMatches = decodedStr.match(/[a-zA-Z0-9.-_]{4,}/g);
+      if (printableMatches && printableMatches.length > 0) {
+          return {
+              format: "protobuf/binary",
+              extracted_strings: printableMatches
+          };
+      }
+      return decodedStr;
     }
     
     // Check if it's the expected GAM array format [ [1, "id", 1], [domain, "id", 1] ]
@@ -159,22 +166,22 @@ chrome.webRequest.onBeforeRequest.addListener(
           if (!paramValue) return;
           
           let decoded = decodeBase64UrlSafe(paramValue);
-          let assignedAdUnit = adUnitsList.length > 0 ? adUnitsList.join(', ') : 'Unknown AdUnit';
+          let assignedAdUnits = adUnitsList.length > 0 ? adUnitsList : ['Unknown AdUnit'];
           
           if (decoded) {
              tabData.network.push({
                type: type,
                rawParams: paramValue,
                decoded: decoded,
-               adUnit: assignedAdUnit,
+               adUnits: assignedAdUnits,
                timestamp: Date.now()
              });
           } else {
              tabData.network.push({
                type: type,
                rawParams: paramValue,
-               decoded: "Failed to decode Base64",
-               adUnit: assignedAdUnit,
+               decoded: "Failed to decode Base64: " + paramValue,
+               adUnits: assignedAdUnits,
                timestamp: Date.now()
              });
           }
