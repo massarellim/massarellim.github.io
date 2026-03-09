@@ -7,30 +7,43 @@
 function decodeBase64UrlSafe(str) {
   if (!str || typeof str !== 'string') return null;
   try {
-    let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (b64.length % 4) b64 += '=';
+    // This solves the bug where trailing dots (.) or spaces crash the atob decoder entirely.
+    let paddingFixed = str.replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9+/]/g, '');
+    while (paddingFixed.length % 4) paddingFixed += '=';
     
-    let decodedStr = atob(b64);
+    let decodedStr = '';
+    try {
+        decodedStr = atob(paddingFixed);
+    } catch(e) {
+        // If it's a completely mangled base64 string, try to just unpack whatever ASCII is in there natively.
+        // But usually, GAM base64 decodes fine into binary bytes, it's just the JSON parse that fails.
+    }
     
     // GAM often URL-encodes the JSON before base64 encoding it
     try {
-        decodedStr = decodeURIComponent(decodedStr);
+        if (decodedStr) decodedStr = decodeURIComponent(decodedStr);
     } catch(e) {}
     
     // Parse the outer array
     let parsedArr = null;
     try {
-      parsedArr = JSON.parse(decodedStr);
+      if (decodedStr) parsedArr = JSON.parse(decodedStr);
+      else throw new Error("No decoded string");
     } catch(e) {
       // Fallback: The string might be Protobuf/Binary. Extract printable ASCII strings >= 4 chars.
-      const printableMatches = decodedStr.match(/[a-zA-Z0-9.-_]{4,}/g);
-      if (printableMatches && printableMatches.length > 0) {
-          return {
-              format: "protobuf/binary",
-              extracted_strings: printableMatches
-          };
+      // E.g., domain names, UUIDs (which have hyphens), and long crypto strings.
+      // We'll use the original base64 decoded binary stream (decodedStr) for this.
+      if (decodedStr) {
+          const printableMatches = decodedStr.match(/[a-zA-Z0-9.\-_]{4,}/g);
+          if (printableMatches && printableMatches.length > 0) {
+              return {
+                  format: "protobuf/binary",
+                  extracted_strings: printableMatches
+              };
+          }
+          return decodedStr;
       }
-      return decodedStr;
+      return null;
     }
     
     // Check if it's the expected GAM array format [ [1, "id", 1], [domain, "id", 1] ]
