@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Secure Signal Monitor",
-  "version": "1.19",
+  "version": "1.20",
   "description": "Monitors and displays GPT Secure Signals.",
   "action": {
     "default_popup": "popup.html"
