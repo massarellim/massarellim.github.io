@@ -30,18 +30,75 @@ function decodeBase64UrlSafe(str) {
       if (decodedStr) parsedArr = JSON.parse(decodedStr);
       else throw new Error("No decoded string");
     } catch(e) {
-      // Fallback: The string might be Protobuf/Binary. Extract printable ASCII strings >= 4 chars.
-      // E.g., domain names, UUIDs (which have hyphens), and long crypto strings.
-      // We'll use the original base64 decoded binary stream (decodedStr) for this.
+      // Fallback: The string is likely a GAM Protobuf Binary Stream (used for encrypted/secure signals).
+      // We need to parse length-delimited (Wire Type 2) VarInts to extract field 1 (Provider) and field 2 (ID Value).
       if (decodedStr) {
-          const printableMatches = decodedStr.match(/[a-zA-Z0-9.\-_]{4,}/g);
-          if (printableMatches && printableMatches.length > 0) {
-              return {
-                  format: "protobuf/binary",
-                  extracted_strings: printableMatches
-              };
+          const buffer = new Uint8Array(decodedStr.length);
+          for (let i = 0; i < decodedStr.length; i++) buffer[i] = decodedStr.charCodeAt(i);
+          
+          let pairs = [];
+          let currentProvider = null;
+          
+          let cursor = 0;
+          while (cursor < buffer.length) {
+              // Read tag VarInt
+              let tag = 0, shift = 0;
+              while (cursor < buffer.length) {
+                  let b = buffer[cursor++];
+                  tag |= (b & 0x7F) << shift;
+                  if ((b & 0x80) === 0) break;
+                  shift += 7;
+              }
+              
+              let wireType = tag & 0x07;
+              let fieldNum = tag >> 3;
+              
+              if (wireType === 2) { // Length-delimited string/message
+                  let len = 0; shift = 0;
+                  while (cursor < buffer.length) {
+                      let b = buffer[cursor++];
+                      len |= (b & 0x7F) << shift;
+                      if ((b & 0x80) === 0) break;
+                      shift += 7;
+                  }
+                  
+                  if (cursor + len <= buffer.length) {
+                      let slice = buffer.subarray(cursor, cursor + len);
+                      cursor += len;
+                      
+                      // Check if it's an ASCII string (all bytes >= 32 and <= 126)
+                      let isPrintable = slice.length > 0;
+                      for (let i = 0; i < slice.length; i++) {
+                         if (slice[i] < 32 || slice[i] > 126) isPrintable = false;
+                      }
+                      
+                      if (isPrintable) {
+                          let strVal = String.fromCharCode.apply(null, slice);
+                          if (fieldNum === 1) { // Provider domain/name
+                              currentProvider = strVal;
+                              pairs.push({ provider: currentProvider, payload: null });
+                          } else if (fieldNum === 2 && currentProvider) { // The ID value itself
+                              pairs[pairs.length - 1].payload = strVal;
+                          }
+                      }
+                  } else {
+                      break; // Corrupted frame
+                  }
+              } else if (wireType === 0) { // VarInt
+                  while (cursor < buffer.length) {
+                      if ((buffer[cursor++] & 0x80) === 0) break;
+                  }
+              } else if (wireType === 1) { cursor += 8; }
+                else if (wireType === 5) { cursor += 4; }
+                else break; // Unknown wire type, abort
           }
-          return decodedStr;
+          
+          if (pairs.length > 0) {
+              return pairs.map(p => ({
+                 provider: p.provider,
+                 payload: p.payload || '[No Value/Zero-byte ID]'
+              }));
+          }
       }
       return null;
     }
