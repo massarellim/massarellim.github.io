@@ -30,6 +30,17 @@ function normalizeProviderName(name) {
     return name.replace(/\.pbjs$/, '').replace(/^_+/, '').toLowerCase();
 }
 
+// Helper to encode raw EID string to GAM URL-Safe Base64 format
+function encodeBase64UrlSafe(str) {
+    try {
+        const b64 = btoa(str);
+        // Make it URL safe (GAM format)
+        return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    } catch (e) {
+        return str; // Fallback to raw string if encoding fails
+    }
+}
+
 // Helper to add or reconcile a signal category
 function processIncomingSignal(provider, value, source, warning, configParams, bidders) {
     const normalizedNewProvider = normalizeProviderName(provider);
@@ -118,6 +129,11 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
         if (inPrebidIdx !== -1) {
             if (secureSignals.prebidOnly[inPrebidIdx].prebidValue !== value) {
                 secureSignals.prebidOnly[inPrebidIdx].prebidValue = value;
+                
+                // If it's still in Prebid Only, we must also update the simulated Encoded GAM Payload 
+                // to display the base64 encoded string instead of leaving it as "Registered in Prebid"
+                secureSignals.prebidOnly[inPrebidIdx].value = encodeBase64UrlSafe(value);
+                
                 updated = true;
             }
         }
@@ -127,7 +143,7 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
         if (!secureSignals.prebidOnly.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
             secureSignals.prebidOnly.push({
                 provider: provider,
-                value: 'Generated EID Payload',
+                value: encodeBase64UrlSafe(value),
                 prebidValue: value,
                 timestamp: new Date().toISOString(),
                 source: source,

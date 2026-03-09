@@ -41,6 +41,18 @@
                 }
             });
         }, 1000);
+
+        // 3. Mock Prebid EID payload
+        window.pbjs = {
+            getUserIdsAsEids: () => {
+                return [
+                    {
+                        source: "mock_prebid_only_eid",
+                        uids: [{ id: "pure_prebid_id_12345", ext: { rtiPartner: "TDID" } }]
+                    }
+                ]
+            }
+        };
     </script>
 </body>
 </html>

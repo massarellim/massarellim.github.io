@@ -277,14 +277,20 @@
                     if (eids && Array.isArray(eids)) {
                         eids.forEach(eid => {
                             if (eid && eid.source) {
-                                const valueString = typeof eid === 'object' ? JSON.stringify(eid) : String(eid);
-                                if (sentEidsCache[eid.source] !== valueString) {
-                                    sentEidsCache[eid.source] = valueString;
+                                
+                                // Wrap the EID object in the expected {"v": ...} format that GAM needs before encoding
+                                const signalPayload = {
+                                    v: typeof eid === 'object' ? JSON.stringify(eid) : String(eid)
+                                };
+                                const payloadString = JSON.stringify(signalPayload);
+                                
+                                if (sentEidsCache[eid.source] !== payloadString) {
+                                    sentEidsCache[eid.source] = payloadString;
                                     window.postMessage({
                                         type: 'SECURE_SIGNAL_DETECTED',
                                         source: 'PREBID_EID',
                                         provider: eid.source,
-                                        value: valueString
+                                        value: payloadString
                                     }, '*');
                                 }
                             }
@@ -297,14 +303,19 @@
                     const uids = window.pbjs.getUserIds();
                     if (uids && typeof uids === 'object') {
                         Object.keys(uids).forEach(providerName => {
-                            const valueString = typeof uids[providerName] === 'object' ? JSON.stringify(uids[providerName]) : String(uids[providerName]);
-                            if (sentEidsCache[providerName] !== valueString) {
-                                sentEidsCache[providerName] = valueString;
+                            // Wrap the UID in the expected {"v": ...} format that GAM needs before encoding
+                            const signalPayload = {
+                                v: typeof uids[providerName] === 'object' ? JSON.stringify(uids[providerName]) : String(uids[providerName])
+                            };
+                            const payloadString = JSON.stringify(signalPayload);
+                            
+                            if (sentEidsCache[providerName] !== payloadString) {
+                                sentEidsCache[providerName] = payloadString;
                                 window.postMessage({
                                     type: 'SECURE_SIGNAL_DETECTED',
                                     source: 'PREBID_EID',
                                     provider: providerName,
-                                    value: valueString
+                                    value: payloadString
                                 }, '*');
                             }
                         });
