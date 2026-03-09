@@ -39,7 +39,7 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
         return false; // Already perfectly mapped
     }
 
-    if (source === 'GAM' || source === 'localStorage') {
+    if (source === 'GAM' || source === 'localStorage' || source === 'GAM_KVP') {
         const inPrebidIdx = secureSignals.prebidOnly.findIndex(s => normalizeProviderName(s.provider) === normalizedNewProvider);
         if (inPrebidIdx !== -1) {
             // It was in Prebid, now it's in GAM -> Move to Shared!
