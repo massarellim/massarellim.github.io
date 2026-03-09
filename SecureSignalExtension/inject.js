@@ -1,6 +1,6 @@
 /**
  * This script is injected into the MAIN world to intercept Google Ad Manager secure signals.
- * It uses aggressive polling and native push overriding to survive GPT wiping the arrays.
+ * It uses the official Secure Signal GPT Monitor implementation.
  */
 (function() {
   const SCRIPT_ID = 'secure-signal-validator-inject';
@@ -16,94 +16,110 @@
         payload: payload,
         timestamp: Date.now()
       }, '*');
-      console.log(`[Secure Signal Validator] Intercepted ${type} from ${providerId}`);
     } catch (e) {
       console.error('[Secure Signal Validator] Error posting message:', e);
     }
   }
 
-  function handlePromiseOrValue(result, type, providerId) {
-    if (result && typeof result.then === 'function') {
-      result.then(val => {
-        sendInterceptedSignal(type, providerId, val);
-        return val;
-      }).catch(err => {
-         // handle error silently
-      });
-    } else {
-      sendInterceptedSignal(type, providerId, result);
-    }
-  }
+  const __monitor_symbol__ = Symbol('monitor_symbol');
 
-  function hookCollector(provider, type) {
-    if (provider && typeof provider.collectorFunction === 'function' && !provider.__validatorPatched) {
-      const originalCollector = provider.collectorFunction;
-      provider.collectorFunction = function() {
-        const result = originalCollector.apply(this, arguments);
-        handlePromiseOrValue(result, type, provider.id || 'unknown');
-        return result;
-      };
-      provider.__validatorPatched = true;
-    }
-  }
-
-  function hookProviderQueue(arrayName, type) {
-    if (!window.googletag || !window.googletag[arrayName]) return;
-    const queue = window.googletag[arrayName];
-
-    // 1. Process anything currently in the queue
-    if (Array.isArray(queue) || typeof queue.forEach === 'function') {
+  function __sec_sig_monitor() {
+    const log_label = '[Secure Signal Validator]';
+    if ('function' === typeof window.googletag?.secureSignalProviders?.push
+         && !window.googletag?.secureSignalProviders?.push[__monitor_symbol__]) {
+      console.log(`${log_label} secureSignalProviders.push() detected. Adding a proxy.`);
       try {
-        queue.forEach(p => hookCollector(p, type));
-      } catch(e){}
-    } else if (queue.length > 0) {
-      for (let i = 0; i < queue.length; i++) {
-        hookCollector(queue[i], type);
+        window.googletag.secureSignalProviders.push = new Proxy(
+          window.googletag.secureSignalProviders.push,
+          {
+            get: (target, key) => __monitor_symbol__ === key ? true : target[key],
+            apply: function (callTarget, callThis, callArgs) {
+              let providerFor = '[unknown]';
+              if (callArgs[0]?.networkCode) providerFor = `network code ${callArgs[0].networkCode}`;
+              else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
+              
+              if (callArgs[0]?.collectorFunction) {
+                  const originalCollector = callArgs[0].collectorFunction;
+                  callArgs[0].collectorFunction = function() {
+                      const result = originalCollector.apply(this, arguments);
+                      if (result && typeof result.then === 'function') {
+                          return result.then(
+                              o => {
+                                sendInterceptedSignal('secureSignal', providerFor, o);
+                                return o;
+                              },
+                              o => {
+                                return o;
+                              }
+                          );
+                      } else {
+                          sendInterceptedSignal('secureSignal', providerFor, result);
+                          return result;
+                      }
+                  };
+              }
+              Reflect.apply(callTarget, callThis, callArgs);
+            }
+          }
+        );
+        console.log(`${log_label} Clearing secureSignalProviders cache.`);
+        window.googletag.secureSignalProviders.clearAllCache();
+      } catch(error) {
+        console.log('Error when trying to add a proxy.', error.message);
       }
     }
+    else requestIdleCallback(__sec_sig_monitor, { timeout: 67 });
+  }
 
-    // 2. Monkey-patch the push function natively.
-    if (typeof queue.push === 'function' && !queue.push.__isHooked) {
-      const originalPush = queue.push;
-      queue.push = function(...args) {
-        args.forEach(p => hookCollector(p, type));
-        return originalPush.apply(this, args);
-      };
-      queue.push.__isHooked = true;
+  function __enc_sig_monitor() {
+    const log_label = '[Secure Signal Validator]';
+    if ('function' === typeof window.googletag?.encryptedSignalProviders?.push
+         && !window.googletag?.encryptedSignalProviders?.push[__monitor_symbol__]) {
+      console.log(`${log_label} encryptedSignalProviders.push() detected. Adding a proxy.`);
+      try {
+        window.googletag.encryptedSignalProviders.push = new Proxy(
+          window.googletag.encryptedSignalProviders.push,
+          {
+            get: (target, key) => __monitor_symbol__ === key ? true : target[key],
+            apply: function (callTarget, callThis, callArgs) {
+              let providerFor = '[unknown]';
+              if (callArgs[0]?.networkCode) providerFor = `network code ${callArgs[0].networkCode}`;
+              else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
+              
+              if (callArgs[0]?.collectorFunction) {
+                  const originalCollector = callArgs[0].collectorFunction;
+                  callArgs[0].collectorFunction = function() {
+                      const result = originalCollector.apply(this, arguments);
+                      if (result && typeof result.then === 'function') {
+                          return result.then(
+                              o => {
+                                sendInterceptedSignal('encryptedSignal', providerFor, o);
+                                return o;
+                              },
+                              o => {
+                                return o;
+                              }
+                          );
+                      } else {
+                          sendInterceptedSignal('encryptedSignal', providerFor, result);
+                          return result;
+                      }
+                  };
+              }
+              Reflect.apply(callTarget, callThis, callArgs);
+            }
+          }
+        );
+        console.log(`${log_label} Clearing encryptedSignalProviders cache.`);
+        window.googletag.encryptedSignalProviders.clearAllCache();
+      } catch(error) {
+        console.log('Error when trying to add a proxy.', error.message);
+      }
     }
+    else requestIdleCallback(__enc_sig_monitor, { timeout: 67 });
   }
 
-  function applyAllHooks() {
-    hookProviderQueue('secureSignalProviders', 'secureSignal');
-    hookProviderQueue('encryptedSignalProviders', 'encryptedSignal');
-  }
+  __sec_sig_monitor();
+  __enc_sig_monitor();
 
-  // 1. Initialize namespace safely
-  window.googletag = window.googletag || {};
-  window.googletag.cmd = window.googletag.cmd || [];
-
-  // 2. Hook googletag.cmd.push so we can try patching exactly when publisher tags fire
-  if (typeof window.googletag.cmd.push === 'function' && !window.googletag.cmd.push.__isHooked) {
-    const originalCmdPush = window.googletag.cmd.push;
-    window.googletag.cmd.push = function(...args) {
-      applyAllHooks();
-      const result = originalCmdPush.apply(this, args);
-      applyAllHooks();
-      return result;
-    };
-    window.googletag.cmd.push.__isHooked = true;
-  }
-
-  // 3. Push a function into the cmd queue to run as soon as GPT is ready
-  window.googletag.cmd.push(function() {
-    applyAllHooks();
-  });
-
-  // 4. Initial run
-  applyAllHooks();
-
-  // 5. Bruteforce Polling Loop (Extremely reliable fallback)
-  setInterval(applyAllHooks, 50);
-
-  console.log('[Secure Signal Validator] Native injection logic initialized.');
 })();
