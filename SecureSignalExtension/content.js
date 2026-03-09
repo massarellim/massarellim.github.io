@@ -1,10 +1,5 @@
-// Inject script into the main world to interact with window.googletag
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
-script.onload = function() {
-    this.remove();
-};
-(document.head || document.documentElement).appendChild(script);
+// In Manifest V3, inject.js is now injected natively into the MAIN world via manifest.json.
+// This prevents asynchronous race conditions where Prebid/GPT initialize before our proxy.
 
 let secureSignals = {
     shared: [],
