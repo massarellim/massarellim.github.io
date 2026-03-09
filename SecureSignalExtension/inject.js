@@ -264,6 +264,20 @@
         });
     }
 
+    // Helper to robustly extract just the raw string ID from nested EID/UID objects
+    function extractRawIdString(obj) {
+        if (obj === null || obj === undefined) return '';
+        if (typeof obj === 'string' || typeof obj === 'number') return String(obj);
+        if (typeof obj === 'object') {
+            if (obj.id !== undefined) return extractRawIdString(obj.id);
+            if (obj.uid !== undefined) return extractRawIdString(obj.uid);
+            if (obj.value !== undefined) return extractRawIdString(obj.value);
+            if (Array.isArray(obj) && obj.length > 0) return extractRawIdString(obj[0]);
+            if (obj.uids && Array.isArray(obj.uids) && obj.uids.length > 0) return extractRawIdString(obj.uids[0]);
+        }
+        return JSON.stringify(obj); // Absolute fallback if we can't find a standard key
+    }
+
     // Track previously sent EIDs to avoid spamming duplicates over the message bridge
     const sentEidsCache = {};
 
@@ -279,12 +293,7 @@
                             if (eid && eid.source) {
                                 
                                 // Extract the raw ID string
-                                let rawId = '';
-                                if (eid.uids && eid.uids.length > 0 && eid.uids[0].id) {
-                                    rawId = typeof eid.uids[0].id === 'object' ? JSON.stringify(eid.uids[0].id) : String(eid.uids[0].id);
-                                } else {
-                                    rawId = typeof eid === 'object' ? JSON.stringify(eid) : String(eid);
-                                }
+                                let rawId = extractRawIdString(eid);
                                 
                                 if (sentEidsCache[eid.source] !== rawId) {
                                     sentEidsCache[eid.source] = rawId;
@@ -306,16 +315,7 @@
                     if (uids && typeof uids === 'object') {
                         Object.keys(uids).forEach(providerName => {
                             // Extract the raw ID string
-                            let rawId = uids[providerName];
-                            if (typeof rawId === 'object') {
-                                if (rawId.id) {
-                                    rawId = typeof rawId.id === 'object' ? JSON.stringify(rawId.id) : String(rawId.id);
-                                } else {
-                                    rawId = JSON.stringify(rawId);
-                                }
-                            } else {
-                                rawId = String(rawId);
-                            }
+                            let rawId = extractRawIdString(uids[providerName]);
                             
                             if (sentEidsCache[providerName] !== rawId) {
                                 sentEidsCache[providerName] = rawId;
