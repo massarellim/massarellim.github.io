@@ -17,22 +17,33 @@
             // Handle both Promise and direct return values
             if (result && typeof result.then === 'function') {
                 return result.then((signal) => {
+                    let extractedSignal = signal;
+                    // If the collector returns an array (like ["criteo.com", "actual_id"]), extract the raw ID string
+                    if (Array.isArray(signal) && signal.length >= 2 && typeof signal[1] === 'string') {
+                        extractedSignal = signal[1];
+                    }
+
                     window.postMessage({
                         type: 'SECURE_SIGNAL_DETECTED',
                         source: 'GAM',
                         provider: provider.id,
-                        value: signal
+                        value: extractedSignal
                     }, '*');
-                    return signal;
+                    return signal; // Must return the ORIGINAL signal to GAM so we don't break the page
                 }).catch(err => {
                     throw err; 
                 });
             } else {
+                let extractedSignal = result;
+                if (Array.isArray(result) && result.length >= 2 && typeof result[1] === 'string') {
+                    extractedSignal = result[1];
+                }
+                
                 window.postMessage({
                     type: 'SECURE_SIGNAL_DETECTED',
                     source: 'GAM',
                     provider: provider.id,
-                    value: result
+                    value: extractedSignal
                 }, '*');
                 return result;
             }
@@ -335,4 +346,78 @@
 
     // Ping the content script that the inject script is ready, just in case
     window.postMessage({ type: 'SECURE_SIGNAL_INJECT_READY' }, '*');
+
+    // ==========================================
+    // NETWORK INTERCEPTION (XHR & Fetch Spying)
+    // ==========================================
+    
+    // Helper to decode Base64 URI safely
+    const decodeUrlSafeBase64 = (str) => {
+        try {
+            let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (b64.length % 4) { b64 += '='; }
+            return atob(b64);
+        } catch(e) { return null; }
+    };
+
+    const processNetworkUrl = (url) => {
+        if (!url || typeof url !== 'string') return;
+        
+        // We strictly care about Google Ad Manager ad requests
+        if (url.includes('/gampad/ads')) {
+            try {
+                const urlObj = new URL(url.startsWith('http') ? url : window.location.origin + url);
+                const a3p = urlObj.searchParams.get('a3p');
+                const ssj = urlObj.searchParams.get('ssj');
+                
+                const processParam = (paramValue, sourceName) => {
+                    if (!paramValue) return;
+                    const decoded = decodeUrlSafeBase64(paramValue);
+                    if (!decoded) return;
+                    
+                    try {
+                        // The payload is typically a JSON object map of { "provider_id": "base64_payload" }
+                        const payloadJson = JSON.parse(decoded);
+                        
+                        // Iterate through each provider in the network payload and beam it back to content.js
+                        Object.keys(payloadJson).forEach(providerId => {
+                            window.postMessage({
+                                type: 'SECURE_SIGNAL_DETECTED',
+                                source: 'GAM_NETWORK_REQUEST',
+                                provider: providerId,
+                                value: payloadJson[providerId],
+                                networkParam: sourceName // 'a3p' or 'ssj'
+                            }, '*');
+                        });
+                    } catch(e) {
+                        // If it's not JSON, it might just be a raw string or we failed to parse it, ignore for now
+                    }
+                };
+
+                processParam(a3p, 'a3p');
+                processParam(ssj, 'ssj');
+
+            } catch(e) { /* ignore URL parse errors */ }
+        }
+    };
+
+    // 1. Monkey-patch XMLHttpRequest
+    const originalXhrOpen = window.XMLHttpRequest.prototype.open;
+    window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+        processNetworkUrl(url);
+        return originalXhrOpen.apply(this, [method, url, ...rest]);
+    };
+
+    // 2. Monkey-patch Fetch API
+    const originalFetch = window.fetch;
+    if (typeof originalFetch === 'function') {
+        window.fetch = function() {
+            let url = arguments[0];
+            if (url instanceof Request) {
+                url = url.url;
+            }
+            processNetworkUrl(url);
+            return originalFetch.apply(this, arguments);
+        };
+    }
 })();
