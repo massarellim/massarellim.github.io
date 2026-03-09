@@ -8,7 +8,37 @@ script.onload = function() {
 
 let secureSignals = [];
 
-// Listen for messages from the injected script
+// Helper to save to chrome storage
+function saveSignalsToStorage() {
+    const pageUrl = window.location.href.split('?')[0].split('#')[0];
+    chrome.storage.local.set({ [pageUrl]: secureSignals });
+}
+
+// 1. Scrape existing localStorage for _GESPSK keys
+try {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('_GESPSK-')) {
+            const providerName = key.replace('_GESPSK-', '');
+            const value = localStorage.getItem(key);
+            
+            secureSignals.push({
+                provider: providerName,
+                value: value,
+                timestamp: new Date().toISOString(),
+                source: 'localStorage'
+            });
+            console.log(`[SecureSignal Extension] Found stored signal from: ${providerName}`);
+        }
+    }
+    if (secureSignals.length > 0) {
+        saveSignalsToStorage();
+    }
+} catch (e) {
+    console.warn('[SecureSignal Extension] Could not access localStorage', e);
+}
+
+// 2. Listen for messages from the injected script
 window.addEventListener('message', (event) => {
     // Only accept messages from ourselves
     if (event.source !== window) return;
@@ -17,15 +47,18 @@ window.addEventListener('message', (event) => {
         const newSignal = {
             provider: event.data.provider,
             value: event.data.value,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            source: 'injected_push'
         };
         
-        secureSignals.push(newSignal);
-        console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider}`);
+        // Prevent exact duplicates if they were already found in localStorage
+        const isDuplicate = secureSignals.some(s => s.provider === newSignal.provider && s.value === newSignal.value);
         
-        // Save to chrome local storage mapped by the URL so pages don't bleed into each other
-        const pageUrl = window.location.href.split('?')[0].split('#')[0]; // simple base URL
-        chrome.storage.local.set({ [pageUrl]: secureSignals });
+        if (!isDuplicate) {
+            secureSignals.push(newSignal);
+            console.log(`[SecureSignal Extension] Collected signal from: ${event.data.provider}`);
+            saveSignalsToStorage();
+        }
     }
 });
 
