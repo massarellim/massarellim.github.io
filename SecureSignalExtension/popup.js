@@ -216,19 +216,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.appendChild(createPayloadBlock('Prebid Bidder Allowlist', signal.bidders));
             }
 
-            // 2. Prebid EID Payload (if exists)
-            if (signal.prebidValue) {
-                card.appendChild(createPayloadBlock('Prebid EID (Raw)', signal.prebidValue));
-            }
+            if (signal.status === 'PREBID_ONLY') {
+                card.appendChild(createPayloadBlock('Prebid ID (Raw)', signal.value || signal.prebidValue));
+            } else {
+                // 2. Prebid EID Payload (if exists)
+                if (signal.prebidValue) {
+                    card.appendChild(createPayloadBlock('Prebid ID (Raw)', signal.prebidValue));
+                }
 
-            // 2. GAM Payload (Encoded)
-            card.appendChild(createPayloadBlock('GAM Payload (Encoded)', signal.value));
+                // 2. GAM Payload (Encoded)
+                card.appendChild(createPayloadBlock('GAM Payload (Encoded)', signal.value));
 
-            // 3. GAM Payload (Decoded)
-            if (signal.value && typeof signal.value === 'string') {
-                const decoded = decodeBase64UrlSafe(signal.value);
-                if (decoded && decoded !== signal.value) {
-                    card.appendChild(createPayloadBlock('GAM Payload (Decoded)', decoded));
+                // 3. GAM Payload (Decoded)
+                if (signal.value && typeof signal.value === 'string') {
+                    const decoded = decodeBase64UrlSafe(signal.value);
+                    if (decoded && decoded !== signal.value) {
+                        card.appendChild(createPayloadBlock('GAM Payload (Decoded)', decoded));
+                    }
                 }
             }
             

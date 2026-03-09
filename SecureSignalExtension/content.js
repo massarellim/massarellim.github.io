@@ -27,7 +27,19 @@ function saveSignalsToStorage() {
 // Helper to normalize provider names since Prebid often appends .pbjs or similar suffixes to GAM
 function normalizeProviderName(name) {
     if (!name) return '';
-    return name.replace(/\.pbjs$/, '').replace(/^_+/, '').toLowerCase();
+    let normalized = name.replace(/\.pbjs$/, '')
+                         .replace(/\.com$/, '') // e.g. criteo.com -> criteo
+                         .replace(/^_+/, '')
+                         .toLowerCase();
+                         
+    // Reconcile common naming mismatches between userSync aliases and EID sources
+    if (normalized === 'criteoid') return 'criteo';
+    if (normalized === 'panoramaid' || normalized === 'lotamepanoramaid') return 'lotame';
+    if (normalized.includes('liveramp') || normalized.includes('idl')) return 'liveramp';
+    if (normalized === 'pubcid') return 'pubcommon';
+    if (normalized === 'ttdid') return 'tradedesk';
+    
+    return normalized;
 }
 
 // Helper to encode raw EID string to GAM URL-Safe Base64 format
@@ -129,11 +141,7 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
         if (inPrebidIdx !== -1) {
             if (secureSignals.prebidOnly[inPrebidIdx].prebidValue !== value) {
                 secureSignals.prebidOnly[inPrebidIdx].prebidValue = value;
-                
-                // If it's still in Prebid Only, we must also update the simulated Encoded GAM Payload 
-                // to display the base64 encoded string instead of leaving it as "Registered in Prebid"
-                secureSignals.prebidOnly[inPrebidIdx].value = encodeBase64UrlSafe(value);
-                
+                secureSignals.prebidOnly[inPrebidIdx].value = value;
                 updated = true;
             }
         }
@@ -143,7 +151,7 @@ function processIncomingSignal(provider, value, source, warning, configParams, b
         if (!secureSignals.prebidOnly.some(s => normalizeProviderName(s.provider) === normalizedNewProvider)) {
             secureSignals.prebidOnly.push({
                 provider: provider,
-                value: encodeBase64UrlSafe(value),
+                value: value,
                 prebidValue: value,
                 timestamp: new Date().toISOString(),
                 source: source,
