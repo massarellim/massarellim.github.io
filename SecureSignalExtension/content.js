@@ -58,9 +58,43 @@ function encodeBase64UrlSafe(str) {
     }
 }
 
+// Deep extraction helper cloned from inject.js to ensure local storage or rogue broadcasts are cleaned
+const extractRawId = (payload) => {
+    if (payload === null || payload === undefined || payload === 'Registered in Prebid' || payload === 'Configured in userSync') return String(payload);
+    
+    let obj = payload;
+    // 1. If it's a string that looks like JSON, try to parse it
+    if (typeof payload === 'string') {
+        try {
+            const parsed = JSON.parse(payload);
+            if (parsed !== null && typeof parsed === 'object') obj = parsed;
+        } catch (e) {}
+    }
+    
+    // 2. If it is an array, we assume index 1 is the raw ID (e.g. ["provider", "raw_id"])
+    if (Array.isArray(obj)) {
+        if (obj.length >= 2) return extractRawId(obj[1]);
+        if (obj.length === 1) return extractRawId(obj[0]);
+        return '[]';
+    }
+    
+    // 3. If it's an object with a uid or id field
+    if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+        if (obj.uid !== undefined) return extractRawId(obj.uid);
+        if (obj.id !== undefined) return extractRawId(obj.id);
+        if (obj.value !== undefined) return extractRawId(obj.value);
+    }
+    
+    // 4. Default stringification
+    return typeof obj === 'object' ? JSON.stringify(obj) : String(obj);
+};
+
 // Helper to add or reconcile a signal category
-function processIncomingSignal(provider, value, source, warning, configParams, bidders) {
+function processIncomingSignal(provider, rawValueUnextracted, source, warning, configParams, bidders) {
     const normalizedNewProvider = normalizeProviderName(provider);
+    
+    // V2.5: Force extraction on anything hitting content.js just in case inject.js missed it
+    const value = extractRawId(rawValueUnextracted);
 
     // 1. Look for an existing signal with this normalized name
     let existingMatch = secureSignals.all.find(s => normalizeProviderName(s.provider) === normalizedNewProvider);

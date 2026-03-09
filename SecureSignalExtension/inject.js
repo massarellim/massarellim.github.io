@@ -396,7 +396,7 @@
                                 type: 'SECURE_SIGNAL_DETECTED',
                                 source: 'GAM_NETWORK_REQUEST',
                                 provider: providerId,
-                                value: payloadJson[providerId],
+                                value: extractRawId(payloadJson[providerId]), // MUST EXTRACT OR WE SEND FULL ARRAYS
                                 networkParam: sourceName // 'a3p' or 'ssj'
                             }, '*');
                         });
