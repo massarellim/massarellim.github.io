@@ -20,11 +20,27 @@ try {
         const key = localStorage.key(i);
         if (key && key.startsWith('_GESPSK-')) {
             const providerName = key.replace('_GESPSK-', '');
-            const value = localStorage.getItem(key);
+            let rawValue = localStorage.getItem(key);
+            let parsedValue = rawValue;
+
+            // Many Secure Signal providers store a JSON object in localStorage
+            // e.g. {"signal":"<the_actual_signal>","timestamp":123456789}
+            // We should attempt to parse it and extract the inner signal to look cleaner.
+            try {
+                const jsonObj = JSON.parse(rawValue);
+                if (jsonObj && typeof jsonObj === 'object') {
+                    // Try common keys if it's an object
+                    if (jsonObj.signal) {
+                        parsedValue = jsonObj.signal;
+                    } else if (jsonObj.v) {
+                        parsedValue = jsonObj.v;
+                    }
+                }
+            } catch(e) { /* It's just a raw string, use as is */ }
             
             secureSignals.push({
                 provider: providerName,
-                value: value,
+                value: parsedValue,
                 timestamp: new Date().toISOString(),
                 source: 'localStorage'
             });
