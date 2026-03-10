@@ -8,7 +8,7 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  const { type, providerId, payload, error, isCached, timestamp } = event.data;
+  const { type, providerId, payload, error, origin, timestamp } = event.data;
   
   chrome.runtime.sendMessage({
     action: 'log_injected_signal',
@@ -16,7 +16,7 @@ window.addEventListener('message', function(event) {
     providerId: providerId,
     payload: payload,
     error: error,
-    isCached: isCached,
+    origin: origin,
     timestamp: timestamp
   });
 });
