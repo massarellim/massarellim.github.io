@@ -7,21 +7,6 @@
   if (window[SCRIPT_ID]) return;
   window[SCRIPT_ID] = true;
 
-  // Polyfill for badly written 3rd party tags (e.g. RTBHouse) looking for Prebid
-  // Their scripts use optional chaining on pbjs (pbjs?.getUserIds()) but assume pbjs means getUserIds exists.
-  // Standard Prebid setups always put a stub pbjs object in the head, causing them to crash trying to execute undefined().
-  window.pbjs = window.pbjs || {};
-  if (typeof window.pbjs.getUserIds !== 'function') {
-      window.pbjs.getUserIds = function() { return {}; };
-  }
-
-  // Ensure GAM namespace and arrays exist IMMEDIATELY.
-  // This allows us to hook the raw Array.prototype.push before GPT even loads, safely
-  // trapping early scripts like RTBHouse that fire immediately on page load.
-  window.googletag = window.googletag || {};
-  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
-  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
-
   function sendInterceptedSignal(type, providerId, payload) {
     try {
       let safePayload = payload;
@@ -49,41 +34,6 @@
     }
   }
 
-  function createSafeRTBHouseCollector() {
-    return async () => {
-        try {
-            let espId = window.localStorage.getItem("rtbhouse-esp");
-            if (!espId) {
-                espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
-                window.localStorage.setItem("rtbhouse-esp", espId);
-            }
-            const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
-                method: "POST",
-                body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
-                headers: { "Content-Type": "text/plain" }
-            });
-            if (!response.ok) return null;
-            const data = await response.json();
-            return data.message;
-        } catch (err) {
-            console.error("Safe RTBHouse fetch failed:", err);
-            return ""; 
-        }
-    };
-  }
-
-  // Sanitize any providers that somehow injected before this script ran
-  [window.googletag.secureSignalProviders, window.googletag.encryptedSignalProviders].forEach(arr => {
-      if (Array.isArray(arr)) {
-          arr.forEach(provider => {
-              if (provider && provider.id === 'rtbhouse') {
-                  console.warn('[Secure Signal Validator] Intercepted pre-existing broken RTBHouse tag. Swapping out collector function.');
-                  provider.collectorFunction = createSafeRTBHouseCollector();
-              }
-          });
-      }
-  });
-
   const __monitor_symbol__ = Symbol('monitor_symbol');
 
   __sec_sig_monitor();
@@ -104,11 +54,6 @@
               if (callArgs[0]?.networkCode) providerFor = `network code ${callArgs[0].networkCode}`;
               else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
               console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
-              
-              if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
-                  console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
-                  callArgs[0].collectorFunction = createSafeRTBHouseCollector();
-              }
               
               if (callArgs[0]?.collectorFunction) {
                 callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
@@ -157,11 +102,6 @@
               else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
               console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
-              
-              if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
-                  console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
-                  callArgs[0].collectorFunction = createSafeRTBHouseCollector();
-              }
               
               if (callArgs[0]?.collectorFunction) {
                 callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
