@@ -116,12 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
              
              if (Array.isArray(net.decoded)) {
                  // Explicitly evaluate dictionary if decoded gracefully into array of objects
-                 const found = net.decoded.find(s => s && s.provider === signal.providerId && (s.payload === signal.payload || String(s.payload) === rawIDToSearch));
+                 const found = net.decoded.find(s => s && s.provider === signal.providerId);
                  if (found) matched = true;
              } else {
                  // Fallback to strict dictionary substr matching, bounding the provider ID in quotes
                  const netStr = JSON.stringify(net.decoded);
-                 if (netStr && netStr.includes('"' + signal.providerId + '"') && netStr.includes(rawIDToSearch)) {
+                 if (netStr && netStr.includes('"' + signal.providerId + '"')) {
                      matched = true;
                  }
              }
