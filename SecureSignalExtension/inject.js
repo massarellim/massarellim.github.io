@@ -174,7 +174,7 @@
                 providerId: providerName, // The first item in the array
                 payload: idValue,
                 error: typeof errorCode === 'number' ? errorCode : null,
-                origin: 'Cached',
+                origin: 'CACHE',
                 timestamp: Date.now()
               }, '*');
               console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
@@ -220,7 +220,7 @@
                 providerId: eid.source,
                 payload: payload,
                 error: null,
-                origin: 'Prebid',
+                origin: 'HB',
                 timestamp: Date.now()
              }, '*');
           }
@@ -238,7 +238,7 @@
                 providerId: source,
                 payload: null,
                 error: "not in eids",
-                origin: 'Prebid',
+                origin: 'HB',
                 timestamp: Date.now()
              }, '*');
           }

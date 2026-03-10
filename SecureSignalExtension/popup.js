@@ -59,14 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           
           let renderOrigin = signal.origin;
-          if (!renderOrigin) renderOrigin = signal.isCached ? 'Cached' : 'GAM';
+          if (!renderOrigin) renderOrigin = signal.isCached ? 'CACHE' : 'GAM';
 
-          if (renderOrigin === 'Cached') {
-            typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">Cached</span>';
+          if (renderOrigin === 'CACHE') {
+            typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">CACHE</span>';
           } else if (renderOrigin === 'GAM') {
             typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);">GAM</span>';
-          } else if (renderOrigin === 'Prebid') {
-            typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">Prebid</span>';
+          } else if (renderOrigin === 'HB') {
+            typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB</span>';
           }
           if (signal.error !== undefined && signal.error !== null) {
             let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
