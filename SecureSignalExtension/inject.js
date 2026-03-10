@@ -7,6 +7,14 @@
   if (window[SCRIPT_ID]) return;
   window[SCRIPT_ID] = true;
 
+  // Polyfill for badly written 3rd party tags (e.g. RTBHouse) looking for Prebid
+  // Their scripts use optional chaining on pbjs (pbjs?.getUserIds()) but assume pbjs means getUserIds exists.
+  // Standard Prebid setups always put a stub pbjs object in the head, causing them to crash trying to execute undefined().
+  window.pbjs = window.pbjs || {};
+  if (typeof window.pbjs.getUserIds !== 'function') {
+      window.pbjs.getUserIds = function() { return {}; };
+  }
+
   function sendInterceptedSignal(type, providerId, payload) {
     try {
       let safePayload = payload;
