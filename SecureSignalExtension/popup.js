@@ -56,10 +56,89 @@ document.addEventListener('DOMContentLoaded', () => {
         listEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No secure or encrypted signals intercepted on this page yet.</p>';
         document.getElementById('stat-network').textContent = '0';
       } else {
-        let sentToGamCount = 0;
+        // --- Pre-compute properties for sorting ---
+        const processedSignals = injected.map(signal => {
+          // Find if this signal exists in the decoded network stream
+          let sentInNetwork = false;
+          let matchedNetworkPayload = null;
+          
+          let stringifiedInjectedPayload = "";
+          try {
+              stringifiedInjectedPayload = typeof signal.payload === 'object' ? JSON.stringify(signal.payload) : String(signal.payload);
+          } catch(e) {
+              stringifiedInjectedPayload = String(signal.payload);
+          }
+
+          let rawIDToSearch = stringifiedInjectedPayload;
+          if (typeof signal.payload === 'string') rawIDToSearch = signal.payload;
+          else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
+
+          for (const net of network) {
+             let matched = false;
+             if (Array.isArray(net.decoded)) {
+                 const found = net.decoded.find(s => s && s.provider === signal.providerId);
+                 if (found) matched = true;
+             } else {
+                 const netStr = JSON.stringify(net.decoded);
+                 if (netStr && netStr.includes('"' + signal.providerId + '"')) {
+                     matched = true;
+                 }
+             }
+             
+             let hasSafePayload = signal.payload !== null && signal.payload !== undefined && signal.payload !== '';
+             if (matched && !hasSafePayload) {
+                 matched = false;
+             }
+             
+             if (matched) {
+               sentInNetwork = true;
+               matchedNetworkPayload = net;
+               break;
+             }
+          }
+          
+          let renderOrigin = signal.origin;
+          if (!renderOrigin) renderOrigin = signal.isCached ? 'CACHE' : 'GAM';
+          
+          // Origin Score: GAM (1) > CACHE (2) > HB (3)
+          let originScore = 3;
+          if (renderOrigin === 'GAM') originScore = 1;
+          else if (renderOrigin === 'CACHE') originScore = 2;
+          
+          // Match Status Score: Green (1) > Red no-error (2) > Red error (3)
+          let matchScore = 3;
+          if (sentInNetwork) {
+              matchScore = 1; // Green
+          } else {
+              let hasError = signal.error !== undefined && signal.error !== null;
+              if (!hasError) matchScore = 2; // Red without error
+          }
+          
+          return {
+              signal: signal,
+              sentInNetwork: sentInNetwork,
+              matchedNetworkPayload: matchedNetworkPayload,
+              renderOrigin: renderOrigin,
+              originScore: originScore,
+              matchScore: matchScore
+          };
+        });
         
-        // We will render each injected signal
-        injected.forEach(signal => {
+        let sentToGamCount = processedSignals.filter(s => s.sentInNetwork).length;
+
+        // Perform sorting logic
+        processedSignals.sort((a, b) => {
+            if (a.originScore !== b.originScore) return a.originScore - b.originScore;
+            if (a.matchScore !== b.matchScore) return a.matchScore - b.matchScore;
+            return a.signal.providerId.localeCompare(b.signal.providerId);
+        });
+
+        // Loop over sorted signals and generate DOM
+        processedSignals.forEach(item => {
+          const signal = item.signal;
+          const sentInNetwork = item.sentInNetwork;
+          const renderOrigin = item.renderOrigin;
+          
           const card = document.createElement('div');
           card.className = 'card';
           
@@ -70,9 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
           }
           
-          let renderOrigin = signal.origin;
-          if (!renderOrigin) renderOrigin = signal.isCached ? 'CACHE' : 'GAM';
-
           if (renderOrigin === 'CACHE') {
             typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">CACHE</span>';
           } else if (renderOrigin === 'GAM') {
@@ -80,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (renderOrigin === 'HB') {
             typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB</span>';
           }
+          
           let errorBadgeHtml = '';
           if (signal.error !== undefined && signal.error !== null) {
             let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
@@ -92,57 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             errorBadgeHtml = `<span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; margin-left: 8px;" title="${signal.error}">Err: ${errName}</span>`;
-          }
-          
-          // Find if this signal exists in the decoded network stream
-          let sentInNetwork = false;
-          let matchedNetworkPayload = null;
-          
-          // We do a naive substring search for the primitive payload representation in the whole network stream
-          // This is highly resilient to GAM base64 schema variations.
-          let stringifiedInjectedPayload = "";
-          try {
-              stringifiedInjectedPayload = typeof signal.payload === 'object' ? JSON.stringify(signal.payload) : String(signal.payload);
-          } catch(e) {
-              stringifiedInjectedPayload = String(signal.payload);
-          }
-
-          // Just use the bare actual identity string since JSON formatting spaces might differ
-          let rawIDToSearch = stringifiedInjectedPayload;
-          // If it looks like a prebid array payload, pull out the string ID
-          if (typeof signal.payload === 'string') rawIDToSearch = signal.payload;
-          else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
-
-          for (const net of network) {
-             let matched = false;
-             
-             if (Array.isArray(net.decoded)) {
-                 // Explicitly evaluate dictionary if decoded gracefully into array of objects
-                 const found = net.decoded.find(s => s && s.provider === signal.providerId);
-                 if (found) matched = true;
-             } else {
-                 // Fallback to strict dictionary substr matching, bounding the provider ID in quotes
-                 const netStr = JSON.stringify(net.decoded);
-                 if (netStr && netStr.includes('"' + signal.providerId + '"')) {
-                     matched = true;
-                 }
-             }
-             
-             // If we found the provider ID in the network stream, we must still prove THIS was the payload sent.
-             // GAM organically strips 'null' payloads from the final network parameter.
-             // Therefore, if this signal intercept has no payload, it cannot be what GAM actually sent!
-             let hasSafePayload = signal.payload !== null && signal.payload !== undefined && signal.payload !== '';
-             if (matched && !hasSafePayload) {
-                 matched = false; // Revoke match status for null/error intercepts
-             }
-             
-             if (matched) {
-               sentInNetwork = true;
-               matchedNetworkPayload = net;
-               // Wait, sentToGamCount should only increment once per provider, not jump blindly.
-               sentToGamCount++;
-               break;
-             }
           }
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
