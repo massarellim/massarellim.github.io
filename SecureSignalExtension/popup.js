@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const matchLabel = sentInNetwork ? 'SUCCESS: Verified in Network Request' : 'FAILED: Not Sent in Network';
 
           card.innerHTML = `
-            <h3 class="signal-provider-name">${typeBadge} ${signal.providerId}</h3>
+            <h3 class="signal-provider-name">${signal.providerId} ${typeBadge}</h3>
             
             <div class="data-row">
               <div class="data-label">Local Payload</div>
