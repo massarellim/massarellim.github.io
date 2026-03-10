@@ -211,19 +211,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
-        // Deduplicate entirely by providerId, type (secure/encrypted), and origin.
-        // This preserves maximum visibility: if GAM intercepts a success but CACHE intercepts a failure, both render individually.
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type && s.origin === request.origin);
+        // Deduplicate entirely by providerId and type (secure/encrypted).
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+        
+        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from V5.4 legacy splinters)
+        if (existingIndex > -1) {
+            tabData.injected = tabData.injected.filter((s, idx) => {
+                if (idx === existingIndex) return true;
+                return !(s.providerId === request.providerId && s.type === request.type);
+            });
+        }
+        
+        const getRank = (o) => o === 'HB' ? 3 : (o === 'CACHE' ? 2 : 1);
         
         if (existingIndex > -1) {
             let existing = tabData.injected[existingIndex];
             
-            // Just update the payload and error if this specific origin fired again
-            if (request.payload !== null && request.payload !== undefined && request.payload !== '') {
+            let currentOriginPriority = getRank(existing.origin);
+            let newOriginPriority = getRank(request.origin);
+            
+            let existingHasPayload = (existing.payload !== null && existing.payload !== undefined && existing.payload !== '');
+            let requestHasPayload = (request.payload !== null && request.payload !== undefined && request.payload !== '');
+            
+            if (requestHasPayload && !existingHasPayload) {
+                // Incoming proxy succeeded where we previously failed (e.g. HB pulling after CACHE/GAM failed)
+                // We completely adopt the incoming successful state AND its origin. We delete the previous error.
                 existing.payload = request.payload;
                 existing.error = null;
-            } else if (existing.payload === null || existing.payload === undefined || existing.payload === '') {
-                 if (request.error !== undefined && request.error !== null) {
+                existing.origin = request.origin;
+            } else if (requestHasPayload && existingHasPayload) {
+                // Both intercepted a payload natively. Keep the higher priority origin flag (HB > CACHE > GAM)
+                // (This happens if CACHE has it, but Prebid polling grabs it again)
+                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
+                // Since both succeeded, neither should have an error.
+                existing.error = null;
+            } else if (!requestHasPayload && !existingHasPayload) {
+                // Neither intercepted a payload. Both failed.
+                // Keep the higher priority origin flag for visibility.
+                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
+                
+                // Merge errors responsibly: 
+                // A native numeric GAM error like 105 is vastly superior to a Prebid string "not in eids"
+                if (request.error !== undefined && request.error !== null) {
                     if (typeof existing.error === 'string' && typeof request.error === 'number') {
                         existing.error = request.error;
                     } else if (existing.error === undefined || existing.error === null) {
@@ -231,6 +260,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     }
                 }
             }
+            
+            // Wait, what if the existing one HAS a payload, but the incoming request DOES NOT?
+            // (e.g. HB successfully grabbed it, but the GAM native callback then rejects with 105)
+            // In this case, we DO NOTHING! We explicitly ignore the incoming error because it's a false-failure.
             
             existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
         } else {
@@ -336,8 +369,20 @@ chrome.webRequest.onBeforeRequest.addListener(
       });
     }
   },
-  { urls: [
-    "*://securepubads.g.doubleclick.net/gampad/ads*",
-    "*://*.doubleclick.net/gampad/ads*"
-  ] }
+  { 
+    urls: [
+      "*://securepubads.g.doubleclick.net/gampad/ads*",
+      "*://*.doubleclick.net/gampad/ads*"
+    ],
+    // Filter for requests to optimize webRequest performance
+    types: ['main_frame', 'sub_frame', 'xmlhttprequest', 'script', 'other']
+  }
 );
+
+// Clear the storage array whenever the user navigates or reloads the page
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+    if (details.frameId === 0) { // Main frame only
+        const key = `tab_${details.tabId}`;
+        await chrome.storage.local.remove([key]).catch(e => console.error(e));
+    }
+});
