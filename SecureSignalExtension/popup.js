@@ -32,6 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
           }
           
+          if (signal.isCached) {
+            typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">Cached</span>';
+          }
+          if (signal.error !== undefined && signal.error !== null) {
+            let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
+            typeBadge += ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44;">Err: ${signal.error}</span>`;
+          }
+          
           // Find if this signal exists in the decoded network stream
           let sentInNetwork = false;
           let matchedNetworkPayload = null;

@@ -8,13 +8,15 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  const { type, providerId, payload, timestamp } = event.data;
+  const { type, providerId, payload, error, isCached, timestamp } = event.data;
   
   chrome.runtime.sendMessage({
     action: 'log_injected_signal',
     type: type,
     providerId: providerId,
     payload: payload,
+    error: error,
+    isCached: isCached,
     timestamp: timestamp
   });
 });

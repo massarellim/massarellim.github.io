@@ -167,6 +167,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             type: request.type,
             providerId: request.providerId,
             payload: request.payload,
+            error: request.error,
+            isCached: request.isCached,
             timestamp: request.timestamp
         };
         

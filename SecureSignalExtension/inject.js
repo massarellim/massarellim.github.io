@@ -80,9 +80,15 @@
     
     // Always schedule the next check so we survive GPT overwriting the array/push method
     if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(__sec_sig_monitor, { timeout: 67 });
+      window.requestIdleCallback(() => {
+          __sec_sig_monitor();
+          __scan_gespsk_cache();
+      }, { timeout: 67 });
     } else {
-      setTimeout(__sec_sig_monitor, 67);
+      setTimeout(() => {
+          __sec_sig_monitor();
+          __scan_gespsk_cache();
+      }, 67);
     }
   }
 
@@ -128,10 +134,49 @@
     
     // Always schedule the next check so we survive GPT overwriting the array/push method
     if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(__enc_sig_monitor, { timeout: 67 });
+      window.requestIdleCallback(() => {
+          __enc_sig_monitor();
+          __scan_gespsk_cache();
+      }, { timeout: 67 });
     } else {
-      setTimeout(__enc_sig_monitor, 67);
+      setTimeout(() => {
+          __enc_sig_monitor();
+          __scan_gespsk_cache();
+      }, 67);
     }
+  }
+
+  const reportedCacheKeys = new Set();
+  function __scan_gespsk_cache() {
+    try {
+      if (!window.localStorage) return;
+      for (let i = 0; i < window.localStorage.length; i++) {
+        let key = window.localStorage.key(i);
+        if (key && key.startsWith('_GESPSK-') && !reportedCacheKeys.has(key)) {
+          reportedCacheKeys.add(key);
+          try {
+            let val = window.localStorage.getItem(key);
+            let parsed = JSON.parse(val);
+            if (Array.isArray(parsed) && parsed.length >= 2) {
+              let providerName = parsed[0];
+              let idValue = parsed[1];
+              let errorCode = parsed[parsed.length - 1]; // last element
+
+              window.postMessage({
+                source: 'secure-signal-validator',
+                type: 'secureSignal', // usually these are modern secure signals
+                providerId: providerName,
+                payload: idValue,
+                error: typeof errorCode === 'number' ? errorCode : null,
+                isCached: true,
+                timestamp: Date.now()
+              }, '*');
+              console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
+            }
+          } catch(e) {}
+        }
+      }
+    } catch(e) {}
   }
 
 })();
