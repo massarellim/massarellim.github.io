@@ -75,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3 class="signal-provider-name">${signal.providerId} ${typeBadge}</h3>
             
             <div class="data-row">
-              <div class="data-label">Local Payload</div>
-              <div class="data-value">${JSON.stringify(signal.payload, null, 2)}</div>
+              <div class="data-value">${typeof signal.payload === 'string' ? signal.payload : JSON.stringify(signal.payload, null, 2)}</div>
             </div>
             
             <div class="data-row" style="margin-top: 12px;">

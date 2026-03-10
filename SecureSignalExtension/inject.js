@@ -51,8 +51,8 @@
             get: (target, key) => __monitor_symbol__ === key ? true : target[key],
             apply: function (callTarget, callThis, callArgs) {
               let providerFor = '[unknown]';
-              if (callArgs[0]?.networkCode) providerFor = `network code ${callArgs[0].networkCode}`;
-              else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
+              if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
+              else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
               console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
               
               if (callArgs[0]?.collectorFunction) {
@@ -104,8 +104,8 @@
             get: (target, key) => __monitor_symbol__ === key ? true : target[key],
             apply: function (callTarget, callThis, callArgs) {
               let providerFor = '[unknown]';
-              if (callArgs[0]?.networkCode) providerFor = `network code ${callArgs[0].networkCode}`;
-              else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
+              if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
+              else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
               console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
               
