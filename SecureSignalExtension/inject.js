@@ -186,6 +186,24 @@
   }
 
   const reportedPrebidKeys = new Set();
+  const PREBID_EID_MAPPING = {
+    'id5Id': 'id5-sync.com',
+    'criteo': 'criteo.com',
+    'unifiedId': 'adserver.org',
+    'coreId': 'audigent.com',
+    'sharedId': 'pubcid.org',
+    'pubCommonId': 'pubcid.org',
+    'teadsId': 'teads.com',
+    'identityLink': 'liveramp.com',
+    'liveIntentId': 'liveintent.com',
+    'quantcastId': 'quantcast.com',
+    'yahooConnectId': 'yahoo.com',
+    'zeotapIdPlus': 'zeotap.com',
+    'lotamePanoramaId': 'crwdcntrl.net',
+    'netId': 'netid.de',
+    'uid2': 'uidapi.com'
+  };
+
   function __scan_prebid() {
     try {
       if (typeof window.pbjs === 'undefined' || typeof window.pbjs.getConfig !== 'function' || typeof window.pbjs.getUserIdsAsEids !== 'function') return;
@@ -228,16 +246,17 @@
       });
 
       configuredUserIds.forEach(source => {
-        if (!foundSources.has(source)) {
-          let key = 'prebid_err_' + source;
+        let expectedSource = PREBID_EID_MAPPING[source] || source;
+        if (!foundSources.has(expectedSource) && !foundSources.has(source)) {
+          let key = 'prebid_err_' + expectedSource;
           if (!reportedPrebidKeys.has(key)) {
              reportedPrebidKeys.add(key);
              window.postMessage({
                 source: 'secure-signal-validator',
                 type: 'secureSignal',
-                providerId: source,
+                providerId: expectedSource,
                 payload: null,
-                error: "not in eids",
+                error: `not in eids (config: ${source})`,
                 origin: 'HB',
                 timestamp: Date.now()
              }, '*');
