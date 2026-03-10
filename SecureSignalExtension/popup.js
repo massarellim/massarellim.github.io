@@ -124,13 +124,22 @@ document.addEventListener('DOMContentLoaded', () => {
              }
           }
           
-          let renderOrigin = signal.origin;
-          if (!renderOrigin) renderOrigin = signal.isCached ? 'CACHE' : 'GAM';
+          // Initialize sources for backwards compatibility
+          if (!signal.sources) {
+              signal.sources = { live: signal.origin === 'GAM', gamCache: signal.origin === 'CACHE' || signal.origin === 'GAM_CACHE', hbCache: signal.origin === 'HB' || signal.origin === 'HB_CACHE' };
+              signal.liveType = signal.sources.live ? signal.type : null;
+          }
+
+          let renderOrigin = 'GAM';
+          if (!signal.sources.live) {
+              if (signal.sources.gamCache) renderOrigin = 'GAM_CACHE';
+              else if (signal.sources.hbCache) renderOrigin = 'HB_CACHE';
+          }
           
-          // Origin Score: GAM (1) > CACHE (2) > HB (3)
+          // Origin Score: GAM (1) > GAM CACHE (2) > HB CACHE (3)
           let originScore = 3;
           if (renderOrigin === 'GAM') originScore = 1;
-          else if (renderOrigin === 'CACHE') originScore = 2;
+          else if (renderOrigin === 'GAM_CACHE') originScore = 2;
           
           // Match Status Score: Green (1) > Red no-error (2) > Red error (3)
           let matchScore = 3;
@@ -153,18 +162,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         let sentToGamCount = 0;
-        let breakdownInjected = { GAM: 0, CACHE: 0, HB: 0 };
-        let breakdownSent = { GAM: 0, CACHE: 0, HB: 0 };
+        let breakdownInjected = { GAM: 0, 'GAM CACHE': 0, 'HB CACHE': 0 };
+        let breakdownSent = { GAM: 0, 'GAM CACHE': 0, 'HB CACHE': 0 };
         
         processedSignals.forEach(s => {
-            breakdownInjected[s.renderOrigin] = (breakdownInjected[s.renderOrigin] || 0) + 1;
+            let key = s.renderOrigin === 'GAM' ? 'GAM' : (s.renderOrigin === 'GAM_CACHE' ? 'GAM CACHE' : 'HB CACHE');
+            breakdownInjected[key] = (breakdownInjected[key] || 0) + 1;
             if (s.sentInNetwork) {
                 sentToGamCount++;
-                breakdownSent[s.renderOrigin] = (breakdownSent[s.renderOrigin] || 0) + 1;
+                breakdownSent[key] = (breakdownSent[key] || 0) + 1;
             }
         });
         
-        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; CACHE: ${breakdownInjected.CACHE} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
+        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; GAM CACHE: ${breakdownInjected['GAM CACHE']} &nbsp;|&nbsp; HB CACHE: ${breakdownInjected['HB CACHE']}`;
 
         // Perform sorting logic
         try {
@@ -187,18 +197,24 @@ document.addEventListener('DOMContentLoaded', () => {
           card.className = 'card';
           
           let typeBadge = '';
-          if (signal.type === 'secureSignal') {
-            typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
+          if (signal.sources.live) {
+              if (signal.liveType === 'secureSignal') {
+                typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
+              } else if (signal.liveType === 'encryptedSignal') {
+                typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
+              }
+              
+              if (signal.sources.hbCache) {
+                typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB</span>';
+              } else {
+                typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);">GAM</span>';
+              }
           } else {
-            typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
-          }
-          
-          if (renderOrigin === 'CACHE') {
-            typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">CACHE</span>';
-          } else if (renderOrigin === 'GAM') {
-            typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);">GAM</span>';
-          } else if (renderOrigin === 'HB') {
-            typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB</span>';
+              if (signal.sources.gamCache) {
+                 typeBadge = '<span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">GAM CACHE</span>';
+              } else if (signal.sources.hbCache) {
+                 typeBadge = '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB CACHE</span>';
+              }
           }
           
           let errorBadgeHtml = '';
@@ -289,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
        }
         
         document.getElementById('stat-network').textContent = sentToGamCount;
-        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; CACHE: ${breakdownSent.CACHE} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;
+        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; GAM CACHE: ${breakdownSent['GAM CACHE']} &nbsp;|&nbsp; HB CACHE: ${breakdownSent['HB CACHE']}`;
       }
       
       // Render all raw network signals

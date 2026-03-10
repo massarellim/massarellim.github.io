@@ -27,7 +27,7 @@
         type: type,
         providerId: providerId,
         payload: safePayload,
-        origin: 'GAM',
+        origin: 'LIVE',
         timestamp: Date.now()
       }, '*');
     } catch (e) {
@@ -181,11 +181,6 @@
                    if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                    else if (typeof errContainer === 'number') errorCode = errContainer;
                }
-               let computedType = 'secureSignal';
-               if (providerName.includes('esp.') || providerName === 'liveintent.com' || providerName === 'criteo.com') {
-                   computedType = 'encryptedSignal';
-               }
-
                window.postMessage({
                    source: 'secure-signal-validator',
                    action: 'log_cache_write',
@@ -218,18 +213,13 @@
                   if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                   else if (typeof errContainer === 'number') errorCode = errContainer;
               }
-              let computedType = 'secureSignal';
-              if (providerName.includes('esp.') || providerName === 'liveintent.com' || providerName === 'criteo.com') {
-                  computedType = 'encryptedSignal';
-              }
-
               window.postMessage({
                 source: 'secure-signal-validator',
-                type: computedType,
-                providerId: providerName, // The first item in the array
+                type: 'GAM_CACHE',
+                providerId: providerName,
                 payload: idValue,
                 error: typeof errorCode === 'number' ? errorCode : null,
-                origin: 'CACHE',
+                origin: 'GAM_CACHE',
                 timestamp: Date.now()
               }, '*');
               console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
@@ -289,11 +279,11 @@
              
              window.postMessage({
                 source: 'secure-signal-validator',
-                type: 'secureSignal',
+                type: 'HB_CACHE',
                 providerId: eid.source,
                 payload: payload,
                 error: null,
-                origin: 'HB',
+                origin: 'HB_CACHE',
                 timestamp: Date.now()
              }, '*');
           }
@@ -308,11 +298,11 @@
              reportedPrebidKeys.add(key);
              window.postMessage({
                 source: 'secure-signal-validator',
-                type: 'secureSignal',
+                type: 'HB_CACHE',
                 providerId: expectedSource,
                 payload: null,
-                error: `not in eids (config: ${source})`,
-                origin: 'HB',
+                error: `Prebid: Extracted but not in eids.`,
+                origin: 'HB_CACHE',
                 timestamp: Date.now()
              }, '*');
           }

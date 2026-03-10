@@ -223,52 +223,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+        // Merge strictly by providerId. The type (secure vs encrypted) is volatile if sourced from cache.
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId);
         
-        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from V5.4 -> V5.5 -> V6 splitting legacy splinters)
+        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from prior versions where duplicate providerIds existed)
         if (existingIndex > -1) {
             tabData.injected = tabData.injected.filter((s, idx) => {
                 if (idx === existingIndex) return true;
-                return !(s.providerId === request.providerId && s.type === request.type);
+                return s.providerId !== request.providerId;
             });
         }
-        
-        const getRank = (o) => o === 'HB' ? 3 : (o === 'CACHE' ? 2 : 1);
         
         if (existingIndex > -1) {
             let existing = tabData.injected[existingIndex];
             
-            let currentOriginPriority = getRank(existing.origin);
-            let newOriginPriority = getRank(request.origin);
-            
-            let existingHasPayload = (existing.payload !== null && existing.payload !== undefined && existing.payload !== '');
-            let requestHasPayload = (request.payload !== null && request.payload !== undefined && request.payload !== '');
-            
-            if (requestHasPayload && !existingHasPayload) {
-                // Incoming proxy succeeded where we previously failed (e.g. HB pulling after CACHE/GAM failed)
-                // We completely adopt the incoming successful state AND its origin. We delete the previous error.
+            // Initialize sources if migrating from old version
+            if (!existing.sources) {
+                existing.sources = { live: existing.origin === 'GAM', gamCache: existing.origin === 'CACHE' || existing.origin === 'GAM_CACHE', hbCache: existing.origin === 'HB' || existing.origin === 'HB_CACHE' };
+                existing.liveType = existing.sources.live ? existing.type : null;
+            }
+
+            if (request.origin === 'LIVE') {
+                existing.sources.live = true;
+                existing.liveType = request.type;
                 existing.payload = request.payload;
                 existing.error = null;
-                existing.origin = request.origin;
-            } else if (requestHasPayload && existingHasPayload) {
-                // Both intercepted a payload natively. Keep the higher priority origin flag (HB > CACHE > GAM)
-                // (This happens if CACHE has it, but Prebid polling grabs it again)
-                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
-                // Since both succeeded, neither should have an error.
-                existing.error = null;
-            } else if (!requestHasPayload && !existingHasPayload) {
-                // Neither intercepted a payload. Both failed.
-                // Keep the higher priority origin flag for visibility.
-                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
-                
-                // Merge errors responsibly: 
-                // A native numeric GAM error like 105 is vastly superior to a Prebid string "not in eids"
-                if (request.error !== undefined && request.error !== null) {
-                    if (typeof existing.error === 'string' && typeof request.error === 'number') {
-                        existing.error = request.error;
-                    } else if (existing.error === undefined || existing.error === null) {
+            } else if (request.origin === 'GAM_CACHE') {
+                existing.sources.gamCache = true;
+                if (!existing.sources.live) {
+                    existing.payload = request.payload;
+                    if (request.error !== undefined && request.error !== null) {
                         existing.error = request.error;
                     }
+                }
+            } else if (request.origin === 'HB_CACHE') {
+                existing.sources.hbCache = true;
+                if (!existing.sources.live && !existing.sources.gamCache) {
+                    existing.payload = request.payload;
+                    existing.error = null;
                 }
             }
             
@@ -280,7 +272,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 payload: request.payload,
                 error: request.error,
                 origin: request.origin,
-                timestamp: request.timestamp
+                timestamp: request.timestamp,
+                sources: {
+                    live: request.origin === 'LIVE',
+                    gamCache: request.origin === 'GAM_CACHE',
+                    hbCache: request.origin === 'HB_CACHE'
+                },
+                liveType: request.origin === 'LIVE' ? request.type : null
             };
             tabData.injected.push(signalData);
         }
