@@ -211,20 +211,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type && s.origin === request.origin);
+        // Deduplicate entirely by providerId and type (secure/encrypted).
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
         
-        const signalData = {
-            type: request.type,
-            providerId: request.providerId,
-            payload: request.payload,
-            error: request.error,
-            origin: request.origin,
-            timestamp: request.timestamp
-        };
+        const getRank = (o) => o === 'HB' ? 3 : (o === 'CACHE' ? 2 : 1);
         
         if (existingIndex > -1) {
-            tabData.injected[existingIndex] = signalData;
+            let existing = tabData.injected[existingIndex];
+            
+            // 1. Elevate Origin Flag (HB > CACHE > GAM)
+            if (getRank(request.origin) > getRank(existing.origin)) {
+                existing.origin = request.origin;
+            }
+            
+            // 2. Override Payload if the new request actually has one
+            if (request.payload !== null && request.payload !== undefined) {
+                existing.payload = request.payload;
+            }
+            
+            // 3. Keep error code prioritising GAM native numbers over Prebid 'missing' strings
+            if (request.error !== undefined && request.error !== null) {
+                if (typeof existing.error === 'string' && typeof request.error === 'number') {
+                    existing.error = request.error;
+                } else if (existing.error === undefined || existing.error === null) {
+                    existing.error = request.error;
+                }
+            }
+            
+            existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
         } else {
+            const signalData = {
+                type: request.type,
+                providerId: request.providerId,
+                payload: request.payload,
+                error: request.error,
+                origin: request.origin,
+                timestamp: request.timestamp
+            };
             tabData.injected.push(signalData);
         }
         
