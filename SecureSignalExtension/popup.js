@@ -27,12 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const PREBID_DISPLAY_MAPPING = {
-    'adserver.org': 'Unified ID 2.0',
-    'pubcid.org': 'SharedId / PubCommonId',
+    'adserver.org': 'UnifiedID2.0',
+    'pubcid.org': 'SharedId/PubCommonId',
     'liveramp.com': 'IdentityLink',
-    'crwdcntrl.net': 'Lotame Panorama',
+    'crwdcntrl.net': 'LotamePanorama',
     'audigent.com': 'CoreId',
-    'uidapi.com': 'UID2.0 API'
+    'uidapi.com': 'UID2.0API'
   };
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -78,10 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (renderOrigin === 'HB') {
             typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">HB</span>';
           }
+          let errorBadgeHtml = '';
           if (signal.error !== undefined && signal.error !== null) {
             let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
-            let errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
-            typeBadge += ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
+            let errName;
+            
+            if (typeof signal.error === 'string') {
+                errName = signal.error.includes('not in eids') ? 'Potential HB Misconfig' : signal.error;
+            } else {
+                errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
+            }
+            
+            errorBadgeHtml = `<span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; margin-left: 8px;" title="${signal.error}">Err: ${errName}</span>`;
           }
           
           // Find if this signal exists in the decoded network stream
@@ -105,7 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           for (const net of network) {
              const netStr = JSON.stringify(net.decoded);
-             if (netStr && netStr.includes(rawIDToSearch)) {
+             // Must match BOTH the ID string AND the provider name, to avoid matching just "null"
+             if (netStr && netStr.includes(rawIDToSearch) && netStr.includes(signal.providerId)) {
                sentInNetwork = true;
                matchedNetworkPayload = net;
                break;
@@ -113,23 +122,30 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
-          const matchLabel = sentInNetwork ? 'SUCCESS: Verified in Network Request' : 'FAILED: Not Sent in Network';
           
           let displayProviderId = signal.providerId;
           if (PREBID_DISPLAY_MAPPING[displayProviderId]) {
-              displayProviderId += ` <span style="color: var(--text-muted); font-weight: 400; font-size: 0.9em;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
+              displayProviderId += `<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
+          }
+          
+          if (sentInNetwork) {
+             card.style.borderLeft = '3px solid mediumseagreen';
+             card.style.background = 'linear-gradient(90deg, rgba(60, 179, 113, 0.05) 0%, transparent 100%)';
+          } else {
+             card.style.borderLeft = '3px solid crimson';
+             card.style.background = 'linear-gradient(90deg, rgba(220, 20, 60, 0.08) 0%, transparent 100%)';
           }
 
           card.innerHTML = `
-            <h3 class="signal-provider-name">${displayProviderId} ${typeBadge}</h3>
-            
-            <div class="data-row">
-              <div class="data-value">${typeof signal.payload === 'string' ? signal.payload : JSON.stringify(signal.payload, null, 2)}</div>
+            <div style="margin-bottom: 8px;">
+               <h3 class="signal-provider-name" style="margin-bottom: 0;">${displayProviderId} ${typeBadge}</h3>
             </div>
             
-            <div class="data-row" style="margin-top: 12px;">
-              <div class="data-label">Network Verification (a3p/ssj)</div>
-              <div class="data-value ${payloadClass}">${matchLabel}</div>
+            <div class="data-row">
+              <div class="data-value" style="display: flex; justify-content: space-between; align-items: center;">
+                 <span>${typeof signal.payload === 'string' ? signal.payload : JSON.stringify(signal.payload, null, 2)}</span>
+                 ${errorBadgeHtml}
+              </div>
             </div>
           `;
           
@@ -187,9 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                  }
                                  
                                  let displaySProviderId = s.provider;
-                                 if (PREBID_DISPLAY_MAPPING[displaySProviderId]) {
-                                     displaySProviderId += ` <span style="font-weight: normal; opacity: 0.7;">(${PREBID_DISPLAY_MAPPING[displaySProviderId]})</span>`;
-                                 }
                                  
                                  return `
                                    <details class="raw-details provider-card">
