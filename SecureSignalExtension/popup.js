@@ -112,9 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
           else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
 
           for (const net of network) {
-             const netStr = JSON.stringify(net.decoded);
-             // Must match BOTH the ID string AND the provider name, to avoid matching just "null"
-             if (netStr && netStr.includes(rawIDToSearch) && netStr.includes(signal.providerId)) {
+             let matched = false;
+             
+             if (Array.isArray(net.decoded)) {
+                 // Explicitly evaluate dictionary if decoded gracefully into array of objects
+                 const found = net.decoded.find(s => s && s.provider === signal.providerId && (s.payload === signal.payload || String(s.payload) === rawIDToSearch));
+                 if (found) matched = true;
+             } else {
+                 // Fallback to strict dictionary substr matching, bounding the provider ID in quotes
+                 const netStr = JSON.stringify(net.decoded);
+                 if (netStr && netStr.includes('"' + signal.providerId + '"') && netStr.includes(rawIDToSearch)) {
+                     matched = true;
+                 }
+             }
+             
+             if (matched) {
                sentInNetwork = true;
                matchedNetworkPayload = net;
                break;

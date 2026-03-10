@@ -236,6 +236,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } else if (existing.error === undefined || existing.error === null) {
                     existing.error = request.error;
                 }
+            } else if (request.error === null || (request.payload !== null && request.payload !== undefined)) {
+                // If the new request explicitly succeeds (error: null) or provides a valid payload,
+                // it means a prior asynchronous "not in eids" error was just a temporary race condition!
+                if (typeof existing.error === 'string') {
+                    existing.error = null;
+                }
             }
             
             existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
