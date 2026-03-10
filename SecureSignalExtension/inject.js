@@ -73,8 +73,6 @@
             }
           }
         );
-        console.log(`${log_label} Clearing secureSignalProviders cache.`);
-        window.googletag.secureSignalProviders.clearAllCache();
       } catch(error) {
         console.log('Error when trying to add a proxy.', error.message);
       }
@@ -123,8 +121,6 @@
             }
           }
         );
-        console.log(`${log_label} Clearing encryptedSignalProviders cache.`);
-        window.googletag.encryptedSignalProviders.clearAllCache();
       } catch(error) {
         console.log('Error when trying to add a proxy.', error.message);
       }
