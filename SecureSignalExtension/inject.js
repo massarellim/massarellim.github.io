@@ -63,6 +63,30 @@
               else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
               console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
               
+              if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
+                  console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
+                  callArgs[0].collectorFunction = async () => {
+                      try {
+                          let espId = window.localStorage.getItem("rtbhouse-esp");
+                          if (!espId) {
+                              espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
+                              window.localStorage.setItem("rtbhouse-esp", espId);
+                          }
+                          const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
+                              method: "POST",
+                              body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
+                              headers: { "Content-Type": "text/plain" }
+                          });
+                          if (!response.ok) return null;
+                          const data = await response.json();
+                          return data.message;
+                      } catch (err) {
+                          console.error("Safe RTBHouse fetch failed:", err);
+                          return null; 
+                      }
+                  };
+              }
+              
               if (callArgs[0]?.collectorFunction) {
                 callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
                   o => {
@@ -110,6 +134,30 @@
               else if (callArgs[0]?.id) providerFor = `bidder id ${callArgs[0].id}`;
               console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
+              
+              if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
+                  console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
+                  callArgs[0].collectorFunction = async () => {
+                      try {
+                          let espId = window.localStorage.getItem("rtbhouse-esp");
+                          if (!espId) {
+                              espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
+                              window.localStorage.setItem("rtbhouse-esp", espId);
+                          }
+                          const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
+                              method: "POST",
+                              body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
+                              headers: { "Content-Type": "text/plain" }
+                          });
+                          if (!response.ok) return null;
+                          const data = await response.json();
+                          return data.message;
+                      } catch (err) {
+                          console.error("Safe RTBHouse fetch failed:", err);
+                          return null; 
+                      }
+                  };
+              }
               
               if (callArgs[0]?.collectorFunction) {
                 callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
