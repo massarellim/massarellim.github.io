@@ -211,59 +211,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
-        // Deduplicate entirely by providerId and type (secure/encrypted).
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+        // Deduplicate entirely by providerId, type, AND origin to retain verbose interception logs
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type && s.origin === request.origin);
         
-        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from V5.4 legacy splinters)
+        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from V5.4 -> V5.5 -> V6 splitting legacy splinters)
         if (existingIndex > -1) {
             tabData.injected = tabData.injected.filter((s, idx) => {
                 if (idx === existingIndex) return true;
-                return !(s.providerId === request.providerId && s.type === request.type);
+                return !(s.providerId === request.providerId && s.type === request.type && s.origin === request.origin);
             });
         }
         
-        const getRank = (o) => o === 'HB' ? 3 : (o === 'CACHE' ? 2 : 1);
-        
         if (existingIndex > -1) {
             let existing = tabData.injected[existingIndex];
-            
-            let currentOriginPriority = getRank(existing.origin);
-            let newOriginPriority = getRank(request.origin);
             
             let existingHasPayload = (existing.payload !== null && existing.payload !== undefined && existing.payload !== '');
             let requestHasPayload = (request.payload !== null && request.payload !== undefined && request.payload !== '');
             
             if (requestHasPayload && !existingHasPayload) {
-                // Incoming proxy succeeded where we previously failed (e.g. HB pulling after CACHE/GAM failed)
-                // We completely adopt the incoming successful state AND its origin. We delete the previous error.
+                // Incoming proxy for THIS specific origin succeeded where we previously failed 
+                // We adopt the incoming successful state.
                 existing.payload = request.payload;
                 existing.error = null;
-                existing.origin = request.origin;
-            } else if (requestHasPayload && existingHasPayload) {
-                // Both intercepted a payload natively. Keep the higher priority origin flag (HB > CACHE > GAM)
-                // (This happens if CACHE has it, but Prebid polling grabs it again)
-                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
-                // Since both succeeded, neither should have an error.
-                existing.error = null;
             } else if (!requestHasPayload && !existingHasPayload) {
-                // Neither intercepted a payload. Both failed.
-                // Keep the higher priority origin flag for visibility.
-                if (newOriginPriority > currentOriginPriority) existing.origin = request.origin;
-                
-                // Merge errors responsibly: 
-                // A native numeric GAM error like 105 is vastly superior to a Prebid string "not in eids"
-                if (request.error !== undefined && request.error !== null) {
-                    if (typeof existing.error === 'string' && typeof request.error === 'number') {
-                        existing.error = request.error;
-                    } else if (existing.error === undefined || existing.error === null) {
-                        existing.error = request.error;
-                    }
-                }
+                // Keep the newer failure/error code if provided
+                existing.error = request.error !== undefined ? request.error : existing.error;
             }
-            
-            // Wait, what if the existing one HAS a payload, but the incoming request DOES NOT?
-            // (e.g. HB successfully grabbed it, but the GAM native callback then rejects with 105)
-            // In this case, we DO NOTHING! We explicitly ignore the incoming error because it's a false-failure.
             
             existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
         } else {

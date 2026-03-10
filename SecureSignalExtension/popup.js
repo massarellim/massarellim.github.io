@@ -124,7 +124,19 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         });
         
-        let sentToGamCount = processedSignals.filter(s => s.sentInNetwork).length;
+        let sentToGamCount = 0;
+        let breakdownInjected = { GAM: 0, CACHE: 0, HB: 0 };
+        let breakdownSent = { GAM: 0, CACHE: 0, HB: 0 };
+        
+        processedSignals.forEach(s => {
+            breakdownInjected[s.renderOrigin] = (breakdownInjected[s.renderOrigin] || 0) + 1;
+            if (s.sentInNetwork) {
+                sentToGamCount++;
+                breakdownSent[s.renderOrigin] = (breakdownSent[s.renderOrigin] || 0) + 1;
+            }
+        });
+        
+        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; CACHE: ${breakdownInjected.CACHE} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
 
         // Perform sorting logic
         processedSignals.sort((a, b) => {
@@ -203,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         document.getElementById('stat-network').textContent = sentToGamCount;
+        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; CACHE: ${breakdownSent.CACHE} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;
       }
       
       // Render all raw network signals
