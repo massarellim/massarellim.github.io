@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const PREBID_DISPLAY_MAPPING = {
-    'adserver.org': 'UnifiedID2.0',
+    'adserver.org': 'UnifiedID2.0/TTD',
     'pubcid.org': 'SharedId/PubCommonId',
     'liveramp.com': 'IdentityLink',
     'crwdcntrl.net': 'LotamePanorama',
