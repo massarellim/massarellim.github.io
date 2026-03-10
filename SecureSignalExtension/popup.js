@@ -167,11 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; CACHE: ${breakdownInjected.CACHE} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
 
         // Perform sorting logic
-        processedSignals.sort((a, b) => {
-            if (a.originScore !== b.originScore) return a.originScore - b.originScore;
-            if (a.matchScore !== b.matchScore) return a.matchScore - b.matchScore;
-            return a.signal.providerId.localeCompare(b.signal.providerId);
-        });
+        try {
+          processedSignals.sort((a, b) => {
+              if (a.originScore !== b.originScore) return a.originScore - b.originScore;
+              if (a.matchScore !== b.matchScore) return a.matchScore - b.matchScore;
+              let aStr = a.signal && a.signal.providerId ? String(a.signal.providerId) : '';
+              let bStr = b.signal && b.signal.providerId ? String(b.signal.providerId) : '';
+              return aStr.localeCompare(bStr);
+          });
 
         // Loop over sorted signals and generate DOM
         processedSignals.forEach(item => {
@@ -284,6 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
           
           listEl.appendChild(card);
         });
+       } catch(popupErr) {
+          console.error("Popup Renderer Crash:", popupErr);
+          listEl.innerHTML += `<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">${popupErr.stack || popupErr.message || popupErr}</code></div>`;
+       }
         
         document.getElementById('stat-network').textContent = sentToGamCount;
         document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; CACHE: ${breakdownSent.CACHE} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;

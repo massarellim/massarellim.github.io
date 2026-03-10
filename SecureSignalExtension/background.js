@@ -177,10 +177,10 @@ function decodeBase64UrlSafe(str) {
                        finalPayload = JSON.parse(innerDecoded);
                    } catch(e) {}
                }
-               
                return {
                    provider: providerName,
-                   payload: finalPayload
+                   payload: finalPayload,
+                   error: signalObj.length >= 3 ? signalObj[2] : null
                };
             }
             return signalObj;
