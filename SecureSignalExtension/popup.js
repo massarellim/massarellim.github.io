@@ -183,8 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
             typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
           } else {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
-            deprecatedWarningHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #b45309; background: #fffbeb; padding: 4px 6px; border-radius: 4px; border: 1px dashed #fcd34d;">
-                    ⚠️ <b>DEPRECATED INTEGRATION:</b> This provider is using the legacy <code>encryptedSignalProviders</code> array. GAM does not natively cache this, making timeout race conditions invisible and unstable.
+            deprecatedWarningHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(245,158,11,0.3);">
+                    ⚠️ <b>DEPRECATED INTEGRATION:</b> This provider is using the legacy <code>encryptedSignalProviders</code> array. GAM does not natively cache this, making execution timing comparisons impossible to track through storage observation.
                  </div>`;
           }
           
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
              let deltaMs = signal.timestamp - cacheWr.timestamp;
              if (deltaMs > 0) {
                  raceConditionHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(245,158,11,0.3);">
-                    ⚠️ <b>TIMEOUT RACE EXPOSED:</b> Native script resolved <b>+${deltaMs}ms</b> <i>after</i> GAM abandoned the Promise & wrote the error cache!
+                    ⚠️ <b>LATE EXECUTION DETECTED:</b> Native script pushed its payload <b>+${deltaMs}ms</b> <i>after</i> GAM already wrote to the error cache.
                  </div>`;
              }
           }

@@ -56,18 +56,25 @@
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
               console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
               
-              if (callArgs[0]?.collectorFunction) {
-                callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
-                  o => {
-                    console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                    sendInterceptedSignal('secureSignal', providerFor, o);
-                    return o;
-                  },
-                  o => {
-                    console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, o);
-                    return o;
+              if (typeof callArgs[0]?.collectorFunction === 'function') {
+                const originalFn = callArgs[0].collectorFunction;
+                callArgs[0].collectorFunction = function() {
+                  const promiseResult = originalFn.apply(this, arguments);
+                  if (promiseResult && typeof promiseResult.then === 'function') {
+                    return promiseResult.then(
+                      o => {
+                        console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
+                        sendInterceptedSignal('secureSignal', providerFor, o);
+                        return o;
+                      },
+                      err => {
+                        console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
+                        return Promise.reject(err);
+                      }
+                    );
                   }
-                );
+                  return promiseResult;
+                };
               }
               
               return Reflect.apply(callTarget, callThis, callArgs);
@@ -112,18 +119,25 @@
               console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
               
-              if (callArgs[0]?.collectorFunction) {
-                callArgs[0].collectorFunction = callArgs[0].collectorFunction().then(
-                  o => {
-                    console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                    sendInterceptedSignal('encryptedSignal', providerFor, o);
-                    return o;
-                  },
-                  o => {
-                    console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, o);
-                    return o;
+              if (typeof callArgs[0]?.collectorFunction === 'function') {
+                const originalFn = callArgs[0].collectorFunction;
+                callArgs[0].collectorFunction = function() {
+                  const promiseResult = originalFn.apply(this, arguments);
+                  if (promiseResult && typeof promiseResult.then === 'function') {
+                    return promiseResult.then(
+                      o => {
+                        console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
+                        sendInterceptedSignal('encryptedSignal', providerFor, o);
+                        return o;
+                      },
+                      err => {
+                        console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
+                        return Promise.reject(err);
+                      }
+                    );
                   }
-                );
+                  return promiseResult;
+                };
               }
               
               return Reflect.apply(callTarget, callThis, callArgs);
