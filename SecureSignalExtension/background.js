@@ -181,10 +181,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// We removed chrome.webNavigation.onCommitted clearing storage because "document_start" inject.js 
-// often fires BEFORE onCommitted (e.g. while head is still parsing). If onCommitted fires immediately
-// after, it brutally wipes out all the signals that inject.js just correctly captured!
-// To keep things clean, users should rely on manual clear or the native tab destruction.
+// 2. Clear data on navigation BEFORE the new scripts inject
+// We use onBeforeNavigate instead of onCommitted because document_start injection
+// (inject.js) fires before onCommitted. onBeforeNavigate guarantees the wipe happens
+// the moment the user clicks reload/link, clearing the slate before the new page even begins parsing.
+chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+  if (details.frameId === 0) { // Main frame
+    const tabId = details.tabId;
+    const key = `tab_${tabId}`;
+    runWithLock(tabId, async () => {
+      await chrome.storage.local.set({ [key]: { injected: [], network: [] } });
+    });
+  }
+});
 
 // 3. Intercept Network Requests
 chrome.webRequest.onBeforeRequest.addListener(
