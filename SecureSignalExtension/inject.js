@@ -61,18 +61,18 @@
                 callArgs[0].collectorFunction = function() {
                   const promiseResult = originalFn.apply(this, arguments);
                   if (promiseResult && typeof promiseResult.then === 'function') {
-                    return promiseResult.then(
+                    // Start an isolated observer chain, DO NOT return it!
+                    promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
                         sendInterceptedSignal('secureSignal', providerFor, o);
-                        return o;
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
-                        return Promise.reject(err);
                       }
                     );
                   }
+                  // Return the exact original object to GAM unaltered
                   return promiseResult;
                 };
               }
@@ -124,18 +124,18 @@
                 callArgs[0].collectorFunction = function() {
                   const promiseResult = originalFn.apply(this, arguments);
                   if (promiseResult && typeof promiseResult.then === 'function') {
-                    return promiseResult.then(
+                    // Start an isolated observer chain, DO NOT return it!
+                    promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
                         sendInterceptedSignal('encryptedSignal', providerFor, o);
-                        return o;
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
-                        return Promise.reject(err);
                       }
                     );
                   }
+                  // Return the exact original object to GAM unaltered
                   return promiseResult;
                 };
               }
