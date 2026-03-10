@@ -165,13 +165,13 @@
               window.postMessage({
                 source: 'secure-signal-validator',
                 type: 'secureSignal', // usually these are modern secure signals
-                providerId: key, // Use the raw storage key to prevent collision
+                providerId: providerName, // The first item in the array
                 payload: idValue,
                 error: typeof errorCode === 'number' ? errorCode : null,
                 isCached: true,
                 timestamp: Date.now()
               }, '*');
-              console.log(`[Secure Signal Validator] Found cached signal for ${key} (Error: ${errorCode})`);
+              console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
             }
           } catch(e) {}
         }

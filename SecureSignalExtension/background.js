@@ -158,8 +158,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const tabId = sender.tab.id;
     const key = `tab_${tabId}`;
     
-    // Process completely synchronously locally, then await the single set.
-    chrome.storage.local.get([key]).then(res => {
+    runWithLock(tabId, async () => {
+        const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
         const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
         
@@ -178,7 +178,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             tabData.injected.push(signalData);
         }
         
-        chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
+        await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
     });
   }
 });
