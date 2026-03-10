@@ -187,14 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
           card.className = 'card';
           
           let typeBadge = '';
-          let deprecatedWarningHtml = '';
           if (signal.type === 'secureSignal') {
             typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
           } else {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
-            deprecatedWarningHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(245,158,11,0.3);">
-                    ⚠️ <b>DEPRECATED INTEGRATION:</b> This provider is using the legacy <code>encryptedSignalProviders</code> array. GAM does not natively cache this, making execution timing comparisons impossible to track through storage observation.
-                 </div>`;
           }
           
           if (renderOrigin === 'CACHE') {
@@ -282,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             ${networkRejectedHtml}
             ${cacheSourcedHtml}
-            ${deprecatedWarningHtml}
             ${raceConditionHtml}
           `;
           

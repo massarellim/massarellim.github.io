@@ -181,7 +181,11 @@
                    if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                    else if (typeof errContainer === 'number') errorCode = errContainer;
                }
-               
+               let computedType = 'secureSignal';
+               if (providerName.includes('esp.') || providerName === 'liveintent.com' || providerName === 'criteo.com') {
+                   computedType = 'encryptedSignal';
+               }
+
                window.postMessage({
                    source: 'secure-signal-validator',
                    action: 'log_cache_write',
@@ -214,10 +218,14 @@
                   if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                   else if (typeof errContainer === 'number') errorCode = errContainer;
               }
+              let computedType = 'secureSignal';
+              if (providerName.includes('esp.') || providerName === 'liveintent.com' || providerName === 'criteo.com') {
+                  computedType = 'encryptedSignal';
+              }
 
               window.postMessage({
                 source: 'secure-signal-validator',
-                type: 'secureSignal', // usually these are modern secure signals
+                type: computedType,
                 providerId: providerName, // The first item in the array
                 payload: idValue,
                 error: typeof errorCode === 'number' ? errorCode : null,
