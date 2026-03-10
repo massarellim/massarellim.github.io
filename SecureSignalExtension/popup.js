@@ -49,13 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const network = data.network || [];
       
       document.getElementById('stat-injected').textContent = injected.length;
-      document.getElementById('stat-network').textContent = network.length;
       
       const listEl = document.getElementById('reconciled-list');
       
       if (injected.length === 0) {
         listEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No secure or encrypted signals intercepted on this page yet.</p>';
+        document.getElementById('stat-network').textContent = '0';
       } else {
+        let sentToGamCount = 0;
+        
         // We will render each injected signal
         injected.forEach(signal => {
           const card = document.createElement('div');
@@ -129,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
              if (matched) {
                sentInNetwork = true;
                matchedNetworkPayload = net;
+               sentToGamCount++;
                break;
              }
           }
@@ -163,6 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
           
           listEl.appendChild(card);
         });
+        
+        document.getElementById('stat-network').textContent = sentToGamCount;
       }
       
       // Render all raw network signals
