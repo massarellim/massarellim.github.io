@@ -1,4 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const ERROR_MAPPING = {
+    0: 'NO_ERROR',
+    1: 'ADAPTER_CREATION_FAILURE',
+    2: 'SIGNAL_COLLECTION_FAILURE',
+    3: 'SIGNAL_COLLECTION_TIMEOUT',
+    4: 'UNKNOWN_ERROR',
+    5: 'ADAPTER_PROTOCOL_CONFORMANCE_FAILURE',
+    100: 'COLLECTOR_FUNCTION_TIMEDOUT',
+    101: 'COLLECTOR_NOT_REGISTERED',
+    102: 'INVALID_COLLECTOR_ID',
+    103: 'UNKNOWN_COLLECTOR',
+    104: 'COLLECTOR_THROTTLED',
+    105: 'INVALID_COLLECTOR_FUNCTION',
+    106: 'COLLECTOR_FUNCTION_REJECTED',
+    107: 'COLLECTOR_FUNCTION_FAILED',
+    108: 'SIGNAL_EXCEEDS_MAX_LENGTH',
+    109: 'COLLECTOR_SCRIPT_LOAD_FAILED',
+    110: 'UNDEFINED_PROVIDER',
+    111: 'SIGNAL_NULL_OR_UNDEFINED',
+    112: 'INVALID_PROVIDER_TYPE',
+    113: 'SIGNAL_INVALID_TYPE',
+    114: 'COLLECTOR_ENDPOINT_LOAD_FAILED',
+    200: 'URL_PARAM_SECURE_SIGNALS_PARSING_FAILED',
+    201: 'URL_PARAM_SECURE_SIGNALS_JSON_PARSING_FAILED'
+  };
+
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs[0]) return;
     const tabId = tabs[0].id;
@@ -37,7 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           if (signal.error !== undefined && signal.error !== null) {
             let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
-            typeBadge += ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44;">Err: ${signal.error}</span>`;
+            let errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
+            typeBadge += ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
           }
           
           // Find if this signal exists in the decoded network stream

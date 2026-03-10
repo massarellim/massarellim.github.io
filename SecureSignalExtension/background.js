@@ -36,73 +36,123 @@ function decodeBase64UrlSafe(str) {
           const buffer = new Uint8Array(decodedStr.length);
           for (let i = 0; i < decodedStr.length; i++) buffer[i] = decodedStr.charCodeAt(i);
           
-          function parseProtobufPairs(buf) {
-              let pairs = [];
-              let currentProvider = null;
-              let cursor = 0;
+          function parseGAMProtobuf(buf) {
+              let results = [];
+              let state = { cursor: 0 };
               
-              while (cursor < buf.length) {
-                  let tag = 0, shift = 0;
-                  while (cursor < buf.length) {
-                      let b = buf[cursor++];
-                      tag |= (b & 0x7F) << shift;
+              function readVarInt() {
+                  let result = 0, shift = 0;
+                  while (state.cursor < buf.length) {
+                      let b = buf[state.cursor++];
+                      result |= (b & 0x7F) << shift;
                       if ((b & 0x80) === 0) break;
                       shift += 7;
                   }
-                  
-                  let wireType = tag & 0x07;
-                  let fieldNum = tag >> 3;
-                  
-                  if (wireType === 2) { 
-                      let len = 0; shift = 0;
-                      while (cursor < buf.length) {
-                          let b = buf[cursor++];
-                          len |= (b & 0x7F) << shift;
+                  return result;
+              }
+              
+              function skipField(wireType) {
+                  if (wireType === 0) readVarInt();
+                  else if (wireType === 2) { let len = readVarInt(); state.cursor += len; }
+                  else if (wireType === 1) state.cursor += 8;
+                  else if (wireType === 5) state.cursor += 4;
+              }
+
+              function parseError(sliceBuf, errorFieldNum) {
+                  let errState = { cursor: 0 };
+                  let errorType = null;
+                  function readInnerVarInt() {
+                      let result = 0, shift = 0;
+                      while (errState.cursor < sliceBuf.length) {
+                          let b = sliceBuf[errState.cursor++];
+                          result |= (b & 0x7F) << shift;
                           if ((b & 0x80) === 0) break;
                           shift += 7;
                       }
-                      
-                      if (cursor + len <= buf.length) {
-                          let slice = buf.subarray(cursor, cursor + len);
-                          cursor += len;
-                          
-                          let isPrintable = slice.length > 0;
-                          for (let i = 0; i < slice.length; i++) {
-                             if (slice[i] < 32 || slice[i] > 126) isPrintable = false;
-                          }
-                          
-                          if (isPrintable) {
-                              let strVal = String.fromCharCode.apply(null, slice);
-                              if (fieldNum === 1) { 
-                                  currentProvider = strVal;
-                                  pairs.push({ provider: currentProvider, payload: null });
-                              } else if (fieldNum === 2 && currentProvider) { 
-                                  pairs[pairs.length - 1].payload = strVal;
-                              }
-                          } else {
-                              // If it's not printable, it might be an embedded message. Recurse.
-                              let innerPairs = parseProtobufPairs(slice);
-                              if (innerPairs.length > 0) pairs.push(...innerPairs);
-                          }
-                      } else {
-                          break; // Corrupted frame
-                      }
-                  } else if (wireType === 0) { 
-                      while (cursor < buf.length) {
-                          if ((buf[cursor++] & 0x80) === 0) break;
-                      }
-                  } else if (wireType === 1) { cursor += 8; }
-                    else if (wireType === 5) { cursor += 4; }
-                    else break; // Unknown wire type, abort
+                      return result;
+                  }
+                  while (errState.cursor < sliceBuf.length) {
+                      let tag = readInnerVarInt();
+                      let wType = tag & 0x07;
+                      let fNum = tag >> 3;
+                      if (wType === 0 && fNum === errorFieldNum) {
+                          errorType = readInnerVarInt();
+                      } else if (wType === 0) readInnerVarInt();
+                      else if (wType === 2) { let len = readInnerVarInt(); errState.cursor += len; }
+                      else if (wType === 1) errState.cursor += 8;
+                      else if (wType === 5) errState.cursor += 4;
+                      else break;
+                  }
+                  return errorType;
               }
-              return pairs;
+              
+              function parseMessage(sliceBuf, typeName, providerTag, payloadTag, errorTag, errorInnerTag) {
+                  let msgState = { cursor: 0 };
+                  let signal = { provider: null, payload: null, error: null };
+                  function readInnerVarInt() {
+                      let result = 0, shift = 0;
+                      while (msgState.cursor < sliceBuf.length) {
+                          let b = sliceBuf[msgState.cursor++];
+                          result |= (b & 0x7F) << shift;
+                          if ((b & 0x80) === 0) break;
+                          shift += 7;
+                      }
+                      return result;
+                  }
+                  while (msgState.cursor < sliceBuf.length) {
+                      let tag = readInnerVarInt();
+                      let wType = tag & 0x07;
+                      let fNum = tag >> 3;
+                      
+                      if (wType === 2) {
+                          let len = readInnerVarInt();
+                          let fieldBuf = sliceBuf.subarray(msgState.cursor, msgState.cursor + len);
+                          msgState.cursor += len;
+                          if (fNum === providerTag) {
+                              signal.provider = String.fromCharCode.apply(null, fieldBuf);
+                          } else if (fNum === payloadTag) {
+                              signal.payload = String.fromCharCode.apply(null, fieldBuf);
+                          } else if (fNum === errorTag) {
+                              signal.error = parseError(fieldBuf, errorInnerTag);
+                          }
+                      } else if (wType === 0) readInnerVarInt();
+                      else if (wType === 1) msgState.cursor += 8;
+                      else if (wType === 5) msgState.cursor += 4;
+                      else break;
+                  }
+                  return signal;
+              }
+
+              while (state.cursor < buf.length) {
+                  let tag = readVarInt();
+                  let wireType = tag & 0x07;
+                  let fieldNum = tag >> 3;
+                  
+                  if (wireType === 2) {
+                      let len = readVarInt();
+                      let slice = buf.subarray(state.cursor, state.cursor + len);
+                      state.cursor += len;
+                      
+                      if (fieldNum === 1) {
+                          // ThirdPartySdk: provider=5, payload=4, error=7 (inner error_type=4)
+                          results.push(parseMessage(slice, 'SDK', 5, 4, 7, 4));
+                      } else if (fieldNum === 2) {
+                          // ThirdPartyJavascript: provider=1, payload=2, error=10 (inner error_type=1)
+                          results.push(parseMessage(slice, 'JavaScript', 1, 2, 10, 1));
+                      }
+                  } else {
+                      skipField(wireType);
+                  }
+              }
+              return results;
           }
           
-          let results = parseProtobufPairs(buffer);
+          let results = parseGAMProtobuf(buffer);
           if (results.length > 0) {
               return results.map(p => ({
                  provider: p.provider,
-                 payload: p.payload || '[No Value/Zero-byte ID]'
+                 payload: p.payload || '[No Value/Zero-byte ID]',
+                 error: p.error
               }));
           }
       }
