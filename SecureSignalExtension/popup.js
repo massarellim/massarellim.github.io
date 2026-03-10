@@ -73,21 +73,43 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typeof signal.payload === 'string') rawIDToSearch = signal.payload;
           else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
 
-          for (const net of network) {
+         for (const net of network) {
              let matched = false;
+             
              if (Array.isArray(net.decoded)) {
                  const found = net.decoded.find(s => s && s.provider === signal.providerId);
-                 if (found) matched = true;
+                 if (found) {
+                     // Check if BOTH are errors, and if their error codes match
+                     let injectedHasError = signal.error !== undefined && signal.error !== null;
+                     let networkHasError = found.error !== undefined && found.error !== null;
+                     
+                     if (injectedHasError && networkHasError) {
+                         if (String(signal.error) === String(found.error)) {
+                             matched = true;
+                         }
+                     } else if (!injectedHasError && !networkHasError) {
+                         // Neither are errors. We MUST verify the payload matches.
+                         let foundStr = typeof found.payload === 'object' ? JSON.stringify(found.payload) : String(found.payload);
+                         
+                         if (foundStr === stringifiedInjectedPayload || foundStr.includes(rawIDToSearch)) {
+                             matched = true;
+                         } else if (Array.isArray(found.payload) && typeof signal.payload === 'string') {
+                             if (found.payload.includes(signal.payload)) matched = true;
+                         }
+                     }
+                 }
              } else {
                  const netStr = JSON.stringify(net.decoded);
+                 let injectedHasError = signal.error !== undefined && signal.error !== null;
+                 
                  if (netStr && netStr.includes('"' + signal.providerId + '"')) {
-                     matched = true;
+                     // Fallback check: if it's an error, the error code should be in the string
+                     if (injectedHasError) {
+                         if (netStr.includes(String(signal.error))) matched = true;
+                     } else {
+                         if (netStr.includes(rawIDToSearch)) matched = true;
+                     }
                  }
-             }
-             
-             let hasSafePayload = signal.payload !== null && signal.payload !== undefined && signal.payload !== '';
-             if (matched && !hasSafePayload) {
-                 matched = false;
              }
              
              if (matched) {
