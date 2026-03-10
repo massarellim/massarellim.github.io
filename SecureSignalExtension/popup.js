@@ -128,9 +128,18 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
              }
              
+             // If we found the provider ID in the network stream, we must still prove THIS was the payload sent.
+             // GAM organically strips 'null' payloads from the final network parameter.
+             // Therefore, if this signal intercept has no payload, it cannot be what GAM actually sent!
+             let hasSafePayload = signal.payload !== null && signal.payload !== undefined && signal.payload !== '';
+             if (matched && !hasSafePayload) {
+                 matched = false; // Revoke match status for null/error intercepts
+             }
+             
              if (matched) {
                sentInNetwork = true;
                matchedNetworkPayload = net;
+               // Wait, sentToGamCount should only increment once per provider, not jump blindly.
                sentToGamCount++;
                break;
              }
