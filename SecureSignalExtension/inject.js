@@ -27,6 +27,7 @@
         type: type,
         providerId: providerId,
         payload: safePayload,
+        origin: 'GAM',
         timestamp: Date.now()
       }, '*');
     } catch (e) {
@@ -83,11 +84,13 @@
       window.requestIdleCallback(() => {
           __sec_sig_monitor();
           __scan_gespsk_cache();
+          __scan_prebid();
       }, { timeout: 67 });
     } else {
       setTimeout(() => {
           __sec_sig_monitor();
           __scan_gespsk_cache();
+          __scan_prebid();
       }, 67);
     }
   }
@@ -137,11 +140,13 @@
       window.requestIdleCallback(() => {
           __enc_sig_monitor();
           __scan_gespsk_cache();
+          __scan_prebid();
       }, { timeout: 67 });
     } else {
       setTimeout(() => {
           __enc_sig_monitor();
           __scan_gespsk_cache();
+          __scan_prebid();
       }, 67);
     }
   }
@@ -169,7 +174,7 @@
                 providerId: providerName, // The first item in the array
                 payload: idValue,
                 error: typeof errorCode === 'number' ? errorCode : null,
-                isCached: true,
+                origin: 'Cached',
                 timestamp: Date.now()
               }, '*');
               console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
@@ -177,6 +182,68 @@
           } catch(e) {}
         }
       }
+    } catch(e) {}
+  }
+
+  const reportedPrebidKeys = new Set();
+  function __scan_prebid() {
+    try {
+      if (typeof window.pbjs === 'undefined' || typeof window.pbjs.getConfig !== 'function' || typeof window.pbjs.getUserIdsAsEids !== 'function') return;
+      
+      let configuredUserIds = [];
+      try {
+        let syncConfig = window.pbjs.getConfig('userSync') || window.pbjs.getConfig().userSync || {};
+        if (Array.isArray(syncConfig.userIds)) {
+          configuredUserIds = syncConfig.userIds.map(u => u.name);
+        }
+      } catch(e) {}
+      
+      let eids = [];
+      try {
+         eids = window.pbjs.getUserIdsAsEids() || [];
+      } catch(e) {}
+
+      let foundSources = new Set();
+      eids.forEach(eid => {
+        if (eid.source) {
+          foundSources.add(eid.source);
+          let key = 'prebid_eid_' + eid.source;
+          if (!reportedPrebidKeys.has(key)) {
+             reportedPrebidKeys.add(key);
+             let payload = eid.uids ? eid.uids : null;
+             // Try to unpack array if it's a single item for cleaner UI
+             if (Array.isArray(payload) && payload.length === 1 && payload[0].id) payload = payload[0].id;
+             
+             window.postMessage({
+                source: 'secure-signal-validator',
+                type: 'secureSignal',
+                providerId: eid.source,
+                payload: payload,
+                error: null,
+                origin: 'Prebid',
+                timestamp: Date.now()
+             }, '*');
+          }
+        }
+      });
+
+      configuredUserIds.forEach(source => {
+        if (!foundSources.has(source)) {
+          let key = 'prebid_err_' + source;
+          if (!reportedPrebidKeys.has(key)) {
+             reportedPrebidKeys.add(key);
+             window.postMessage({
+                source: 'secure-signal-validator',
+                type: 'secureSignal',
+                providerId: source,
+                payload: null,
+                error: "not in eids",
+                origin: 'Prebid',
+                timestamp: Date.now()
+             }, '*');
+          }
+        }
+      });
     } catch(e) {}
   }
 

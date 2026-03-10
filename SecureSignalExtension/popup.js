@@ -58,8 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
           }
           
-          if (signal.isCached) {
+          if (signal.origin === 'Cached') {
             typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">Cached</span>';
+          } else if (signal.origin === 'GAM') {
+            typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);">GAM</span>';
+          } else if (signal.origin === 'Prebid') {
+            typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">Prebid</span>';
           }
           if (signal.error !== undefined && signal.error !== null) {
             let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
@@ -166,16 +170,22 @@ document.addEventListener('DOMContentLoaded', () => {
                          return net.decoded.map(s => {
                             if (s && s.provider) {
                                 let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
-                                return `
-                                  <details class="raw-details provider-card">
-                                    <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
-                                      <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${s.provider}</span></span>
-                                      <span class="expand-icon">▼</span>
-                                    </summary>
-                                    <div class="provider-id" title="${valString}">${valString}</div>
-                                  </details>
-                                `;
-                            }
+                                 let errBadge = '';
+                                 if (s.error !== undefined && s.error !== null) {
+                                     let errColor = s.error === 0 ? 'mediumseagreen' : 'crimson';
+                                     let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
+                                     errBadge = ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
+                                 }
+                                 return `
+                                   <details class="raw-details provider-card">
+                                     <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${s.provider}</span>${errBadge}</span>
+                                       <span class="expand-icon">▼</span>
+                                     </summary>
+                                     <div class="provider-id" title="${valString}">${valString}</div>
+                                   </details>
+                                 `;
+                             }
                             return `<div class="provider-pill">${JSON.stringify(s)}</div>`;
                          }).join('');
                      } else {
