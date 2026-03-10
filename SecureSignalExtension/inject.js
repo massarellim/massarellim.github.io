@@ -15,6 +15,13 @@
       window.pbjs.getUserIds = function() { return {}; };
   }
 
+  // Ensure GAM namespace and arrays exist IMMEDIATELY.
+  // This allows us to hook the raw Array.prototype.push before GPT even loads, safely
+  // trapping early scripts like RTBHouse that fire immediately on page load.
+  window.googletag = window.googletag || {};
+  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
+
   function sendInterceptedSignal(type, providerId, payload) {
     try {
       let safePayload = payload;
@@ -42,6 +49,41 @@
     }
   }
 
+  function createSafeRTBHouseCollector() {
+    return async () => {
+        try {
+            let espId = window.localStorage.getItem("rtbhouse-esp");
+            if (!espId) {
+                espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
+                window.localStorage.setItem("rtbhouse-esp", espId);
+            }
+            const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
+                method: "POST",
+                body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
+                headers: { "Content-Type": "text/plain" }
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.message;
+        } catch (err) {
+            console.error("Safe RTBHouse fetch failed:", err);
+            return ""; 
+        }
+    };
+  }
+
+  // Sanitize any providers that somehow injected before this script ran
+  [window.googletag.secureSignalProviders, window.googletag.encryptedSignalProviders].forEach(arr => {
+      if (Array.isArray(arr)) {
+          arr.forEach(provider => {
+              if (provider && provider.id === 'rtbhouse') {
+                  console.warn('[Secure Signal Validator] Intercepted pre-existing broken RTBHouse tag. Swapping out collector function.');
+                  provider.collectorFunction = createSafeRTBHouseCollector();
+              }
+          });
+      }
+  });
+
   const __monitor_symbol__ = Symbol('monitor_symbol');
 
   __sec_sig_monitor();
@@ -65,26 +107,7 @@
               
               if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
                   console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
-                  callArgs[0].collectorFunction = async () => {
-                      try {
-                          let espId = window.localStorage.getItem("rtbhouse-esp");
-                          if (!espId) {
-                              espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
-                              window.localStorage.setItem("rtbhouse-esp", espId);
-                          }
-                          const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
-                              method: "POST",
-                              body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
-                              headers: { "Content-Type": "text/plain" }
-                          });
-                          if (!response.ok) return null;
-                          const data = await response.json();
-                          return data.message;
-                      } catch (err) {
-                          console.error("Safe RTBHouse fetch failed:", err);
-                          return null; 
-                      }
-                  };
+                  callArgs[0].collectorFunction = createSafeRTBHouseCollector();
               }
               
               if (callArgs[0]?.collectorFunction) {
@@ -101,7 +124,7 @@
                 );
               }
               
-              Reflect.apply(callTarget, callThis, callArgs);
+              return Reflect.apply(callTarget, callThis, callArgs);
             }
           }
         );
@@ -109,12 +132,12 @@
         console.log('Error when trying to add a proxy.', error.message);
       }
     }
-    else {
-      if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(__sec_sig_monitor, { timeout: 67 });
-      } else {
-        setTimeout(__sec_sig_monitor, 67);
-      }
+    
+    // Always schedule the next check so we survive GPT overwriting the array/push method
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(__sec_sig_monitor, { timeout: 67 });
+    } else {
+      setTimeout(__sec_sig_monitor, 67);
     }
   }
 
@@ -137,26 +160,7 @@
               
               if (callArgs[0] && callArgs[0].id === 'rtbhouse') {
                   console.warn(`${log_label} Intercepted broken RTBHouse tag. Swapping out collector function.`);
-                  callArgs[0].collectorFunction = async () => {
-                      try {
-                          let espId = window.localStorage.getItem("rtbhouse-esp");
-                          if (!espId) {
-                              espId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'esp-fallback-' + Date.now();
-                              window.localStorage.setItem("rtbhouse-esp", espId);
-                          }
-                          const response = await window.fetch("https://esp.rtbhouse.com/encrypt", {
-                              method: "POST",
-                              body: JSON.stringify({ publisher_id: "rtbhouse", signal: { domain: encodeURIComponent(window.location.href), "rtbhouse-esp": espId } }),
-                              headers: { "Content-Type": "text/plain" }
-                          });
-                          if (!response.ok) return null;
-                          const data = await response.json();
-                          return data.message;
-                      } catch (err) {
-                          console.error("Safe RTBHouse fetch failed:", err);
-                          return null; 
-                      }
-                  };
+                  callArgs[0].collectorFunction = createSafeRTBHouseCollector();
               }
               
               if (callArgs[0]?.collectorFunction) {
@@ -173,7 +177,7 @@
                 );
               }
               
-              Reflect.apply(callTarget, callThis, callArgs);
+              return Reflect.apply(callTarget, callThis, callArgs);
             }
           }
         );
@@ -181,12 +185,12 @@
         console.log('Error when trying to add a proxy.', error.message);
       }
     }
-    else {
-      if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(__enc_sig_monitor, { timeout: 67 });
-      } else {
-        setTimeout(__enc_sig_monitor, 67);
-      }
+    
+    // Always schedule the next check so we survive GPT overwriting the array/push method
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(__enc_sig_monitor, { timeout: 67 });
+    } else {
+      setTimeout(__enc_sig_monitor, 67);
     }
   }
 
