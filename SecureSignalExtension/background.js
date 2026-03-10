@@ -211,36 +211,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
-        // Deduplicate entirely by providerId and type (secure/encrypted).
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
-        
-        const getRank = (o) => o === 'HB' ? 3 : (o === 'CACHE' ? 2 : 1);
+        // Deduplicate entirely by providerId, type (secure/encrypted), and origin.
+        // This preserves maximum visibility: if GAM intercepts a success but CACHE intercepts a failure, both render individually.
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type && s.origin === request.origin);
         
         if (existingIndex > -1) {
             let existing = tabData.injected[existingIndex];
             
-            // 1. Elevate Origin Flag (HB > CACHE > GAM)
-            if (getRank(request.origin) > getRank(existing.origin)) {
-                existing.origin = request.origin;
-            }
-            
-            // 2. Override Payload if the new request actually has one
-            if (request.payload !== null && request.payload !== undefined) {
+            // Just update the payload and error if this specific origin fired again
+            if (request.payload !== null && request.payload !== undefined && request.payload !== '') {
                 existing.payload = request.payload;
-            }
-            
-            // 3. Keep error code prioritising GAM native numbers over Prebid 'missing' strings
-            if (request.error !== undefined && request.error !== null) {
-                if (typeof existing.error === 'string' && typeof request.error === 'number') {
-                    existing.error = request.error;
-                } else if (existing.error === undefined || existing.error === null) {
-                    existing.error = request.error;
-                }
-            } else if (request.error === null || (request.payload !== null && request.payload !== undefined)) {
-                // If the new request explicitly succeeds (error: null) or provides a valid payload,
-                // it means a prior asynchronous "not in eids" error was just a temporary race condition!
-                if (typeof existing.error === 'string') {
-                    existing.error = null;
+                existing.error = null;
+            } else if (existing.payload === null || existing.payload === undefined || existing.payload === '') {
+                 if (request.error !== undefined && request.error !== null) {
+                    if (typeof existing.error === 'string' && typeof request.error === 'number') {
+                        existing.error = request.error;
+                    } else if (existing.error === undefined || existing.error === null) {
+                        existing.error = request.error;
+                    }
                 }
             }
             
