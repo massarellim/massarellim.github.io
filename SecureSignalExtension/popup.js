@@ -178,10 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
           card.className = 'card';
           
           let typeBadge = '';
+          let deprecatedWarningHtml = '';
           if (signal.type === 'secureSignal') {
             typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
           } else {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
+            deprecatedWarningHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #b45309; background: #fffbeb; padding: 4px 6px; border-radius: 4px; border: 1px dashed #fcd34d;">
+                    ⚠️ <b>DEPRECATED INTEGRATION:</b> This provider is using the legacy <code>encryptedSignalProviders</code> array. GAM does not natively cache this, making timeout race conditions invisible and unstable.
+                 </div>`;
           }
           
           if (renderOrigin === 'CACHE') {
@@ -246,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  ${errorBadgeHtml}
               </div>
             </div>
+            ${deprecatedWarningHtml}
             ${raceConditionHtml}
           `;
           
