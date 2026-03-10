@@ -58,11 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
             typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
           }
           
-          if (signal.origin === 'Cached') {
+          let renderOrigin = signal.origin;
+          if (!renderOrigin) renderOrigin = signal.isCached ? 'Cached' : 'GAM';
+
+          if (renderOrigin === 'Cached') {
             typeBadge += ' <span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">Cached</span>';
-          } else if (signal.origin === 'GAM') {
+          } else if (renderOrigin === 'GAM') {
             typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);">GAM</span>';
-          } else if (signal.origin === 'Prebid') {
+          } else if (renderOrigin === 'Prebid') {
             typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);">Prebid</span>';
           }
           if (signal.error !== undefined && signal.error !== null) {
@@ -113,15 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="data-label">Network Verification (a3p/ssj)</div>
               <div class="data-value ${payloadClass}">${matchLabel}</div>
             </div>
-            
-            ${sentInNetwork ? `
-            <div class="data-row" style="margin-top: 8px;">
-              <div class="data-label">Full Decoded Network Parameter</div>
-              <div class="data-value" style="opacity: 0.7; font-size: 10px;">
-                ${JSON.stringify(matchedNetworkPayload.decoded, null, 2)}
-              </div>
-            </div>
-            ` : ''}
           `;
           
           listEl.appendChild(card);
