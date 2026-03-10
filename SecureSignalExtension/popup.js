@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Find if this signal exists in the decoded network stream
           let sentInNetwork = false;
           let matchedNetworkPayload = null;
+          let networkErrorPayload = null;
           
           let stringifiedInjectedPayload = "";
           try {
@@ -97,6 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
                          } else if (Array.isArray(found.payload) && typeof signal.payload === 'string') {
                              if (found.payload.includes(signal.payload)) matched = true;
                          }
+                     } else if (!injectedHasError && networkHasError) {
+                         // The local script SUCCEEDED, but GAM sent an ERROR over the network!
+                         networkErrorPayload = found;
                      }
                  }
              } else {
@@ -141,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
               signal: signal,
               sentInNetwork: sentInNetwork,
               matchedNetworkPayload: matchedNetworkPayload,
+              networkErrorPayload: networkErrorPayload,
               renderOrigin: renderOrigin,
               originScore: originScore,
               matchScore: matchScore
@@ -250,6 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
                  </div>`;
               }
           }
+          
+          let networkRejectedHtml = '';
+          if (!sentInNetwork && item.networkErrorPayload) {
+              const errCode = item.networkErrorPayload.error;
+              const errName = ERROR_MAPPING[errCode] || 'UNKNOWN_ERROR';
+              networkRejectedHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #dc2626; background: rgba(220, 38, 38, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(220,38,38,0.3);">
+                    🚫 <b>NETWORK REJECTED:</b> GAM dropped this signal due to latency and transmitted <b>Error ${errCode} (${errName})</b> instead.
+                 </div>`;
+          }
 
           card.innerHTML = `
             <div style="margin-bottom: 8px;">
@@ -262,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  ${errorBadgeHtml}
               </div>
             </div>
+            ${networkRejectedHtml}
             ${cacheSourcedHtml}
             ${deprecatedWarningHtml}
             ${raceConditionHtml}
