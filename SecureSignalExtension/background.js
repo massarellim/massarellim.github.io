@@ -210,7 +210,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
-        let tabData = res[key] || { injected: [], network: [] };
+        let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
         const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
         
         // Active Garbage Collection: Purge any abandoned duplicates (e.g. from V5.4 -> V5.5 -> V6 splitting legacy splinters)
@@ -273,6 +273,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             tabData.injected.push(signalData);
         }
         
+        
+        await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
+    });
+  } else if (request.action === 'log_cache_write' && sender.tab) {
+    const tabId = sender.tab.id;
+    const key = `tab_${tabId}`;
+    runWithLock(tabId, async () => {
+        const res = await chrome.storage.local.get([key]);
+        let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
+        // Initialize cacheWrites object if legacy array
+        if (!tabData.cacheWrites) tabData.cacheWrites = {};
+        
+        tabData.cacheWrites[request.providerId] = {
+            timestamp: request.timestamp,
+            error: request.error
+        };
         await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
     });
   }
@@ -287,7 +303,7 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
     const tabId = details.tabId;
     const key = `tab_${tabId}`;
     runWithLock(tabId, async () => {
-      await chrome.storage.local.set({ [key]: { injected: [], network: [] } });
+      await chrome.storage.local.set({ [key]: { injected: [], network: [], cacheWrites: {} } });
     });
   }
 });

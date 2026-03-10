@@ -44,9 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('results').classList.remove('hidden');
       
-      const data = res[key] || { injected: [], network: [] };
+      const data = res[key] || { injected: [], network: [], cacheWrites: {} };
       const injected = data.injected || [];
       const network = data.network || [];
+      const cacheWrites = data.cacheWrites || {};
       
       document.getElementById('stat-injected').textContent = injected.length;
       
@@ -220,6 +221,20 @@ document.addEventListener('DOMContentLoaded', () => {
              card.style.background = 'linear-gradient(90deg, rgba(220, 20, 60, 0.08) 0%, transparent 100%)';
           }
 
+          // RACECONDITION TELEMETRY
+          let raceConditionHtml = '';
+          const cacheWr = cacheWrites[signal.providerId];
+          // We only render this warning if the signal actually HAS a payload (it eventually resolved)
+          // AND it completely missed the network stream.
+          if (cacheWr && signal.payload && !sentInNetwork) {
+             let deltaMs = signal.timestamp - cacheWr.timestamp;
+             if (deltaMs > 0) {
+                 raceConditionHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(245,158,11,0.3);">
+                    ⚠️ <b>TIMEOUT RACE EXPOSED:</b> Native script resolved <b>+${deltaMs}ms</b> <i>after</i> GAM abandoned the Promise & wrote the error cache!
+                 </div>`;
+             }
+          }
+
           card.innerHTML = `
             <div style="margin-bottom: 8px;">
                <h3 class="signal-provider-name" style="margin-bottom: 0;">${displayProviderId} ${typeBadge}</h3>
@@ -231,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  ${errorBadgeHtml}
               </div>
             </div>
+            ${raceConditionHtml}
           `;
           
           listEl.appendChild(card);

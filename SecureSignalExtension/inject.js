@@ -152,6 +152,35 @@
   }
 
   const reportedCacheKeys = new Set();
+  
+  // Directly proxy Storage.prototype.setItem to catch the exact millisecond GAM writes the timeout error
+  const originalSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(key, value) {
+    try {
+        if (key && key.startsWith('_GESPSK-')) {
+            let providerName = key.replace('_GESPSK-', '');
+            let parsed = JSON.parse(value);
+            if (Array.isArray(parsed) && parsed.length >= 2) {
+               let errorCode = null;
+               if (parsed.length > 8) {
+                   let errContainer = parsed[9];
+                   if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
+                   else if (typeof errContainer === 'number') errorCode = errContainer;
+               }
+               
+               window.postMessage({
+                   source: 'secure-signal-validator',
+                   action: 'log_cache_write',
+                   providerId: providerName,
+                   error: typeof errorCode === 'number' ? errorCode : null,
+                   timestamp: Date.now()
+               }, '*');
+            }
+        }
+    } catch(e) {}
+    return originalSetItem.apply(this, arguments);
+  };
+
   function __scan_gespsk_cache() {
     try {
       if (!window.localStorage) return;

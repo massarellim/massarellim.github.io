@@ -8,10 +8,10 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  const { type, providerId, payload, error, origin, timestamp } = event.data;
+  const { action, type, providerId, payload, error, origin, timestamp } = event.data;
   
   chrome.runtime.sendMessage({
-    action: 'log_injected_signal',
+    action: action || 'log_injected_signal',
     type: type,
     providerId: providerId,
     payload: payload,
