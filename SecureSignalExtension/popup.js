@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3 class="signal-provider-name">${typeBadge} ${signal.providerId}</h3>
             
             <div class="data-row">
-              <div class="data-label">Injected Payload (Monkey-patched)</div>
+              <div class="data-label">Local Payload</div>
               <div class="data-value">${JSON.stringify(signal.payload, null, 2)}</div>
             </div>
             
