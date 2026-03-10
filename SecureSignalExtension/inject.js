@@ -161,6 +161,7 @@
               let providerName = parsed[0];
               let idValue = parsed[1];
               let errorCode = parsed[parsed.length - 1]; // last element
+              if (Array.isArray(errorCode) && errorCode.length > 0) errorCode = errorCode[0];
 
               window.postMessage({
                 source: 'secure-signal-validator',

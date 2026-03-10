@@ -161,7 +161,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [] };
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type);
+        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId && s.type === request.type && !!s.isCached === !!request.isCached);
         
         const signalData = {
             type: request.type,
