@@ -187,6 +187,18 @@ function decodeBase64UrlSafe(str) {
         });
     }
 
+    // SSJ Fallback: If it's a raw object (e.g. {"providerName": "encPayload"}), standardize it.
+    if (parsedArr && typeof parsedArr === 'object' && !Array.isArray(parsedArr)) {
+        let mapped = [];
+        for (const [key, val] of Object.entries(parsedArr)) {
+            mapped.push({
+                provider: key,
+                payload: val
+            });
+        }
+        return mapped;
+    }
+
     return parsedArr;
   } catch(e) {
     return null;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Secure Signal Validator",
-  "version": "6.6",
+  "version": "6.7",
   "description": "Intercepts and validates Secure Signals and Encrypted Signals sent to Google Ad Manager.",
   "permissions": [
     "webRequest",
