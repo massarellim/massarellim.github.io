@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const signal = item.signal;
           const sentInNetwork = item.sentInNetwork;
           const renderOrigin = item.renderOrigin;
+          const matchedNetworkPayload = item.matchedNetworkPayload;
           
           const card = document.createElement('div');
           card.className = 'card';
