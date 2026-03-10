@@ -239,6 +239,18 @@ document.addEventListener('DOMContentLoaded', () => {
              }
           }
 
+          let cacheSourcedHtml = '';
+          if (renderOrigin === 'GAM' && sentInNetwork && matchedNetworkPayload && matchedNetworkPayload.timestamp) {
+              let deltaMs = signal.timestamp - matchedNetworkPayload.timestamp;
+              // If the local injected script resolved AFTER the network request was fired containing its payload,
+              // it mathematically proves GAM pulled the payload from the _GESPSK cache!
+              if (deltaMs > 0) {
+                 cacheSourcedHtml = `<div style="margin-top: 6px; font-size: 0.70rem; color: #16a34a; background: rgba(22, 163, 74, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(22,163,74,0.3); display: inline-block;">
+                    ⚡ <b>SOURCED FROM CACHE:</b> Network request fired <b>${deltaMs}ms</b> before local script finished execution.
+                 </div>`;
+              }
+          }
+
           card.innerHTML = `
             <div style="margin-bottom: 8px;">
                <h3 class="signal-provider-name" style="margin-bottom: 0;">${displayProviderId} ${typeBadge}</h3>
@@ -250,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  ${errorBadgeHtml}
               </div>
             </div>
+            ${cacheSourcedHtml}
             ${deprecatedWarningHtml}
             ${raceConditionHtml}
           `;
