@@ -21,8 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     112: 'INVALID_PROVIDER_TYPE',
     113: 'SIGNAL_INVALID_TYPE',
     114: 'COLLECTOR_ENDPOINT_LOAD_FAILED',
+    114: 'COLLECTOR_ENDPOINT_LOAD_FAILED',
     200: 'URL_PARAM_SECURE_SIGNALS_PARSING_FAILED',
     201: 'URL_PARAM_SECURE_SIGNALS_JSON_PARSING_FAILED'
+  };
+
+  const PREBID_DISPLAY_MAPPING = {
+    'adserver.org': 'Unified ID 2.0',
+    'pubcid.org': 'SharedId / PubCommonId',
+    'liveramp.com': 'IdentityLink',
+    'crwdcntrl.net': 'Lotame Panorama',
+    'audigent.com': 'CoreId',
+    'uidapi.com': 'UID2.0 API'
   };
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -104,9 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
           const matchLabel = sentInNetwork ? 'SUCCESS: Verified in Network Request' : 'FAILED: Not Sent in Network';
+          
+          let displayProviderId = signal.providerId;
+          if (PREBID_DISPLAY_MAPPING[displayProviderId]) {
+              displayProviderId += ` <span style="color: var(--text-muted); font-weight: 400; font-size: 0.9em;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
+          }
 
           card.innerHTML = `
-            <h3 class="signal-provider-name">${signal.providerId} ${typeBadge}</h3>
+            <h3 class="signal-provider-name">${displayProviderId} ${typeBadge}</h3>
             
             <div class="data-row">
               <div class="data-value">${typeof signal.payload === 'string' ? signal.payload : JSON.stringify(signal.payload, null, 2)}</div>
@@ -170,10 +185,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
                                      errBadge = ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }
+                                 
+                                 let displaySProviderId = s.provider;
+                                 if (PREBID_DISPLAY_MAPPING[displaySProviderId]) {
+                                     displaySProviderId += ` <span style="font-weight: normal; opacity: 0.7;">(${PREBID_DISPLAY_MAPPING[displaySProviderId]})</span>`;
+                                 }
+                                 
                                  return `
                                    <details class="raw-details provider-card">
                                      <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
-                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${s.provider}</span>${errBadge}</span>
+                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${displaySProviderId}</span>${errBadge}</span>
                                        <span class="expand-icon">▼</span>
                                      </summary>
                                      <div class="provider-id" title="${valString}">${valString}</div>
