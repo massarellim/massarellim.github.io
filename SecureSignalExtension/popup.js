@@ -298,6 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ${networkRejectedHtml}
             ${cacheSourcedHtml}
             ${raceConditionHtml}
+            <div style="font-size: 9px; font-family: monospace; color: var(--text-muted); background: var(--bg-card); border-top: 1px dashed var(--border-color); padding: 4px; border-radius: 0 0 6px 6px; word-break: break-all; opacity: 0.7; margin-top: 4px;">
+                 [RAW DB DUMP]: ${JSON.stringify(signal)}
+            </div>
           `;
           
           listEl.appendChild(card);

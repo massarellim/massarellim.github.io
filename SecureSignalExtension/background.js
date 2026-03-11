@@ -223,19 +223,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
-        // Merge strictly by providerId. The type (secure vs encrypted) is volatile if sourced from cache.
-        const existingIndex = tabData.injected.findIndex(s => s.providerId === request.providerId);
+        let existing = tabData.injected.find(s => s.providerId === request.providerId);
         
-        // Active Garbage Collection: Purge any abandoned duplicates (e.g. from prior versions where duplicate providerIds existed)
-        if (existingIndex > -1) {
-            tabData.injected = tabData.injected.filter((s, idx) => {
-                if (idx === existingIndex) return true;
-                return s.providerId !== request.providerId;
-            });
-        }
-        
-        if (existingIndex > -1) {
-            let existing = tabData.injected[existingIndex];
+        // Active Garbage Collection: Purge abandoned duplicates (e.g. from prior versions where duplicate providerIds existed)
+        if (existing) {
+            tabData.injected = tabData.injected.filter(s => s === existing || s.providerId !== request.providerId);
             
             // Initialize sources if migrating from old version
             if (!existing.sources) {
