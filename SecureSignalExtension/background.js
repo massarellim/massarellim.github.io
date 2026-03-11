@@ -252,15 +252,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 existing.sources.gamCache = true;
                 if (!existing.sources.live) {
                     existing.payload = request.payload;
-                    if (request.error !== undefined && request.error !== null) {
-                        existing.error = request.error;
-                    }
+                    existing.error = request.error !== undefined ? request.error : null;
                 }
             } else if (request.origin === 'HB_CACHE') {
                 existing.sources.hbCache = true;
                 if (!existing.sources.live && !existing.sources.gamCache) {
                     existing.payload = request.payload;
-                    existing.error = null;
+                    existing.error = request.error !== undefined ? request.error : null;
                 }
             }
             

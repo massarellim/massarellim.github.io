@@ -175,7 +175,7 @@
     }
   }
 
-  const reportedCacheKeys = new Set();
+  const reportedCacheKeys = new Map();
   
   // Directly proxy Storage.prototype.setItem to catch the exact millisecond GAM writes the timeout error
   const originalSetItem = Storage.prototype.setItem;
@@ -221,10 +221,12 @@
       if (!window.localStorage) return;
       for (let i = 0; i < window.localStorage.length; i++) {
         let key = window.localStorage.key(i);
-        if (key && key.startsWith('_GESPSK-') && !reportedCacheKeys.has(key)) {
-          reportedCacheKeys.add(key);
+        if (key && key.startsWith('_GESPSK-')) {
           try {
             let val = window.localStorage.getItem(key);
+            if (reportedCacheKeys.get(key) === val) continue;
+            reportedCacheKeys.set(key, val);
+            
             let parsed = JSON.parse(val);
             if (Array.isArray(parsed) && parsed.length >= 2) {
               let providerName = parsed[0];
@@ -252,7 +254,7 @@
     } catch(e) {}
   }
 
-  const reportedPrebidKeys = new Set();
+  const reportedPrebidKeys = new Map();
   const PREBID_EID_MAPPING = {
     'id5Id': 'id5-sync.com',
     'criteo': 'criteo.com',
@@ -293,8 +295,9 @@
         if (eid.source) {
           foundSources.add(eid.source);
           let key = 'prebid_eid_' + eid.source;
-          if (!reportedPrebidKeys.has(key)) {
-             reportedPrebidKeys.add(key);
+          let payloadStr = JSON.stringify(eid.uids || null);
+          if (reportedPrebidKeys.get(key) !== payloadStr) {
+             reportedPrebidKeys.set(key, payloadStr);
              let payload = eid.uids ? eid.uids : null;
              // Try to unpack array if it's a single item for cleaner UI
              if (Array.isArray(payload) && payload.length === 1 && payload[0].id) payload = payload[0].id;
@@ -316,8 +319,8 @@
         let expectedSource = PREBID_EID_MAPPING[source] || source;
         if (!foundSources.has(expectedSource) && !foundSources.has(source)) {
           let key = 'prebid_err_' + expectedSource;
-          if (!reportedPrebidKeys.has(key)) {
-             reportedPrebidKeys.add(key);
+          if (reportedPrebidKeys.get(key) !== 'error') {
+             reportedPrebidKeys.set(key, 'error');
              window.postMessage({
                 source: 'secure-signal-validator',
                 type: 'HB_CACHE',
