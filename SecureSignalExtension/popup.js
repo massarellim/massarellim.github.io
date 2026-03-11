@@ -324,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (network.length === 0) {
         networkListEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No network signals intercepted.</p>';
       } else {
+        networkListEl.innerHTML = ''; // Wipe DOM before re-rendering
         network.forEach((net) => {
           const card = document.createElement('div');
           card.className = 'card';
