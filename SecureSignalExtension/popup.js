@@ -222,16 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let errorBadgeHtml = '';
           if (signal.error !== undefined && signal.error !== null) {
-            let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
-            let errName;
-            
-            if (typeof signal.error === 'string') {
-                errName = signal.error.includes('not in eids') ? 'Potential HB Misconfig' : signal.error;
-            } else {
-                errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
+            let hasValidPayload = signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '';
+            if (!hasValidPayload) {
+              let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
+              let errName;
+              
+              if (typeof signal.error === 'string') {
+                  errName = signal.error.includes('not in eids') ? 'Potential HB Misconfig' : signal.error;
+              } else {
+                  errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
+              }
+              
+              errorBadgeHtml = `<span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; margin-left: 8px;" title="${signal.error}">Err: ${errName}</span>`;
             }
-            
-            errorBadgeHtml = `<span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; margin-left: 8px;" title="${signal.error}">Err: ${errName}</span>`;
           }
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
@@ -298,14 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ${networkRejectedHtml}
             ${cacheSourcedHtml}
             ${raceConditionHtml}
-            ${signal.events && signal.events.length > 0 ? `
-            <div style="font-size: 9px; font-family: monospace; color: #a855f7; background: rgba(168, 85, 247, 0.05); padding: 4px; border-radius: 4px; margin-top: 4px; word-break: break-all; border: 1px dashed rgba(168, 85, 247, 0.2);">
-                 <b>[BACKGROUND MSG LOG]:</b><br>
-                 ${signal.events.join('<br>')}
-            </div>` : ''}
-            <div style="font-size: 9px; font-family: monospace; color: var(--text-muted); background: var(--bg-card); border-top: 1px dashed var(--border-color); padding: 4px; border-radius: 0 0 6px 6px; word-break: break-all; opacity: 0.7; margin-top: 4px;">
-                 [RAW DB DUMP]: ${JSON.stringify(signal)}
-            </div>
           `;
           
           listEl.appendChild(card);
