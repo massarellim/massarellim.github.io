@@ -7,7 +7,7 @@
   if (window[SCRIPT_ID]) return;
   window[SCRIPT_ID] = true;
 
-  function sendInterceptedSignal(type, providerId, payload) {
+  function sendInterceptedSignal(type, providerId, payload, isHbInitiated = false) {
     try {
       let safePayload = payload;
       try {
@@ -28,6 +28,7 @@
         providerId: providerId,
         payload: safePayload,
         origin: 'LIVE',
+        isHbInitiated: isHbInitiated,
         timestamp: Date.now()
       }, '*');
     } catch (e) {
@@ -54,7 +55,16 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-              console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
+              
+              let isHbInitiated = false;
+              try {
+                  const stack = new Error().stack || '';
+                  if (stack.toLowerCase().includes('prebid') || stack.toLowerCase().includes('pb.js') || stack.toLowerCase().includes('pbjs')) {
+                      isHbInitiated = true;
+                  }
+              } catch(e) {}
+              
+              console.log(`${log_label} Secure Signals Provider registered for ${providerFor}. Initiated by: ${isHbInitiated ? 'Prebid' : 'Native Script'}`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
                 const originalFn = callArgs[0].collectorFunction;
@@ -65,7 +75,7 @@
                     promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                        sendInterceptedSignal('secureSignal', providerFor, o);
+                        sendInterceptedSignal('secureSignal', providerFor, o, isHbInitiated);
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
@@ -116,7 +126,16 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-              console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
+
+              let isHbInitiated = false;
+              try {
+                  const stack = new Error().stack || '';
+                  if (stack.toLowerCase().includes('prebid') || stack.toLowerCase().includes('pb.js') || stack.toLowerCase().includes('pbjs')) {
+                      isHbInitiated = true;
+                  }
+              } catch(e) {}
+
+              console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}. Initiated by: ${isHbInitiated ? 'Prebid' : 'Native Script'}`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
@@ -128,7 +147,7 @@
                     promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                        sendInterceptedSignal('encryptedSignal', providerFor, o);
+                        sendInterceptedSignal('encryptedSignal', providerFor, o, isHbInitiated);
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
