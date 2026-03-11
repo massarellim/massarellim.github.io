@@ -225,9 +225,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
         let existing = tabData.injected.find(s => s.providerId === request.providerId);
         
+        let timestampStr = new Date().toISOString().split('T')[1].replace('Z', '');
+        let eventLog = `[${timestampStr}] payload:${request.payload ? (typeof request.payload === 'object' ? 'OBJ' : 'STR') : 'NULL'}, err:${request.error}, src:${request.origin}`;
+        
         // Active Garbage Collection: Purge abandoned duplicates (e.g. from prior versions where duplicate providerIds existed)
         if (existing) {
             tabData.injected = tabData.injected.filter(s => s === existing || s.providerId !== request.providerId);
+            
+            if (!existing.events) existing.events = [];
+            existing.events.push(eventLog);
+            if (existing.events.length > 5) existing.events.shift();
             
             // Initialize sources if migrating from old version
             if (!existing.sources) {
@@ -271,6 +278,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 error: request.error,
                 origin: request.origin,
                 timestamp: request.timestamp,
+                events: [eventLog],
                 sources: {
                     live: request.origin === 'LIVE',
                     gamCache: request.origin === 'GAM_CACHE',
