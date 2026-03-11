@@ -191,12 +191,24 @@
                    if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                    else if (typeof errContainer === 'number') errorCode = errContainer;
                }
+               // Used specifically for race-condition delta timing in popup
                window.postMessage({
                    source: 'secure-signal-validator',
                    action: 'log_cache_write',
                    providerId: providerName,
                    error: typeof errorCode === 'number' ? errorCode : null,
                    timestamp: Date.now()
+               }, '*');
+               
+               // Keep the UI fully synchronized with the real-time cache memory
+               window.postMessage({
+                 source: 'secure-signal-validator',
+                 type: 'GAM_CACHE',
+                 providerId: providerName,
+                 payload: parsed[1],
+                 error: typeof errorCode === 'number' ? errorCode : null,
+                 origin: 'GAM_CACHE',
+                 timestamp: Date.now()
                }, '*');
             }
         }
