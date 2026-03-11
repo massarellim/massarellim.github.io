@@ -40,11 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabId = tabs[0].id;
     const key = `tab_${tabId}`;
     
-    chrome.storage.local.get([key], (res) => {
+    function renderData(data) {
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('results').classList.remove('hidden');
       
-      const data = res[key] || { injected: [], network: [], cacheWrites: {} };
+      data = data || { injected: [], network: [], cacheWrites: {} };
       const injected = data.injected || [];
       const network = data.network || [];
       const cacheWrites = data.cacheWrites || {};
@@ -384,6 +384,19 @@ document.addEventListener('DOMContentLoaded', () => {
           networkListEl.appendChild(card);
         });
       }
+    } // End of renderData
+
+    // 1. Initial render on popup open
+    chrome.storage.local.get([key], (res) => {
+        renderData(res[key]);
     });
+    
+    // 2. Live auto-refresh if native scripts overwrite cache while popup is open
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes[key]) {
+            renderData(changes[key].newValue);
+        }
+    });
+
   });
 });
