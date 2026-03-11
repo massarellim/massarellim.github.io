@@ -281,6 +281,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             tabData.injected.push(signalData);
         }
         
+        console.log(`[Background] Merged Signal Data for ${request.providerId}:`, tabData.injected.find(s => s.providerId === request.providerId));
         
         await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
     });

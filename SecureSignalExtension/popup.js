@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         listEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No secure or encrypted signals intercepted on this page yet.</p>';
         document.getElementById('stat-network').textContent = '0';
       } else {
+        listEl.innerHTML = ''; // Wipe DOM before re-rendering
+        
         // --- Pre-compute properties for sorting ---
         const processedSignals = injected.map(signal => {
           // Find if this signal exists in the decoded network stream
