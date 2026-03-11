@@ -251,41 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
              card.style.borderLeft = '3px solid crimson';
              card.style.background = 'linear-gradient(90deg, rgba(220, 20, 60, 0.08) 0%, transparent 100%)';
           }
-
-          // RACECONDITION TELEMETRY
-          let raceConditionHtml = '';
-          const cacheWr = cacheWrites[signal.providerId];
-          // We only render this warning if the signal actually HAS a payload (it eventually resolved)
-          // AND it completely missed the network stream.
-          if (cacheWr && signal.payload && !sentInNetwork) {
-             let deltaMs = signal.timestamp - cacheWr.timestamp;
-             if (deltaMs > 0) {
-                 raceConditionHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(245,158,11,0.3);">
-                    ⚠️ <b>LATE EXECUTION DETECTED:</b> Native script pushed its payload <b>+${deltaMs}ms</b> <i>after</i> GAM already wrote to the error cache.
-                 </div>`;
-             }
-          }
-
-          let cacheSourcedHtml = '';
-          if (renderOrigin === 'GAM' && sentInNetwork && matchedNetworkPayload && matchedNetworkPayload.timestamp) {
-              let deltaMs = signal.timestamp - matchedNetworkPayload.timestamp;
-              // If the local injected script resolved AFTER the network request was fired containing its payload,
-              // it mathematically proves GAM pulled the payload from the _GESPSK cache!
-              if (deltaMs > 0) {
-                 cacheSourcedHtml = `<div style="margin-top: 6px; font-size: 0.70rem; color: #16a34a; background: rgba(22, 163, 74, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(22,163,74,0.3); display: inline-block;">
-                    ⚡ <b>SOURCED FROM CACHE:</b> Network request fired <b>${deltaMs}ms</b> before local script finished execution.
-                 </div>`;
-              }
-          }
-          
-          let networkRejectedHtml = '';
-          if (!sentInNetwork && item.networkErrorPayload) {
-              const errCode = item.networkErrorPayload.error;
-              const errName = ERROR_MAPPING[errCode] || 'UNKNOWN_ERROR';
-              networkRejectedHtml = `<div style="margin-top: 6px; font-size: 0.75rem; color: #dc2626; background: rgba(220, 38, 38, 0.1); padding: 4px 6px; border-radius: 4px; border: 1px dashed rgba(220,38,38,0.3);">
-                    🚫 <b>NETWORK REJECTED:</b> GAM dropped this signal due to latency and transmitted <b>Error ${errCode} (${errName})</b> instead.
-                 </div>`;
-          }
+          // End of diagnostic tags (removed)
 
           card.innerHTML = `
             <div style="margin-bottom: 8px;">
@@ -298,9 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  ${errorBadgeHtml}
               </div>
             </div>
-            ${networkRejectedHtml}
-            ${cacheSourcedHtml}
-            ${raceConditionHtml}
           `;
           
           listEl.appendChild(card);
