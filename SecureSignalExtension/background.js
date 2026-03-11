@@ -245,7 +245,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             if (request.origin === 'LIVE') {
                 existing.sources.live = true;
-                if (request.isHbInitiated) existing.sources.hbInitiated = true;
                 existing.liveType = request.type;
                 existing.payload = request.payload;
                 existing.error = null;
@@ -276,7 +275,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 timestamp: request.timestamp,
                 sources: {
                     live: request.origin === 'LIVE',
-                    hbInitiated: request.isHbInitiated === true,
                     gamCache: request.origin === 'GAM_CACHE',
                     hbCache: request.origin === 'HB_CACHE'
                 },

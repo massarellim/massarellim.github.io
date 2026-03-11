@@ -15,7 +15,7 @@
   window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
   window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
 
-  function sendInterceptedSignal(type, providerId, payload, isHbInitiated = false) {
+  function sendInterceptedSignal(type, providerId, payload) {
     try {
       let safePayload = payload;
       try {
@@ -36,7 +36,6 @@
         providerId: providerId,
         payload: safePayload,
         origin: 'LIVE',
-        isHbInitiated: isHbInitiated,
         timestamp: Date.now()
       }, '*');
     } catch (e) {
@@ -65,16 +64,7 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-              
-              let isHbInitiated = false;
-              try {
-                  const stack = new Error().stack || '';
-                  if (stack.toLowerCase().includes('prebid') || stack.toLowerCase().includes('pb.js') || stack.toLowerCase().includes('pbjs')) {
-                      isHbInitiated = true;
-                  }
-              } catch(e) {}
-              
-              console.log(`${log_label} Secure Signals Provider registered for ${providerFor}. Initiated by: ${isHbInitiated ? 'Prebid' : 'Native Script'}`);
+              console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
                 const originalFn = callArgs[0].collectorFunction;
@@ -85,7 +75,7 @@
                     promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                        sendInterceptedSignal('secureSignal', providerFor, o, isHbInitiated);
+                        sendInterceptedSignal('secureSignal', providerFor, o);
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
@@ -136,16 +126,7 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-
-              let isHbInitiated = false;
-              try {
-                  const stack = new Error().stack || '';
-                  if (stack.toLowerCase().includes('prebid') || stack.toLowerCase().includes('pb.js') || stack.toLowerCase().includes('pbjs')) {
-                      isHbInitiated = true;
-                  }
-              } catch(e) {}
-
-              console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}. Initiated by: ${isHbInitiated ? 'Prebid' : 'Native Script'}`);
+              console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
               console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
@@ -157,7 +138,7 @@
                     promiseResult.then(
                       o => {
                         console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
-                        sendInterceptedSignal('encryptedSignal', providerFor, o, isHbInitiated);
+                        sendInterceptedSignal('encryptedSignal', providerFor, o);
                       },
                       err => {
                         console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
@@ -290,66 +271,6 @@
         }
       } catch(e) {}
       
-      // Proxy getUserIdsAsEids once it exists to catch GAM's passive reads ("Google deploy" mode)
-      if (typeof window.pbjs.getUserIdsAsEids === 'function' && !window.pbjs.getUserIdsAsEids[__monitor_symbol__]) {
-          console.log('[Secure Signal Validator Monitor] pbjs.getUserIdsAsEids() detected. Proxying to intercept passive Google reads.');
-          const originalEids = window.pbjs.getUserIdsAsEids;
-          window.pbjs.getUserIdsAsEids = new Proxy(originalEids, {
-              get: (target, key) => __monitor_symbol__ === key ? true : target[key],
-              apply: function(callTarget, callThis, callArgs) {
-                  const fetchedEids = Reflect.apply(callTarget, callThis, callArgs);
-                  
-                  let isNativeFetch = false;
-                  try {
-                      const stack = new Error().stack || '';
-                      if (stack.toLowerCase().includes('pubads') || stack.toLowerCase().includes('gpt.js') || stack.toLowerCase().includes('doubleclick') || (!stack.includes('__scan_prebid') && stack !== '')) {
-                          isNativeFetch = true;
-                      }
-                  } catch(e) {}
-                  
-                  if (isNativeFetch && Array.isArray(fetchedEids)) {
-                     console.log('[Secure Signal Validator Monitor] Intercepted external read of Prebid Memory. Treating as LIVE execution.');
-                     fetchedEids.forEach(eid => {
-                         if (eid && eid.source && eid.uids && eid.uids.length > 0) {
-                             sendInterceptedSignal('secureSignal', eid.source, eid.uids[0].id, true);
-                         }
-                     });
-                  }
-                  
-                  return fetchedEids;
-              }
-          });
-      }
-      
-      // Proxy getUserIds once it exists to catch GAM's passive reads
-      if (typeof window.pbjs.getUserIds === 'function' && !window.pbjs.getUserIds[__monitor_symbol__]) {
-          console.log('[Secure Signal Validator Monitor] pbjs.getUserIds() detected. Proxying to intercept passive Google reads.');
-          const originalUids = window.pbjs.getUserIds;
-          window.pbjs.getUserIds = new Proxy(originalUids, {
-              get: (target, key) => __monitor_symbol__ === key ? true : target[key],
-              apply: function(callTarget, callThis, callArgs) {
-                  const fetchedUids = Reflect.apply(callTarget, callThis, callArgs);
-                  
-                  let isNativeFetch = false;
-                  try {
-                      const stack = new Error().stack || '';
-                      if (stack.toLowerCase().includes('pubads') || stack.toLowerCase().includes('gpt.js') || stack.toLowerCase().includes('doubleclick') || (!stack.includes('__scan_prebid') && stack !== '')) {
-                          isNativeFetch = true;
-                      }
-                  } catch(e) {}
-                  
-                  if (isNativeFetch && typeof fetchedUids === 'object' && fetchedUids !== null) {
-                     console.log('[Secure Signal Validator Monitor] Intercepted external read of Prebid Memory via getUserIds. Treating as LIVE execution.');
-                     for (const source in fetchedUids) {
-                         sendInterceptedSignal('secureSignal', source, fetchedUids[source], true);
-                     }
-                  }
-                  
-                  return fetchedUids;
-              }
-          });
-      }
-
       let eids = [];
       try {
          eids = window.pbjs.getUserIdsAsEids() || [];

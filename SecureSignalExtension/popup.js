@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let breakdownSent = { GAM: 0, HB: 0 };
         
         processedSignals.forEach(s => {
-            let isHbPrimary = s.signal && s.signal.sources ? (s.signal.sources.hbInitiated || (!s.signal.sources.live && s.signal.sources.hbCache)) : false;
+            let isHbPrimary = s.signal && s.signal.sources && !s.signal.sources.live && s.signal.sources.hbCache;
             let key = isHbPrimary ? 'HB' : 'GAM';
             breakdownInjected[key] = (breakdownInjected[key] || 0) + 1;
             if (s.sentInNetwork) {
@@ -200,7 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
           let typeBadge = '';
           
           // 1. Determine Primary Origin Badge (GAM or HB)
-          if (signal.sources.hbInitiated || (!signal.sources.live && signal.sources.hbCache)) {
+          let isHbPrimary = (!signal.sources.live && signal.sources.hbCache);
+          if (isHbPrimary) {
               typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); margin-right: 4px;">HB</span>';
           } else {
               typeBadge += '<span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4); margin-right: 4px;">GAM</span>';
