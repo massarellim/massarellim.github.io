@@ -7,6 +7,14 @@
   if (window[SCRIPT_ID]) return;
   window[SCRIPT_ID] = true;
 
+  // INITIALIZE IMMEDIATELY
+  // This physically blocks any third-party script from pushing to the raw array undetected 
+  // before the first 67ms loop fires.
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+  window.googletag.encryptedSignalProviders = window.googletag.encryptedSignalProviders || [];
+
   function sendInterceptedSignal(type, providerId, payload, isHbInitiated = false) {
     try {
       let safePayload = payload;
@@ -38,6 +46,8 @@
 
   const __monitor_symbol__ = Symbol('monitor_symbol');
 
+  // Immediately apply proxy right after initialization
+  // so no synchronous block from publisher code can beat us.
   __sec_sig_monitor();
   __enc_sig_monitor();
 
@@ -280,6 +290,66 @@
         }
       } catch(e) {}
       
+      // Proxy getUserIdsAsEids once it exists to catch GAM's passive reads ("Google deploy" mode)
+      if (typeof window.pbjs.getUserIdsAsEids === 'function' && !window.pbjs.getUserIdsAsEids[__monitor_symbol__]) {
+          console.log('[Secure Signal Validator Monitor] pbjs.getUserIdsAsEids() detected. Proxying to intercept passive Google reads.');
+          const originalEids = window.pbjs.getUserIdsAsEids;
+          window.pbjs.getUserIdsAsEids = new Proxy(originalEids, {
+              get: (target, key) => __monitor_symbol__ === key ? true : target[key],
+              apply: function(callTarget, callThis, callArgs) {
+                  const fetchedEids = Reflect.apply(callTarget, callThis, callArgs);
+                  
+                  let isNativeFetch = false;
+                  try {
+                      const stack = new Error().stack || '';
+                      if (stack.toLowerCase().includes('pubads') || stack.toLowerCase().includes('gpt.js') || stack.toLowerCase().includes('doubleclick') || (!stack.includes('__scan_prebid') && stack !== '')) {
+                          isNativeFetch = true;
+                      }
+                  } catch(e) {}
+                  
+                  if (isNativeFetch && Array.isArray(fetchedEids)) {
+                     console.log('[Secure Signal Validator Monitor] Intercepted external read of Prebid Memory. Treating as LIVE execution.');
+                     fetchedEids.forEach(eid => {
+                         if (eid && eid.source && eid.uids && eid.uids.length > 0) {
+                             sendInterceptedSignal('secureSignal', eid.source, eid.uids[0].id, true);
+                         }
+                     });
+                  }
+                  
+                  return fetchedEids;
+              }
+          });
+      }
+      
+      // Proxy getUserIds once it exists to catch GAM's passive reads
+      if (typeof window.pbjs.getUserIds === 'function' && !window.pbjs.getUserIds[__monitor_symbol__]) {
+          console.log('[Secure Signal Validator Monitor] pbjs.getUserIds() detected. Proxying to intercept passive Google reads.');
+          const originalUids = window.pbjs.getUserIds;
+          window.pbjs.getUserIds = new Proxy(originalUids, {
+              get: (target, key) => __monitor_symbol__ === key ? true : target[key],
+              apply: function(callTarget, callThis, callArgs) {
+                  const fetchedUids = Reflect.apply(callTarget, callThis, callArgs);
+                  
+                  let isNativeFetch = false;
+                  try {
+                      const stack = new Error().stack || '';
+                      if (stack.toLowerCase().includes('pubads') || stack.toLowerCase().includes('gpt.js') || stack.toLowerCase().includes('doubleclick') || (!stack.includes('__scan_prebid') && stack !== '')) {
+                          isNativeFetch = true;
+                      }
+                  } catch(e) {}
+                  
+                  if (isNativeFetch && typeof fetchedUids === 'object' && fetchedUids !== null) {
+                     console.log('[Secure Signal Validator Monitor] Intercepted external read of Prebid Memory via getUserIds. Treating as LIVE execution.');
+                     for (const source in fetchedUids) {
+                         sendInterceptedSignal('secureSignal', source, fetchedUids[source], true);
+                     }
+                  }
+                  
+                  return fetchedUids;
+              }
+          });
+      }
+
       let eids = [];
       try {
          eids = window.pbjs.getUserIdsAsEids() || [];
