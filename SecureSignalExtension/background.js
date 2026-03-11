@@ -243,14 +243,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } else if (request.origin === 'GAM_CACHE') {
                 existing.sources.gamCache = true;
                 if (!existing.sources.live) {
-                    existing.payload = request.payload;
-                    existing.error = request.error !== undefined ? request.error : null;
+                    if (request.payload !== null && request.payload !== undefined && String(request.payload).trim() !== "null" && String(request.payload).trim() !== "") {
+                        existing.payload = request.payload;
+                        existing.error = null; // Clear error because we just received a valid payload
+                    } else if (request.error !== null && request.error !== undefined) {
+                        existing.error = request.error; // Only merge the error without erasing the existing payload
+                    }
                 }
             } else if (request.origin === 'HB_CACHE') {
                 existing.sources.hbCache = true;
                 if (!existing.sources.live && !existing.sources.gamCache) {
-                    existing.payload = request.payload;
-                    existing.error = request.error !== undefined ? request.error : null;
+                    if (request.payload !== null && request.payload !== undefined && String(request.payload).trim() !== "null" && String(request.payload).trim() !== "") {
+                        existing.payload = request.payload;
+                        existing.error = null; // Clear error because we just received a valid payload
+                    } else if (request.error !== null && request.error !== undefined) {
+                        existing.error = request.error; // Only merge the error without erasing the existing payload
+                    }
                 }
             }
             
