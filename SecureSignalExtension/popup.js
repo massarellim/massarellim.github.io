@@ -162,11 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         let sentToGamCount = 0;
-        let breakdownInjected = { GAM: 0, 'GAM CACHE': 0, 'HB CACHE': 0 };
-        let breakdownSent = { GAM: 0, 'GAM CACHE': 0, 'HB CACHE': 0 };
+        let breakdownInjected = { GAM: 0, HB: 0 };
+        let breakdownSent = { GAM: 0, HB: 0 };
         
         processedSignals.forEach(s => {
-            let key = s.renderOrigin === 'GAM' ? 'GAM' : (s.renderOrigin === 'GAM_CACHE' ? 'GAM CACHE' : 'HB CACHE');
+            let isHbPrimary = s.signal && s.signal.sources ? (s.signal.sources.hbInitiated || (!s.signal.sources.live && s.signal.sources.hbCache)) : false;
+            let key = isHbPrimary ? 'HB' : 'GAM';
             breakdownInjected[key] = (breakdownInjected[key] || 0) + 1;
             if (s.sentInNetwork) {
                 sentToGamCount++;
@@ -174,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; GAM CACHE: ${breakdownInjected['GAM CACHE']} &nbsp;|&nbsp; HB INJECTION: ${breakdownInjected['HB CACHE']}`;
+        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
 
         // Perform sorting logic
         try {
@@ -197,28 +198,23 @@ document.addEventListener('DOMContentLoaded', () => {
           card.className = 'card';
           
           let typeBadge = '';
+          
+          // 1. Determine Primary Origin Badge (GAM or HB)
+          if (signal.sources.hbInitiated || (!signal.sources.live && signal.sources.hbCache)) {
+              typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); margin-right: 4px;">HB</span>';
+          } else {
+              typeBadge += '<span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4); margin-right: 4px;">GAM</span>';
+          }
+          
+          // 2. Determine Secondary State Badge
           if (signal.sources.live) {
               if (signal.liveType === 'secureSignal') {
-                typeBadge = '<span class="badge badge-secure">Secure Signal</span>';
+                typeBadge += '<span class="badge badge-secure">Secure Signal</span>';
               } else if (signal.liveType === 'encryptedSignal') {
-                typeBadge = '<span class="badge badge-encrypted">Encrypted Signal</span>';
-              }
-              
-              if (signal.sources.hbInitiated) {
-                typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);" title="Execution Initiator: Prebid Wrapper">PREBID INJECTION</span>';
-              } else {
-                typeBadge += ' <span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);" title="Execution Initiator: Native Provider Script">NATIVE SCRIPT</span>';
-              }
-              
-              if (signal.sources.hbCache && !signal.sources.hbInitiated) {
-                  typeBadge += ' <span class="badge" style="background: rgba(156, 39, 176, 0.1); color: #9C27B0; border: 1px dashed rgba(156, 39, 176, 0.3);" title="Also safely found residing in Prebid memory">ALSO IN HB</span>';
+                typeBadge += '<span class="badge badge-encrypted">Encrypted Signal</span>';
               }
           } else {
-              if (signal.sources.gamCache) {
-                 typeBadge = '<span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);" title="Found passively resting in Native _GESPSK Local Storage">GAM CACHE</span>';
-              } else if (signal.sources.hbCache) {
-                 typeBadge = '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);" title="Found in Prebid memory and forcefully injected into GAM via dynamic pbjs.setConfig()">HB DYNAMIC INJECTION</span>';
-              }
+              typeBadge += '<span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);">CACHE</span>';
           }
           
           let errorBadgeHtml = '';
@@ -309,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
        }
         
         document.getElementById('stat-network').textContent = sentToGamCount;
-        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; GAM CACHE: ${breakdownSent['GAM CACHE']} &nbsp;|&nbsp; HB INJECTION: ${breakdownSent['HB CACHE']}`;
+        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;
       }
       
       // Render all raw network signals
