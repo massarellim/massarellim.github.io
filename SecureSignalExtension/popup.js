@@ -1,4 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const powerToggle = document.getElementById('power-toggle');
+  const toggleLabel = document.getElementById('toggle-label');
+  
+  // Initialize toggle state (default OFF)
+  chrome.storage.local.get(['extension_enabled'], (res) => {
+      const isEnabled = !!res.extension_enabled;
+      powerToggle.checked = isEnabled;
+      toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
+      toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
+  });
+  
+  // Listen for toggle changes
+  powerToggle.addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      chrome.storage.local.set({ extension_enabled: isEnabled });
+      toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
+      toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
+  });
+
   const ERROR_MAPPING = {
     0: 'NO_ERROR',
     1: 'ADAPTER_CREATION_FAILURE',
@@ -269,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
           listEl.appendChild(card);
         });
        } catch(popupErr) {
-          console.error("Popup Renderer Crash:", popupErr);
           listEl.innerHTML += `<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">${popupErr.stack || popupErr.message || popupErr}</code></div>`;
        }
         

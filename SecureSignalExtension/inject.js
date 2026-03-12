@@ -39,7 +39,7 @@
         timestamp: Date.now()
       }, '*');
     } catch (e) {
-      console.error('[Secure Signal Validator] Error posting message:', e);
+      // silent catch
     }
   }
 
@@ -54,7 +54,6 @@
     const log_label = '[Secure Signal Validator Monitor]';
     if ('function' === typeof window.googletag?.secureSignalProviders?.push
          && !window.googletag?.secureSignalProviders?.push[__monitor_symbol__]) {
-      console.log(`${log_label} secureSignalProviders.push() detected. Adding a proxy.`);
       try {
         window.googletag.secureSignalProviders.push = new Proxy(
           window.googletag.secureSignalProviders.push,
@@ -64,7 +63,6 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-              console.log(`${log_label} Secure Signals Provider registered for ${providerFor}.`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
                 const originalFn = callArgs[0].collectorFunction;
@@ -74,12 +72,9 @@
                     // Start an isolated observer chain, DO NOT return it!
                     promiseResult.then(
                       o => {
-                        console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
                         sendInterceptedSignal('secureSignal', providerFor, o);
                       },
-                      err => {
-                        console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
-                      }
+                      err => {}
                     );
                   }
                   // Return the exact original object to GAM unaltered
@@ -92,7 +87,7 @@
           }
         );
       } catch(error) {
-        console.log('Error when trying to add a proxy.', error.message);
+        // proxy err
       }
     }
     
@@ -116,7 +111,6 @@
     const log_label = '[Secure Signal Validator Monitor]';
     if ('function' === typeof window.googletag?.encryptedSignalProviders?.push
          && !window.googletag?.encryptedSignalProviders?.push[__monitor_symbol__]) {
-      console.log(`${log_label} encryptedSignalProviders.push() detected. Adding a proxy.`);
       try {
         window.googletag.encryptedSignalProviders.push = new Proxy(
           window.googletag.encryptedSignalProviders.push,
@@ -126,8 +120,6 @@
               let providerFor = '[unknown]';
               if (callArgs[0]?.networkCode) providerFor = String(callArgs[0].networkCode);
               else if (callArgs[0]?.id) providerFor = String(callArgs[0].id);
-              console.log(`${log_label} Encrypted Signals Provider registered for ${providerFor}.`);
-              console.log(`${log_label} Note that encryptedSignalProviders.push() is deprecated.`);
               
               if (typeof callArgs[0]?.collectorFunction === 'function') {
                 const originalFn = callArgs[0].collectorFunction;
@@ -137,12 +129,9 @@
                     // Start an isolated observer chain, DO NOT return it!
                     promiseResult.then(
                       o => {
-                        console.log(`${log_label} Collector for ${providerFor} resolves with value %o`, o);
                         sendInterceptedSignal('encryptedSignal', providerFor, o);
                       },
-                      err => {
-                        console.log(`${log_label} Collector for ${providerFor} rejects with value %o`, err);
-                      }
+                      err => {}
                     );
                   }
                   // Return the exact original object to GAM unaltered
@@ -155,7 +144,7 @@
           }
         );
       } catch(error) {
-        console.log('Error when trying to add a proxy.', error.message);
+        // proxy err
       }
     }
     
@@ -246,7 +235,6 @@
                 origin: 'GAM_CACHE',
                 timestamp: Date.now()
               }, '*');
-              console.log(`[Secure Signal Validator] Found cached signal for ${providerName} (Error: ${errorCode})`);
             }
           } catch(e) {}
         }

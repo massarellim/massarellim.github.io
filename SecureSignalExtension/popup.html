@@ -7,8 +7,15 @@
 </head>
 <body>
   <div class="container">
-    <header class="header">
-      <h1>Secure Signal Inspector</h1>
+    <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h1 style="margin: 0;">Secure Signal Inspector</h1>
+      <div class="toggle-container" style="display: flex; align-items: center; gap: 8px;">
+        <span id="toggle-label" style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">OFF</span>
+        <label class="switch">
+          <input type="checkbox" id="power-toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </header>
 
     <main id="main-content">

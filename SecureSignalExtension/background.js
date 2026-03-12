@@ -4,6 +4,40 @@
  */
 
 // Helper: Decode URL-safe Base64 (from Knowledge Item)
+let isExtensionEnabled = false;
+
+chrome.storage.local.get(['extension_enabled'], async (res) => {
+    isExtensionEnabled = !!res.extension_enabled;
+    await updateRegistration(isExtensionEnabled);
+});
+
+chrome.storage.onChanged.addListener(async (changes, namespace) => {
+    if (changes.extension_enabled) {
+        isExtensionEnabled = changes.extension_enabled.newValue;
+        await updateRegistration(isExtensionEnabled);
+    }
+});
+
+async function updateRegistration(enabled) {
+    try {
+        const existing = await chrome.scripting.getRegisteredContentScripts({ ids: ["secure_signal_inject"] });
+        if (enabled && existing.length === 0) {
+            await chrome.scripting.registerContentScripts([{
+                id: "secure_signal_inject",
+                js: ["inject.js"],
+                matches: ["<all_urls>"],
+                runAt: "document_start",
+                world: "MAIN",
+                allFrames: true
+            }]);
+        } else if (!enabled && existing.length > 0) {
+            await chrome.scripting.unregisterContentScripts({ ids: ["secure_signal_inject"] });
+        }
+    } catch (e) {
+        // Silent catch
+    }
+}
+
 function decodeBase64UrlSafe(str) {
   if (!str || typeof str !== 'string') return null;
   try {
@@ -210,7 +244,7 @@ const tabLocks = {};
 function runWithLock(tabId, asyncFn) {
   if (!tabLocks[tabId]) tabLocks[tabId] = Promise.resolve();
   tabLocks[tabId] = tabLocks[tabId].then(async () => {
-    try { await asyncFn(); } catch (e) { console.error(e); }
+    try { await asyncFn(); } catch (e) { }
   });
 }
 
@@ -291,9 +325,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             tabData.injected.push(signalData);
         }
         
-        console.log(`[Background] Merged Signal Data for ${request.providerId}:`, tabData.injected.find(s => s.providerId === request.providerId));
         
-        await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
+        await chrome.storage.local.set({ [key]: tabData }).catch(() => {});
     });
   } else if (request.action === 'log_cache_write' && sender.tab) {
     const tabId = sender.tab.id;
@@ -308,7 +341,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             timestamp: request.timestamp,
             error: request.error
         };
-        await chrome.storage.local.set({ [key]: tabData }).catch(e => console.error("Storage Error:", e));
+        await chrome.storage.local.set({ [key]: tabData }).catch(() => {});
     });
   }
 });
@@ -330,6 +363,7 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 // 3. Intercept Network Requests
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
+    if (!isExtensionEnabled) return;
     if (details.tabId === -1) return;
     
     const url = new URL(details.url);
@@ -413,6 +447,6 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     if (details.frameId === 0) { // Main frame only
         const key = `tab_${details.tabId}`;
-        await chrome.storage.local.remove([key]).catch(e => console.error(e));
+        await chrome.storage.local.remove([key]).catch(() => {});
     }
 });
