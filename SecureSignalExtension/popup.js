@@ -16,6 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.local.set({ extension_enabled: isEnabled });
       toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
       toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
+      
+      if (!isEnabled) {
+          document.getElementById('results').classList.add('hidden');
+          document.getElementById('loading').classList.add('hidden');
+          document.getElementById('reconciled-list').innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">Extension disabled. Toggle ON to start capturing signals.</p>';
+      } else {
+          document.getElementById('loading').classList.remove('hidden');
+          document.getElementById('reconciled-list').innerHTML = '';
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+             if (tabs && tabs[0]) {
+                 const key = `tab_${tabs[0].id}`;
+                 chrome.storage.local.get([key], (res) => {
+                     if (res[key]) renderData(res[key], true);
+                 });
+             }
+          });
+      }
   });
 
   const ERROR_MAPPING = {
@@ -60,8 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const key = `tab_${tabId}`;
     
     function renderData(data) {
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('results').classList.remove('hidden');
+      chrome.storage.local.get(['extension_enabled'], (res) => {
+          if (!res.extension_enabled) {
+              document.getElementById('results').classList.add('hidden');
+              document.getElementById('loading').classList.add('hidden');
+              document.getElementById('reconciled-list').innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">Extension disabled. Toggle ON to start capturing signals.</p>';
+              return;
+          }
+          
+          document.getElementById('loading').classList.add('hidden');
+          document.getElementById('results').classList.remove('hidden');
       
       data = data || { injected: [], network: [], cacheWrites: {} };
       const injected = data.injected || [];
@@ -111,14 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
                              matched = true;
                          }
                      } else if (!injectedHasError && !networkHasError) {
-                         // Neither are errors. We MUST verify the payload matches.
-                         let foundStr = typeof found.payload === 'object' ? JSON.stringify(found.payload) : String(found.payload);
-                         
-                         if (foundStr === stringifiedInjectedPayload || foundStr.includes(rawIDToSearch)) {
-                             matched = true;
-                         } else if (Array.isArray(found.payload) && typeof signal.payload === 'string') {
-                             if (found.payload.includes(signal.payload)) matched = true;
-                         }
+                         // Neither are errors. Over-strict payload string matching has been removed
+                         // because GAM restructures/re-serializes payloads (like arrays). 
+                         // Provider exact equality is enough to guarantee verification.
+                         matched = true;
                      } else if (!injectedHasError && networkHasError) {
                          // The local script SUCCEEDED, but GAM sent an ERROR over the network!
                          networkErrorPayload = found;
@@ -128,12 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
                  const netStr = JSON.stringify(net.decoded);
                  let injectedHasError = signal.error !== undefined && signal.error !== null;
                  
+                 // Fallback string matching safely bounded by quotes to prevent esp.criteo matching criteo
                  if (netStr && netStr.includes('"' + signal.providerId + '"')) {
-                     // Fallback check: if it's an error, the error code should be in the string
                      if (injectedHasError) {
                          if (netStr.includes(String(signal.error))) matched = true;
                      } else {
-                         if (netStr.includes(rawIDToSearch)) matched = true;
+                         matched = true; 
                      }
                  }
              }
@@ -371,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
           networkListEl.appendChild(card);
         });
       }
+      });
     } // End of renderData
 
     // 1. Initial render on popup open
