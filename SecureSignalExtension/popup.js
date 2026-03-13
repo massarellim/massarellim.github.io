@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
               
               let errName;
               if (typeof signal.error === 'string') {
-                  errName = signal.error.includes('not in eids') ? 'Potential HB Misconfig' : signal.error;
+                  errName = signal.error.includes('not in eids') ? 'POTENTIAL_HB_MISCONFIG' : signal.error;
               } else {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
