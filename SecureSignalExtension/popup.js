@@ -174,10 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
                          // The local script SUCCEEDED, but GAM sent an ERROR over the network!
                          networkErrorPayload = found;
                          matched = true;
-                     } else if (injectedHasError && !networkHasError) {
-                         // The local script FAILED, but GAM magically sent a SUCCESS over the network!
-                         matchedNetworkPayload = found;
-                         matched = true;
                      }
                  }
              } else {
@@ -186,15 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
                  
                  // Fallback string matching securely bounded by quotes to prevent esp.criteo matching criteo
                  if (netStr && netStr.includes('"' + signal.providerId + '"')) {
-                     // If the local cache has an error (e.g. 106) but GAM successfully transmitted a payload over the network anyway,
-                     // we MUST merge them! The previous logic strictly required the network to also have an error to match.
-                     // By matching purely on Provider ID, we allow the Network Success Payload to overwrite the Cache Error.
-                     matched = true;
-                     
-                     if (injectedHasError && !networkHasError) {
-                         // A miracle! The network succeeded even though the cache failed!
-                         // Capture the successful network payload to overwrite the UI error state
-                         matchedNetworkPayload = net;
+                     if (injectedHasError) {
+                         if (netStr.includes(String(signal.error))) matched = true;
+                     } else {
+                         matched = true; 
                      }
                  }
              }

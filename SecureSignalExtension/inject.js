@@ -245,6 +245,7 @@
   const reportedPrebidKeys = new Map();
   const PREBID_EID_MAPPING = {
     'id5Id': 'id5-sync.com',
+    'id5id': 'id5-sync.com',
     'criteo': 'criteo.com',
     'unifiedId': 'adserver.org',
     'coreId': 'audigent.com',
