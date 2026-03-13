@@ -20,12 +20,31 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
     }
 });
 
-function updateBadge(enabled) {
+async function updateBadge(enabled) {
     if (enabled) {
-        chrome.action.setBadgeText({ text: 'ON' });
-        chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
+        chrome.action.setBadgeText({ text: '' }); // Clear any residual badge
+        // Set dynamic green icon using fail-safe base64 SVG Data URIs
+        try {
+            chrome.action.setIcon({
+                path: {
+                    '16': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSIjNENBRjUwIiBkPSJNMTIgMUwzIDV2NmMwIDUuNTUgMy44NCAxMC43NCA5IDEyIDUuMTYtMS4yNiA5LTYuNDUgOS0xMlY1bC05LTR6bTAgMTAuOTloN2MtLjUzIDQuMTItMy4yOCA3Ljc5LTcgOC45NFYxMkg1VjYuM2w3LTMuMTF2OC44eiIvPjwvc3ZnPg==',
+                    '48': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSIjNENBRjUwIiBkPSJNMTIgMUwzIDV2NmMwIDUuNTUgMy44NCAxMC43NCA5IDEyIDUuMTYtMS4yNiA5LTYuNDUgOS0xMlY1bC05LTR6bTAgMTAuOTloN2MtLjUzIDQuMTItMy4yOCA3Ljc5LTcgOC45NFYxMkg1VjYuM2w3LTMuMTF2OC44eiIvPjwvc3ZnPg==',
+                    '128': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9IiM0Q0FGNTAiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHptMCAxMC45OWg3Yy0uNTMgNC4xMi0zLjI4IDcuNzktNyA4Ljk0VjEySDVWNi4zbDctMy4xMXY4Ljh6Ii8+PC9zdmc+'
+                }
+            });
+        } catch (e) {
+            console.error("Failed to set SVG icon:", e);
+        }
     } else {
         chrome.action.setBadgeText({ text: '' });
+        // Restore default grayscale icon from manifest
+        chrome.action.setIcon({
+            path: {
+                "16": "icons/icon16.png",
+                "48": "icons/icon48.png",
+                "128": "icons/icon128.png"
+            }
+        });
     }
 }
 

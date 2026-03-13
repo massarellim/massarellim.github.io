@@ -45,12 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
              if (tabs && tabs[0]) {
-                 chrome.scripting.executeScript({
-                     target: { tabId: tabs[0].id },
-                     func: () => {
-                         setTimeout(() => window.location.reload(), 150);
-                     }
-                 });
+                 chrome.tabs.reload(tabs[0].id);
              }
           });
       }
