@@ -9,14 +9,25 @@ let isExtensionEnabled = false;
 chrome.storage.local.get(['extension_enabled'], async (res) => {
     isExtensionEnabled = !!res.extension_enabled;
     await updateRegistration(isExtensionEnabled);
+    updateBadge(isExtensionEnabled);
 });
 
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
     if (changes.extension_enabled) {
         isExtensionEnabled = changes.extension_enabled.newValue;
         await updateRegistration(isExtensionEnabled);
+        updateBadge(isExtensionEnabled);
     }
 });
+
+function updateBadge(enabled) {
+    if (enabled) {
+        chrome.action.setBadgeText({ text: 'ON' });
+        chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
+    } else {
+        chrome.action.setBadgeText({ text: '' });
+    }
+}
 
 async function updateRegistration(enabled) {
     try {
