@@ -337,8 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           
           // Diagnostics
-           if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '')) {
-               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for current environment and correct deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>`;
+           if (!sentInNetwork) {
+               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment and deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>`;
            }
            
            let errorBadgeHtml = '';
