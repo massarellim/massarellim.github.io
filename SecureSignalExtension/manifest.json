@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Secure Signal Inspector",
-  "version": "11.9",
+  "version": "12.0",
   "description": "Intercepts and validates Secure Signals and Encrypted Signals sent to Google Ad Manager.",
   "permissions": [
     "webRequest",

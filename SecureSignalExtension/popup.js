@@ -357,11 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              if (errName === 'SIGNAL_NULL_OR_UNDEFINED' || errName === 'Potential HB Misconfig') {
-                  errorBadgeHtml = `<span class="badge" style="background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; margin-left: 6px;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
-              } else {
-                  errorBadgeHtml = `<div class="custom-tooltip slate"><span class="badge badge-slate">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
-              }
+              errorBadgeHtml = `<span class="badge" style="background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; margin-left: 6px;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
             }
           }
           

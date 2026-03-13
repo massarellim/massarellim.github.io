@@ -402,8 +402,5 @@ input:checked + .slider:before {
 .custom-tooltip.pink .tooltip-content { background: linear-gradient(rgba(186, 24, 79, 0.4), rgba(186, 24, 79, 0.4)), #0f172a; color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
 .custom-tooltip.pink .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
-/* Slate - ERROR */
-.badge-slate { background: rgba(100, 116, 139, 0.15); color: #64748B; border: 1px solid rgba(100, 116, 139, 0.3); }
-.custom-tooltip.slate .tooltip-content { background: rgba(100, 116, 139, 0.95); color: #ffffff; border: 1px solid rgba(100, 116, 139, 0.8); backdrop-filter: blur(4px); }
-.custom-tooltip.slate .tooltip-content { background: rgba(100, 116, 139, 0.95); color: #ffffff; border: 1px solid rgba(100, 116, 139, 0.8); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+
 
