@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
                              if (foundNet && foundNet.payload) displayValue = foundNet.payload;
                         }
                     }
-                    return typeof displayValue === 'string' ? displayValue : JSON.stringify(displayValue, null, 2);
+                    return typeof displayValue === 'string' ? displayValue : (displayValue === null || displayValue === undefined ? 'null' : JSON.stringify(displayValue, null, 2));
                  })()}</span>
                  ${errorBadgeHtml}
               </div>
