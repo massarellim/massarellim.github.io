@@ -225,12 +225,38 @@ function decodeBase64UrlSafe(str) {
     
     // Check if it's the expected GAM array format [ [1, "id", 1], [domain, "id", 1] ]
     if (Array.isArray(parsedArr)) {
+        // If it's a 1-dimensional array where index 0 is a string (e.g. ["id5-sync.com",null,1773411352766,null,null,null... [106]]), wrap it in a 2D array to normalize processing
+        if (parsedArr.length >= 2 && typeof parsedArr[0] === 'string' && !Array.isArray(parsedArr[1])) {
+            parsedArr = [parsedArr];
+        }
+        
         return parsedArr.map(signalObj => {
             if (Array.isArray(signalObj) && signalObj.length >= 2) {
                let providerValue = signalObj[0];
                let payloadValue = signalObj[1];
                
                let providerName = String(providerValue);
+               
+               // Attempt to extract deeply nested error codes if present (typically at index 9)
+               let extractedError = null;
+               if (signalObj.length >= 3) {
+                   // Only treat index 2 as an error if it's a small integer (not a massive millisecond timestamp like 1773411352766)
+                   if (typeof signalObj[2] === 'number' && signalObj[2] < 1000000) {
+                       extractedError = signalObj[2]; 
+                   } else if (typeof signalObj[2] === 'string') {
+                       extractedError = signalObj[2];
+                   }
+                   
+                   // ID5 and others often bury the Timeout [106] code deep in index 9
+                   if (signalObj.length > 8) {
+                        let errContainer = signalObj[9];
+                        if (Array.isArray(errContainer) && errContainer.length > 0 && typeof errContainer[0] === 'number') {
+                            extractedError = errContainer[0];
+                        } else if (typeof errContainer === 'number') {
+                            extractedError = errContainer;
+                        }
+                   }
+               }
                
                let finalPayload = payloadValue;
                if (typeof payloadValue === 'string') {
@@ -244,7 +270,7 @@ function decodeBase64UrlSafe(str) {
                return {
                    provider: providerName,
                    payload: finalPayload,
-                   error: signalObj.length >= 3 ? signalObj[2] : null
+                   error: extractedError
                };
             }
             return signalObj;
