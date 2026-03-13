@@ -20,16 +20,33 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isEnabled) {
           document.getElementById('results').classList.add('hidden');
           document.getElementById('loading').classList.add('hidden');
-          document.getElementById('reconciled-list').innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">Extension disabled. Toggle ON to start capturing signals.</p>';
+          
+          let emptyState = document.getElementById('empty-state');
+          if (!emptyState) {
+              emptyState = document.createElement('div');
+              emptyState.id = 'empty-state';
+              emptyState.className = 'card text-center';
+              emptyState.style.marginTop = '20px';
+              emptyState.style.padding = '30px 20px';
+              emptyState.innerHTML = `
+                <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">🔌</div>
+                <h3 style="margin-bottom: 8px; color: var(--text-base);">Extension is OFF</h3>
+                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0;">Turn the extension <strong>ON</strong> using the toggle above to start capturing and verifying Secure Signals on the current page.</p>
+              `;
+              document.getElementById('main-content').appendChild(emptyState);
+          }
+          emptyState.style.display = 'block';
       } else {
+          let emptyState = document.getElementById('empty-state');
+          if (emptyState) emptyState.style.display = 'none';
+          
+          document.getElementById('loading').textContent = 'Reloading page to start capturing signals...';
           document.getElementById('loading').classList.remove('hidden');
-          document.getElementById('reconciled-list').innerHTML = '';
+          document.getElementById('results').classList.add('hidden');
+          
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
              if (tabs && tabs[0]) {
-                 const key = `tab_${tabs[0].id}`;
-                 chrome.storage.local.get([key], (res) => {
-                     if (res[key]) renderData(res[key], true);
-                 });
+                 chrome.tabs.reload(tabs[0].id);
              }
           });
       }
@@ -81,9 +98,27 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!res.extension_enabled) {
               document.getElementById('results').classList.add('hidden');
               document.getElementById('loading').classList.add('hidden');
-              document.getElementById('reconciled-list').innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">Extension disabled. Toggle ON to start capturing signals.</p>';
+              
+              let emptyState = document.getElementById('empty-state');
+              if (!emptyState) {
+                  emptyState = document.createElement('div');
+                  emptyState.id = 'empty-state';
+                  emptyState.className = 'card text-center';
+                  emptyState.style.marginTop = '20px';
+                  emptyState.style.padding = '30px 20px';
+                  emptyState.innerHTML = `
+                    <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">🔌</div>
+                    <h3 style="margin-bottom: 8px; color: var(--text-base);">Extension is OFF</h3>
+                    <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0;">Turn the extension <strong>ON</strong> using the toggle above to start capturing and verifying Secure Signals on the current page.</p>
+                  `;
+                  document.getElementById('main-content').appendChild(emptyState);
+              }
+              emptyState.style.display = 'block';
               return;
           }
+          
+          let emptyState = document.getElementById('empty-state');
+          if (emptyState) emptyState.style.display = 'none';
           
           document.getElementById('loading').classList.add('hidden');
           document.getElementById('results').classList.remove('hidden');
