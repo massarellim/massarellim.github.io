@@ -255,6 +255,7 @@
     'identityLink': 'liveramp.com',
     'liveIntentId': 'liveintent.com',
     'quantcastId': 'quantcast.com',
+    'pubmaticId': 'esp.pubmatic.com',
     'yahooConnectId': 'yahoo.com',
     'zeotapIdPlus': 'zeotap.com',
     'lotamePanoramaId': 'crwdcntrl.net',

@@ -275,19 +275,19 @@ document.addEventListener('DOMContentLoaded', () => {
           // Unified 5-Tag Taxonomy Implementation
           if (signal.sources.live) {
               if (signal.liveType === 'secureSignal') {
-                 typeBadge += '<span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);" title="Captured live via googletag.secureSignalProviders.push()">SECURE SIGNAL</span>';
+                 typeBadge += '<span class="badge" style="background: rgba(0, 150, 136, 0.2); color: #009688; border: 1px solid rgba(0, 150, 136, 0.4); cursor: help;" title="Hover for origin: Captured live via googletag.secureSignalProviders.push()">SECURE SIGNAL</span>';
               } else if (signal.liveType === 'encryptedSignal') {
-                 typeBadge += '<span class="badge" style="background: rgba(66, 133, 244, 0.2); color: #4285F4; border: 1px solid rgba(66, 133, 244, 0.4);" title="Captured live via googletag.encryptedSignalProviders.push()">ENCRYPTED SIGNAL</span>';
+                 typeBadge += '<span class="badge" style="background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.4); cursor: help;" title="Hover for origin: Captured live via googletag.encryptedSignalProviders.push()">ENCRYPTED SIGNAL</span>';
               }
           } else {
               if (signal.sources.gamCache) {
-                 typeBadge += '<span class="badge" style="background: rgba(255,165,0,0.2); color: orange; border: 1px solid rgba(255,165,0,0.4);" title="Extracted natively from browser localStorage key: _GESPSK-*">GAM CACHE</span>';
+                 typeBadge += '<span class="badge" style="background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); cursor: help;" title="Hover for origin: Extracted natively from browser localStorage key: _GESPSK-*">GAM CACHE</span>';
               } else {
                  if (signal.sources.hbConfig) {
-                     typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);" title="Found in pbjs.getConfig().userSync.userIds">HB CONFIG</span>';
+                     typeBadge += '<span class="badge" style="background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.4); cursor: help;" title="Hover for origin: Found in pbjs.getConfig().userSync.userIds">HB CONFIG</span>';
                  }
                  if (signal.sources.hbCache) {
-                     typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4);" title="Extracted actively from memory via pbjs.getUserIdsAsEids()">HB SYNC</span>';
+                     typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); cursor: help;" title="Hover for origin: Extracted actively from memory via pbjs.getUserIdsAsEids()">HB SYNC</span>';
                  }
               }
           }
