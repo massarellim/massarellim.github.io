@@ -366,48 +366,44 @@ input:checked + .slider:before {
   opacity: 1;
 }
 
+
 /* Tooltip Caret */
 .custom-tooltip .tooltip-content::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -6px;
-  border-width: 6px;
-  border-style: solid;
+  display: none !important;
 }
 
 /* Teal - SECURE SIGNAL */
 .badge-teal { background: rgba(0, 150, 136, 0.2); color: #009688; border: 1px solid rgba(0, 150, 136, 0.4); }
-.custom-tooltip.teal .tooltip-content { background: rgba(0, 120, 109, 0.4); color: #009688; border: 1px solid rgba(0, 150, 136, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.teal .tooltip-content::after { border-color: rgba(0, 150, 136, 0.6) transparent transparent transparent; }
+.custom-tooltip.teal .tooltip-content { background: linear-gradient(rgba(0, 120, 109, 0.4), rgba(0, 120, 109, 0.4)), #0f172a; color: #009688; border: 1px solid rgba(0, 150, 136, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.teal .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Blue - ENCRYPTED SIGNAL */
 .badge-blue { background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.4); }
-.custom-tooltip.blue .tooltip-content { background: rgba(26, 120, 194, 0.4); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.blue .tooltip-content::after { border-color: rgba(33, 150, 243, 0.6) transparent transparent transparent; }
+.custom-tooltip.blue .tooltip-content { background: linear-gradient(rgba(26, 120, 194, 0.4), rgba(26, 120, 194, 0.4)), #0f172a; color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.blue .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Orange - GAM CACHE */
 .badge-orange { background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); }
-.custom-tooltip.orange .tooltip-content { background: rgba(204, 122, 0, 0.4); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.orange .tooltip-content::after { border-color: rgba(255, 152, 0, 0.6) transparent transparent transparent; }
+.custom-tooltip.orange .tooltip-content { background: linear-gradient(rgba(204, 122, 0, 0.4), rgba(204, 122, 0, 0.4)), #0f172a; color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.orange .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Purple - HB SYNC */
 .badge-purple { background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); }
-.custom-tooltip.purple .tooltip-content { background: rgba(125, 31, 141, 0.4); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.purple .tooltip-content::after { border-color: rgba(156, 39, 176, 0.6) transparent transparent transparent; }
+.custom-tooltip.purple .tooltip-content { background: linear-gradient(rgba(125, 31, 141, 0.4), rgba(125, 31, 141, 0.4)), #0f172a; color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.purple .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Cyan - HB CONFIG */
 .badge-cyan { background: rgba(0, 188, 212, 0.2); color: #00BCD4; border: 1px solid rgba(0, 188, 212, 0.4); }
-.custom-tooltip.cyan .tooltip-content { background: rgba(0, 150, 170, 0.4); color: #00BCD4; border: 1px solid rgba(0, 188, 212, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.cyan .tooltip-content::after { border-color: rgba(0, 188, 212, 0.6) transparent transparent transparent; }
+.custom-tooltip.cyan .tooltip-content { background: linear-gradient(rgba(0, 150, 170, 0.4), rgba(0, 150, 170, 0.4)), #0f172a; color: #00BCD4; border: 1px solid rgba(0, 188, 212, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.cyan .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Pink - NOT DEPLOYED / NOT SENT */
 .badge-pink { background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.4); }
-.custom-tooltip.pink .tooltip-content { background: rgba(186, 24, 79, 0.4); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.custom-tooltip.pink .tooltip-content::after { border-color: rgba(233, 30, 99, 0.6) transparent transparent transparent; }
+.custom-tooltip.pink .tooltip-content { background: linear-gradient(rgba(186, 24, 79, 0.4), rgba(186, 24, 79, 0.4)), #0f172a; color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.6); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+.custom-tooltip.pink .tooltip-content::after { border-color: #0f172a transparent transparent transparent; }
 
 /* Slate - ERROR */
 .badge-slate { background: rgba(100, 116, 139, 0.15); color: #64748B; border: 1px solid rgba(100, 116, 139, 0.3); }
 .custom-tooltip.slate .tooltip-content { background: rgba(100, 116, 139, 0.95); color: #ffffff; border: 1px solid rgba(100, 116, 139, 0.8); backdrop-filter: blur(4px); }
-.custom-tooltip.slate .tooltip-content::after { border-color: rgba(100, 116, 139, 0.8) transparent transparent transparent; }
+.custom-tooltip.slate .tooltip-content { background: rgba(100, 116, 139, 0.95); color: #ffffff; border: 1px solid rgba(100, 116, 139, 0.8); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
+

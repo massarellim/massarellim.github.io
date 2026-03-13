@@ -316,29 +316,29 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let typeBadge = '';
           
-          // Unified 5-Tag Taxonomy Implementation
+          // Unified Taxonomy Implementation (Decoupled & Stackable)
           if (signal.sources.live) {
               if (signal.liveType === 'secureSignal') {
                  typeBadge += '<div class="custom-tooltip teal"><span class="badge badge-teal">SECURE SIGNAL</span><span class="tooltip-content">Captured live via googletag.secureSignalProviders.push()</span></div>';
               } else if (signal.liveType === 'encryptedSignal') {
                  typeBadge += '<div class="custom-tooltip blue"><span class="badge badge-blue">ENCRYPTED SIGNAL</span><span class="tooltip-content">Captured live via googletag.encryptedSignalProviders.push()</span></div>';
               }
-          } else {
-              if (signal.sources.gamCache) {
-                 typeBadge += '<div class="custom-tooltip orange"><span class="badge badge-orange">GAM CACHE</span><span class="tooltip-content">Extracted natively from browser localStorage key: _GESPSK-*</span></div>';
-              } else {
-                 if (signal.sources.hbConfig) {
-                     typeBadge += '<div class="custom-tooltip cyan"><span class="badge badge-cyan">HB CONFIG</span><span class="tooltip-content">Found in pbjs.getConfig().userSync.userIds</span></div>';
-                 }
-                 if (signal.sources.hbCache) {
-                     typeBadge += '<div class="custom-tooltip purple"><span class="badge badge-purple">HB SYNC</span><span class="tooltip-content">Extracted actively from memory via pbjs.getUserIdsAsEids()</span></div>';
-                 }
-              }
+          }
+          
+          if (signal.sources.gamCache) {
+             typeBadge += '<div class="custom-tooltip orange"><span class="badge badge-orange">GAM CACHE</span><span class="tooltip-content">Extracted natively from browser localStorage key: _GESPSK-*</span></div>';
+          }
+          
+          if (signal.sources.hbConfig) {
+             typeBadge += '<div class="custom-tooltip cyan"><span class="badge badge-cyan">HB CONFIG</span><span class="tooltip-content">Found in pbjs.getConfig().userSync.userIds</span></div>';
+          }
+          if (signal.sources.hbCache) {
+             typeBadge += '<div class="custom-tooltip purple"><span class="badge badge-purple">HB SYNC</span><span class="tooltip-content">Extracted actively from memory via pbjs.getUserIdsAsEids()</span></div>';
           }
           
           // Diagnostics
            if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '') && (signal.error === undefined || signal.error === null)) {
-               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal extracted locally but NOT SENT to GAM. Check GAM Secure Signal UI configuration to ensure provider is enabled for current environment and correct deployment method (publisher/google/prebid), or verify if the Identity script is resolving too slowly (after the GAM ad request already fired).</span></div>`;
+               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment with the correct deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>`;
            }
            
            let errorBadgeHtml = '';
