@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  typeBadge += '<div class="custom-tooltip orange"><span class="badge badge-orange">GAM CACHE</span><span class="tooltip-content">Extracted natively from browser localStorage key: _GESPSK-*</span></div>';
               } else {
                  if (signal.sources.hbConfig) {
-                     typeBadge += '<div class="custom-tooltip indigo"><span class="badge badge-indigo">HB CONFIG</span><span class="tooltip-content">Found in pbjs.getConfig().userSync.userIds</span></div>';
+                     typeBadge += '<div class="custom-tooltip cyan"><span class="badge badge-cyan">HB CONFIG</span><span class="tooltip-content">Found in pbjs.getConfig().userSync.userIds</span></div>';
                  }
                  if (signal.sources.hbCache) {
                      typeBadge += '<div class="custom-tooltip purple"><span class="badge badge-purple">HB SYNC</span><span class="tooltip-content">Extracted actively from memory via pbjs.getUserIdsAsEids()</span></div>';
@@ -292,11 +292,16 @@ document.addEventListener('DOMContentLoaded', () => {
               }
           }
           
-          let errorBadgeHtml = '';
+          // Diagnostics
+           if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '') && (signal.error === undefined || signal.error === null)) {
+               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 200px; white-space: normal; text-transform:none;">Signal extracted locally but NOT SENT to GAM. Check GAM Secure Signal UI configuration, or verify if the Identity script is resolving too slowly (after the GAM ad request already fired).</span></div>`;
+           }
+           
+           let errorBadgeHtml = '';
           if (signal.error !== undefined && signal.error !== null) {
             let hasValidPayload = signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '';
             if (!hasValidPayload) {
-              let errColor = signal.error === 0 ? 'mediumseagreen' : 'crimson';
+              let errClass = signal.error === 0 ? 'mediumseagreen' : 'crimson';
               let errName;
               
               if (typeof signal.error === 'string') {
@@ -305,12 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = `<div class="custom-tooltip maroon"><span class="badge badge-maroon">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
+              errorBadgeHtml = `<div class="custom-tooltip slate"><span class="badge badge-slate">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
             }
-          } else if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '')) {
-              // The signal has a valid payload but was NOT sent in the network, and there is NO explicit error tracking it. 
-              // This implies the publisher failed to properly configure GAM to ingest the signal.
-              errorBadgeHtml = `<div class="custom-tooltip pink"><span class="badge badge-pink" style="margin-left: 8px;">NOT DEPLOYED</span><span class="tooltip-content" style="width: 200px; white-space: normal;">Check your GAM secure signal configuration to ensure that the signal provider is enabled for the current environment (web/app) and that the correct deployment method (publisher / google / prebid) is selected for this script.</span></div>`;
           }
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
@@ -407,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
                                  let errBadge = '';
                                  if (s.error !== undefined && s.error !== null) {
-                                     let errColor = s.error === 0 ? 'mediumseagreen' : 'crimson';
+                                     let errClass = s.error === 0 ? 'mediumseagreen' : 'crimson';
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
                                      errBadge = ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }

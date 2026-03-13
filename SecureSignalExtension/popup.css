@@ -138,7 +138,7 @@ body {
   border-radius: 6px;
   font-family: monospace;
   font-size: 12px;
-  word-break: break-all;
+  word-break: normal; overflow-wrap: break-word;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -254,7 +254,7 @@ body {
   font-family: monospace;
   font-size: 11px;
   color: #94a3b8;
-  word-break: break-all;
+  word-break: normal; overflow-wrap: break-word;
   background: rgba(0,0,0,0.2);
   padding: 6px 8px;
   border-radius: 4px;
@@ -340,7 +340,7 @@ input:checked + .slider:before {
   display: block;
   opacity: 0;
   width: max-content;
-  max-width: 280px;
+  max-width: 250px;
   background-color: var(--card-bg);
   text-align: center;
   border-radius: 6px;
@@ -356,6 +356,13 @@ input:checked + .slider:before {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   text-transform: none;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Guard against tooltips bleeding off the right side of the screen */
+.card:nth-child(n) .custom-tooltip .tooltip-content {
+  transform: translateX(min(-50%, -50% - (100% - 200px)));
 }
 
 .custom-tooltip:hover .tooltip-content,
@@ -378,26 +385,36 @@ input:checked + .slider:before {
 
 /* Teal - SECURE SIGNAL */
 .badge-teal { background: rgba(0, 150, 136, 0.2); color: #009688; border: 1px solid rgba(0, 150, 136, 0.4); }
-.custom-tooltip.teal .tooltip-content { border: 1px solid rgba(0, 150, 136, 0.4); color: #009688; }
-.custom-tooltip.teal .tooltip-content::after { border-color: rgba(0, 150, 136, 0.4) transparent transparent transparent; }
+.custom-tooltip.teal .tooltip-content { background: rgba(0, 150, 136, 0.95); color: #ffffff; border: 1px solid rgba(0, 150, 136, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.teal .tooltip-content::after { border-color: #009688 transparent transparent transparent; }
 
 /* Blue - ENCRYPTED SIGNAL */
 .badge-blue { background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.4); }
-.custom-tooltip.blue .tooltip-content { border: 1px solid rgba(33, 150, 243, 0.4); color: #2196F3; }
-.custom-tooltip.blue .tooltip-content::after { border-color: rgba(33, 150, 243, 0.4) transparent transparent transparent; }
+.custom-tooltip.blue .tooltip-content { background: rgba(33, 150, 243, 0.95); color: #ffffff; border: 1px solid rgba(33, 150, 243, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.blue .tooltip-content::after { border-color: #2196F3 transparent transparent transparent; }
 
 /* Orange - GAM CACHE */
 .badge-orange { background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); }
-.custom-tooltip.orange .tooltip-content { border: 1px solid rgba(255, 152, 0, 0.4); color: #FF9800; }
-.custom-tooltip.orange .tooltip-content::after { border-color: rgba(255, 152, 0, 0.4) transparent transparent transparent; }
+.custom-tooltip.orange .tooltip-content { background: rgba(255, 152, 0, 0.95); color: #ffffff; border: 1px solid rgba(255, 152, 0, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.orange .tooltip-content::after { border-color: #FF9800 transparent transparent transparent; }
 
 /* Purple - HB SYNC */
 .badge-purple { background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); }
-.custom-tooltip.purple .tooltip-content { border: 1px solid rgba(156, 39, 176, 0.4); color: #9C27B0; }
-.custom-tooltip.purple .tooltip-content::after { border-color: rgba(156, 39, 176, 0.4) transparent transparent transparent; }
+.custom-tooltip.purple .tooltip-content { background: rgba(156, 39, 176, 0.95); color: #ffffff; border: 1px solid rgba(156, 39, 176, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.purple .tooltip-content::after { border-color: #9C27B0 transparent transparent transparent; }
 
-/* Pink - NOT DEPLOYED */
+/* Cyan - HB CONFIG */
+.badge-cyan { background: rgba(0, 188, 212, 0.2); color: #00BCD4; border: 1px solid rgba(0, 188, 212, 0.4); }
+.custom-tooltip.cyan .tooltip-content { background: rgba(0, 188, 212, 0.95); color: #ffffff; border: 1px solid rgba(0, 188, 212, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.cyan .tooltip-content::after { border-color: #00BCD4 transparent transparent transparent; }
+
+/* Pink - NOT DEPLOYED / NOT SENT */
 .badge-pink { background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.4); }
-.custom-tooltip.pink .tooltip-content { border: 1px solid rgba(233, 30, 99, 0.4); color: #E91E63; }
-.custom-tooltip.pink .tooltip-content::after { border-color: rgba(233, 30, 99, 0.4) transparent transparent transparent; }
+.custom-tooltip.pink .tooltip-content { background: rgba(233, 30, 99, 0.95); color: #ffffff; border: 1px solid rgba(233, 30, 99, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.pink .tooltip-content::after { border-color: #E91E63 transparent transparent transparent; }
+
+/* Slate - ERROR */
+.badge-slate { background: rgba(100, 116, 139, 0.15); color: #64748B; border: 1px solid rgba(100, 116, 139, 0.3); }
+.custom-tooltip.slate .tooltip-content { background: rgba(100, 116, 139, 0.95); color: #ffffff; border: 1px solid rgba(100, 116, 139, 0.8); backdrop-filter: blur(4px); }
+.custom-tooltip.slate .tooltip-content::after { border-color: #64748B transparent transparent transparent; }
 

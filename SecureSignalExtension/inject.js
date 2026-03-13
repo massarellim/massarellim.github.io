@@ -262,6 +262,9 @@
     'netId': 'netid.de',
     'uid2': 'uidapi.com'
   };
+  
+  // Dynamic inference map for discovering unknown EID sources
+  let dynamicEIDMap = {};
 
   function __scan_prebid() {
     try {
@@ -278,6 +281,36 @@
       let eids = [];
       try {
          eids = window.pbjs.getUserIdsAsEids() || [];
+      } catch(e) {}
+
+      // DYNAMIC EID INFERENCE ENGINE
+      // Mathematically cross-references raw string payloads from submodules
+      // against final EID objects to deduce unknown routing maps
+      try {
+        let uids = window.pbjs.getUserIds() || {};
+        for (let configName in uids) {
+            if (!PREBID_EID_MAPPING[configName] && !dynamicEIDMap[configName]) {
+                let val = uids[configName];
+                let searchTokens = [];
+                if (typeof val === 'string' && val.length > 4) searchTokens.push(val);
+                else if (typeof val === 'object' && val !== null) {
+                    for (let k in val) {
+                        if (typeof val[k] === 'string' && val[k].length > 4) searchTokens.push(val[k]);
+                    }
+                }
+                
+                if (searchTokens.length > 0) {
+                    eids.forEach(eid => {
+                        let eidStr = JSON.stringify(eid.uids) || '';
+                        searchTokens.forEach(token => {
+                            if (eidStr.includes(token) && eid.source) {
+                                dynamicEIDMap[configName] = eid.source;
+                            }
+                        });
+                    });
+                }
+            }
+        }
       } catch(e) {}
 
       let foundSources = new Set();
@@ -306,7 +339,8 @@
       });
 
       configuredUserIds.forEach(source => {
-        let expectedSource = PREBID_EID_MAPPING[source] || source;
+        // Fallback chain: Dynamic Inference Map -> Hardcoded Dictionary -> Raw String
+        let expectedSource = dynamicEIDMap[source] || PREBID_EID_MAPPING[source] || source;
         let key = 'prebid_cfg_' + expectedSource;
         if (reportedPrebidKeys.get(key) !== 'config_true') {
            reportedPrebidKeys.set(key, 'config_true');
