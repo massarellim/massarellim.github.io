@@ -1,4 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Tooltip Click Handler ---
+    document.addEventListener('click', (e) => {
+        const tooltip = e.target.closest('.custom-tooltip');
+        
+        // If clicking outside any tooltip, close all active tooltips
+        if (!tooltip) {
+            document.querySelectorAll('.custom-tooltip.active').forEach(t => t.classList.remove('active'));
+            return;
+        }
+
+        const content = tooltip.querySelector('.tooltip-content');
+        if (!content) return;
+        
+        // Toggle the clicked one
+        const isActive = tooltip.classList.contains('active');
+        
+        // Close others
+        document.querySelectorAll('.custom-tooltip.active').forEach(t => t.classList.remove('active'));
+        
+        if (!isActive) {
+            tooltip.classList.add('active');
+            
+            // Re-center before measuring to avoid compounded shifts
+            content.style.left = '50%';
+            content.style.transform = 'translateX(-50%)';
+            content.style.marginLeft = '0px';
+
+            const rect = content.getBoundingClientRect();
+            const padding = 10; // Safe distance from window edge
+            
+            // If the element bleeds off the right edge of the window
+            if (rect.right > window.innerWidth - padding) {
+                const overflow = rect.right - (window.innerWidth - padding);
+                content.style.transform = `translateX(calc(-50% - ${overflow}px))`;
+            } 
+            // If the element bleeds off the left edge
+            else if (rect.left < padding) {
+                const underflow = padding - rect.left;
+                content.style.transform = `translateX(calc(-50% + ${underflow}px))`;
+            }
+        }
+    });
+
   const powerToggle = document.getElementById('power-toggle');
   const toggleLabel = document.getElementById('toggle-label');
   
@@ -294,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           // Diagnostics
            if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '') && (signal.error === undefined || signal.error === null)) {
-               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 200px; white-space: normal; text-transform:none;">Signal extracted locally but NOT SENT to GAM. Check GAM Secure Signal UI configuration, or verify if the Identity script is resolving too slowly (after the GAM ad request already fired).</span></div>`;
+               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal extracted locally but NOT SENT to GAM. Check GAM Secure Signal UI configuration to ensure provider is enabled for current environment and correct deployment method (publisher/google/prebid), or verify if the Identity script is resolving too slowly (after the GAM ad request already fired).</span></div>`;
            }
            
            let errorBadgeHtml = '';
@@ -410,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                  if (s.error !== undefined && s.error !== null) {
                                      let errClass = s.error === 0 ? 'mediumseagreen' : 'crimson';
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
-                                     errBadge = ` <span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
+                                     errBadge = ` <span class="badge" style="background: ${errClass}22; color: ${errClass}; border: 1px solid ${errClass}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }
                                  
                                  let displaySProviderId = s.provider;
