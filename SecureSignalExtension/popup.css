@@ -327,3 +327,77 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+/* Custom UI Tooltips */
+.custom-tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.custom-tooltip .tooltip-content {
+  visibility: hidden;
+  display: block;
+  opacity: 0;
+  width: max-content;
+  max-width: 280px;
+  background-color: var(--card-bg);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 150%;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.2s, visibility 0.2s;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  text-transform: none;
+}
+
+.custom-tooltip:hover .tooltip-content,
+.custom-tooltip:active .tooltip-content,
+.custom-tooltip:focus .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip Caret */
+.custom-tooltip .tooltip-content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+}
+
+/* Teal - SECURE SIGNAL */
+.badge-teal { background: rgba(0, 150, 136, 0.2); color: #009688; border: 1px solid rgba(0, 150, 136, 0.4); }
+.custom-tooltip.teal .tooltip-content { border: 1px solid rgba(0, 150, 136, 0.4); color: #009688; }
+.custom-tooltip.teal .tooltip-content::after { border-color: rgba(0, 150, 136, 0.4) transparent transparent transparent; }
+
+/* Blue - ENCRYPTED SIGNAL */
+.badge-blue { background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.4); }
+.custom-tooltip.blue .tooltip-content { border: 1px solid rgba(33, 150, 243, 0.4); color: #2196F3; }
+.custom-tooltip.blue .tooltip-content::after { border-color: rgba(33, 150, 243, 0.4) transparent transparent transparent; }
+
+/* Orange - GAM CACHE */
+.badge-orange { background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); }
+.custom-tooltip.orange .tooltip-content { border: 1px solid rgba(255, 152, 0, 0.4); color: #FF9800; }
+.custom-tooltip.orange .tooltip-content::after { border-color: rgba(255, 152, 0, 0.4) transparent transparent transparent; }
+
+/* Purple - HB SYNC */
+.badge-purple { background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); }
+.custom-tooltip.purple .tooltip-content { border: 1px solid rgba(156, 39, 176, 0.4); color: #9C27B0; }
+.custom-tooltip.purple .tooltip-content::after { border-color: rgba(156, 39, 176, 0.4) transparent transparent transparent; }
+
+/* Pink - NOT DEPLOYED */
+.badge-pink { background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.4); }
+.custom-tooltip.pink .tooltip-content { border: 1px solid rgba(233, 30, 99, 0.4); color: #E91E63; }
+.custom-tooltip.pink .tooltip-content::after { border-color: rgba(233, 30, 99, 0.4) transparent transparent transparent; }
+

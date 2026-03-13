@@ -275,19 +275,19 @@ document.addEventListener('DOMContentLoaded', () => {
           // Unified 5-Tag Taxonomy Implementation
           if (signal.sources.live) {
               if (signal.liveType === 'secureSignal') {
-                 typeBadge += '<span class="badge" style="background: rgba(0, 150, 136, 0.2); color: #009688; border: 1px solid rgba(0, 150, 136, 0.4); cursor: help;" title="Hover for origin: Captured live via googletag.secureSignalProviders.push()">SECURE SIGNAL</span>';
+                 typeBadge += '<div class="custom-tooltip teal"><span class="badge badge-teal">SECURE SIGNAL</span><span class="tooltip-content">Captured live via googletag.secureSignalProviders.push()</span></div>';
               } else if (signal.liveType === 'encryptedSignal') {
-                 typeBadge += '<span class="badge" style="background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.4); cursor: help;" title="Hover for origin: Captured live via googletag.encryptedSignalProviders.push()">ENCRYPTED SIGNAL</span>';
+                 typeBadge += '<div class="custom-tooltip blue"><span class="badge badge-blue">ENCRYPTED SIGNAL</span><span class="tooltip-content">Captured live via googletag.encryptedSignalProviders.push()</span></div>';
               }
           } else {
               if (signal.sources.gamCache) {
-                 typeBadge += '<span class="badge" style="background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); cursor: help;" title="Hover for origin: Extracted natively from browser localStorage key: _GESPSK-*">GAM CACHE</span>';
+                 typeBadge += '<div class="custom-tooltip orange"><span class="badge badge-orange">GAM CACHE</span><span class="tooltip-content">Extracted natively from browser localStorage key: _GESPSK-*</span></div>';
               } else {
                  if (signal.sources.hbConfig) {
-                     typeBadge += '<span class="badge" style="background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 1px solid rgba(233, 30, 99, 0.4); cursor: help;" title="Hover for origin: Found in pbjs.getConfig().userSync.userIds">HB CONFIG</span>';
+                     typeBadge += '<div class="custom-tooltip indigo"><span class="badge badge-indigo">HB CONFIG</span><span class="tooltip-content">Found in pbjs.getConfig().userSync.userIds</span></div>';
                  }
                  if (signal.sources.hbCache) {
-                     typeBadge += '<span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9C27B0; border: 1px solid rgba(156, 39, 176, 0.4); cursor: help;" title="Hover for origin: Extracted actively from memory via pbjs.getUserIdsAsEids()">HB SYNC</span>';
+                     typeBadge += '<div class="custom-tooltip purple"><span class="badge badge-purple">HB SYNC</span><span class="tooltip-content">Extracted actively from memory via pbjs.getUserIdsAsEids()</span></div>';
                  }
               }
           }
@@ -305,8 +305,12 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = `<span class="badge" style="background: ${errColor}22; color: ${errColor}; border: 1px solid ${errColor}44; margin-left: 8px;" title="${signal.error}">Err: ${errName}</span>`;
+              errorBadgeHtml = `<div class="custom-tooltip maroon"><span class="badge badge-maroon">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
             }
+          } else if (!sentInNetwork && (signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '')) {
+              // The signal has a valid payload but was NOT sent in the network, and there is NO explicit error tracking it. 
+              // This implies the publisher failed to properly configure GAM to ingest the signal.
+              errorBadgeHtml = `<div class="custom-tooltip pink"><span class="badge badge-pink" style="margin-left: 8px;">NOT DEPLOYED</span><span class="tooltip-content" style="width: 200px; white-space: normal;">Check your GAM secure signal configuration to ensure that the signal provider is enabled for the current environment (web/app) and that the correct deployment method (publisher / google / prebid) is selected for this script.</span></div>`;
           }
           
           const payloadClass = sentInNetwork ? 'match' : 'mismatch';
