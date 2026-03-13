@@ -199,17 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
           
           // Initialize sources for backwards compatibility
           if (!signal.sources) {
-              signal.sources = { live: signal.origin === 'GAM', gamCache: signal.origin === 'CACHE' || signal.origin === 'GAM_CACHE', hbCache: signal.origin === 'HB' || signal.origin === 'HB_CACHE' };
+              signal.sources = { live: signal.origin === 'GAM', gamCache: signal.origin === 'CACHE' || signal.origin === 'GAM_CACHE', hbCache: signal.origin === 'HB' || signal.origin === 'HB_CACHE', hbConfig: signal.origin === 'HB_CONFIG' };
               signal.liveType = signal.sources.live ? signal.type : null;
           }
 
           let renderOrigin = 'GAM';
           if (!signal.sources.live) {
               if (signal.sources.gamCache) renderOrigin = 'GAM_CACHE';
-              else if (signal.sources.hbCache) renderOrigin = 'HB_CACHE';
+              else if (signal.sources.hbCache || signal.sources.hbConfig) renderOrigin = 'HB_CACHE';
           }
           
-          // Origin Score: GAM (1) > GAM CACHE (2) > HB CACHE (3)
+          // Origin Score: GAM (1) > GAM CACHE (2) > HB (3)
           let originScore = 3;
           if (renderOrigin === 'GAM') originScore = 1;
           else if (renderOrigin === 'GAM_CACHE') originScore = 2;
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let breakdownSent = { GAM: 0, HB: 0 };
         
         processedSignals.forEach(s => {
-            let isHbPrimary = s.signal && s.signal.sources && !s.signal.sources.live && s.signal.sources.hbCache;
+            let isHbPrimary = s.signal && s.signal.sources && !s.signal.sources.live && !s.signal.sources.gamCache && (s.signal.sources.hbCache || s.signal.sources.hbConfig);
             let key = isHbPrimary ? 'HB' : 'GAM';
             breakdownInjected[key] = (breakdownInjected[key] || 0) + 1;
             if (s.sentInNetwork) {

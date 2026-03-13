@@ -313,7 +313,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
-        let requestGroup = (request.origin === 'HB_CACHE') ? 'HB' : 'GAM';
+        let requestGroup = (request.origin === 'HB_CACHE' || request.origin === 'HB_CONFIG') ? 'HB' : 'GAM';
         let existing = tabData.injected.find(s => {
             if (s.providerId !== request.providerId) return false;
             let sGroup = 'GAM';
