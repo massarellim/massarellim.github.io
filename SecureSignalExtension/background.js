@@ -306,7 +306,20 @@ function runWithLock(tabId, asyncFn) {
 
 // 1. Listen for messages from content.js (injected signals)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'log_injected_signal' && sender.tab) {
+  if (request.action === 'request_eid_map') {
+      chrome.storage.local.get(['global_eid_map']).then((res) => {
+          sendResponse({ map: res.global_eid_map || {} });
+      });
+      return true; // Keep message channel open for async response
+  } else if (request.action === 'log_inferred_eid') {
+      chrome.storage.local.get(['global_eid_map']).then((res) => {
+          let globalData = res.global_eid_map || {};
+          if (globalData[request.configName] !== request.eidSource) {
+              globalData[request.configName] = request.eidSource;
+              chrome.storage.local.set({ 'global_eid_map': globalData });
+          }
+      });
+  } else if (request.action === 'log_injected_signal' && sender.tab) {
     const tabId = sender.tab.id;
     const key = `tab_${tabId}`;
     

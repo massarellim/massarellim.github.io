@@ -265,6 +265,14 @@
   
   // Dynamic inference map for discovering unknown EID sources
   let dynamicEIDMap = {};
+  
+  // Listen for sync from background.js (via content.js)
+  window.addEventListener('message', function(event) {
+      if (event.source !== window || !event.data || event.data.source !== 'secure-signal-validator-sync') return;
+      if (event.data.action === 'sync_eid_map' && event.data.payload) {
+          dynamicEIDMap = Object.assign(dynamicEIDMap, event.data.payload);
+      }
+  });
 
   function __scan_prebid() {
     try {
@@ -305,6 +313,13 @@
                         searchTokens.forEach(token => {
                             if (eidStr.includes(token) && eid.source) {
                                 dynamicEIDMap[configName] = eid.source;
+                                // Emit the discovery upward so background.js can save it permanently
+                                window.postMessage({
+                                    source: 'secure-signal-validator',
+                                    action: 'log_inferred_eid',
+                                    configName: configName,
+                                    eidSource: eid.source
+                                }, '*');
                             }
                         });
                     });

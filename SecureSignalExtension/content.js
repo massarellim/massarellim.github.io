@@ -8,7 +8,7 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  const { action, type, providerId, payload, error, origin, timestamp } = event.data;
+  const { action, type, providerId, payload, error, origin, timestamp, configName, eidSource } = event.data;
   
   chrome.runtime.sendMessage({
     action: action || 'log_injected_signal',
@@ -17,6 +17,19 @@ window.addEventListener('message', function(event) {
     payload: payload,
     error: error,
     origin: origin,
-    timestamp: timestamp
+    timestamp: timestamp,
+    configName: configName,
+    eidSource: eidSource
   });
+});
+
+// Run once on load to fetch the persistent map and sync it DOWN to inject.js
+chrome.runtime.sendMessage({ action: 'request_eid_map' }, (response) => {
+    if (response && response.map) {
+        window.postMessage({
+            source: 'secure-signal-validator-sync',
+            action: 'sync_eid_map',
+            payload: response.map
+        }, '*');
+    }
 });
