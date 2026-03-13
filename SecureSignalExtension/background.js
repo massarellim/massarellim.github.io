@@ -318,8 +318,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (s.providerId !== request.providerId) return false;
             let sGroup = 'GAM';
             if (s.sources) {
-                if (s.sources.hbCache && !s.sources.live && !s.sources.gamCache) sGroup = 'HB';
-            } else if (s.origin === 'HB_CACHE') {
+                if ((s.sources.hbCache || s.sources.hbConfig) && !s.sources.live && !s.sources.gamCache) sGroup = 'HB';
+            } else if (s.origin === 'HB_CACHE' || s.origin === 'HB_CONFIG') {
                 sGroup = 'HB';
             }
             return sGroup === requestGroup;
@@ -338,7 +338,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             
             // Initialize sources if migrating from old version
             if (!existing.sources) {
-                existing.sources = { live: existing.origin === 'GAM', gamCache: existing.origin === 'CACHE' || existing.origin === 'GAM_CACHE', hbCache: existing.origin === 'HB' || existing.origin === 'HB_CACHE' };
+                existing.sources = { live: existing.origin === 'GAM', gamCache: existing.origin === 'CACHE' || existing.origin === 'GAM_CACHE', hbCache: existing.origin === 'HB_CACHE', hbConfig: existing.origin === 'HB_CONFIG' };
                 existing.liveType = existing.sources.live ? existing.type : null;
             }
 
@@ -369,11 +369,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         existing.error = request.error; // Only append error if we DON'T have a valid payload
                     }
                 }
+            } else if (request.origin === 'HB_CONFIG') {
+                existing.sources.hbConfig = true;
             }
             
             existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
         } else {
-            const signalData = {
+            // New Signal
+            let signalData = {
                 type: request.type,
                 providerId: request.providerId,
                 payload: request.payload,
@@ -384,7 +387,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sources: {
                     live: request.origin === 'LIVE',
                     gamCache: request.origin === 'GAM_CACHE',
-                    hbCache: request.origin === 'HB_CACHE'
+                    hbCache: request.origin === 'HB_CACHE',
+                    hbConfig: request.origin === 'HB_CONFIG'
                 },
                 liveType: request.origin === 'LIVE' ? request.type : null
             };

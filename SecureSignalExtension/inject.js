@@ -306,20 +306,18 @@
 
       configuredUserIds.forEach(source => {
         let expectedSource = PREBID_EID_MAPPING[source] || source;
-        if (!foundSources.has(expectedSource) && !foundSources.has(source)) {
-          let key = 'prebid_err_' + expectedSource;
-          if (reportedPrebidKeys.get(key) !== 'error') {
-             reportedPrebidKeys.set(key, 'error');
-             window.postMessage({
-                source: 'secure-signal-validator',
-                type: 'HB_CACHE',
-                providerId: expectedSource,
-                payload: null,
-                error: `Prebid: Extracted but not in eids.`,
-                origin: 'HB_CACHE',
-                timestamp: Date.now()
-             }, '*');
-          }
+        let key = 'prebid_cfg_' + expectedSource;
+        if (reportedPrebidKeys.get(key) !== 'config_true') {
+           reportedPrebidKeys.set(key, 'config_true');
+           window.postMessage({
+              source: 'secure-signal-validator',
+              type: 'HB_CONFIG',
+              providerId: expectedSource,
+              payload: null,
+              error: null,
+              origin: 'HB_CONFIG',
+              timestamp: Date.now()
+           }, '*');
         }
       });
     } catch(e) {}
