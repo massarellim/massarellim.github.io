@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
               emptyState.style.marginTop = '20px';
               emptyState.style.padding = '30px 20px';
               emptyState.innerHTML = `
-                <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">🔌</div>
                 <h3 style="margin-bottom: 8px; color: var(--text-base);">Extension is OFF</h3>
                 <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0;">Turn the extension <strong>ON</strong> using the toggle above to start capturing and verifying Secure Signals on the current page.</p>
               `;
@@ -46,7 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
           
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
              if (tabs && tabs[0]) {
-                 chrome.tabs.reload(tabs[0].id);
+                 chrome.scripting.executeScript({
+                     target: { tabId: tabs[0].id },
+                     func: () => {
+                         setTimeout(() => window.location.reload(), 150);
+                     }
+                 });
              }
           });
       }
@@ -107,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   emptyState.style.marginTop = '20px';
                   emptyState.style.padding = '30px 20px';
                   emptyState.innerHTML = `
-                    <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">🔌</div>
                     <h3 style="margin-bottom: 8px; color: var(--text-base);">Extension is OFF</h3>
                     <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0;">Turn the extension <strong>ON</strong> using the toggle above to start capturing and verifying Secure Signals on the current page.</p>
                   `;
