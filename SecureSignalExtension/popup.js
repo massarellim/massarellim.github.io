@@ -340,7 +340,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             <div class="data-row">
               <div class="data-value" style="display: flex; justify-content: space-between; align-items: center;">
-                 <span>${typeof signal.payload === 'string' ? signal.payload : JSON.stringify(signal.payload, null, 2)}</span>
+                 <span>${(function() {
+                    let displayValue = signal.payload;
+                    // Miracle Success: The local cache threw an error (is null), but the network matched and succeeded!
+                    if ((displayValue === null || displayValue === undefined) && matchedNetworkPayload) {
+                        if (Array.isArray(matchedNetworkPayload.decoded)) {
+                             let foundNet = matchedNetworkPayload.decoded.find(s => s && s.provider === signal.providerId);
+                             if (foundNet && foundNet.payload) displayValue = foundNet.payload;
+                        }
+                    }
+                    return typeof displayValue === 'string' ? displayValue : JSON.stringify(displayValue, null, 2);
+                 })()}</span>
                  ${errorBadgeHtml}
               </div>
             </div>

@@ -313,14 +313,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     runWithLock(tabId, async () => {
         const res = await chrome.storage.local.get([key]);
         let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
-        let existing = tabData.injected.find(s => s.providerId === request.providerId);
+        let requestGroup = (request.origin === 'HB_CACHE') ? 'HB' : 'GAM';
+        let existing = tabData.injected.find(s => {
+            if (s.providerId !== request.providerId) return false;
+            let sGroup = 'GAM';
+            if (s.sources) {
+                if (s.sources.hbCache && !s.sources.live && !s.sources.gamCache) sGroup = 'HB';
+            } else if (s.origin === 'HB_CACHE') {
+                sGroup = 'HB';
+            }
+            return sGroup === requestGroup;
+        });
         
         let timestampStr = new Date().toISOString().split('T')[1].replace('Z', '');
         let eventLog = `[${timestampStr}] payload:${request.payload ? (typeof request.payload === 'object' ? 'OBJ' : 'STR') : 'NULL'}, err:${request.error}, src:${request.origin}`;
         
         // Active Garbage Collection: Purge abandoned duplicates (e.g. from prior versions where duplicate providerIds existed)
         if (existing) {
-            tabData.injected = tabData.injected.filter(s => s === existing || s.providerId !== request.providerId);
+            tabData.injected = tabData.injected.filter(s => s === existing || !(s.providerId === request.providerId && ((s.sources?.hbCache && !s.sources?.live && !s.sources?.gamCache ? 'HB' : 'GAM') === requestGroup)));
             
             if (!existing.events) existing.events = [];
             existing.events.push(eventLog);
