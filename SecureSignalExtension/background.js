@@ -23,13 +23,13 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
 async function updateBadge(enabled) {
     if (enabled) {
         chrome.action.setBadgeText({ text: '' }); // Clear any residual badge
-        // Set physical green SVG icons
+        // Set physical green PNG icons
         try {
             chrome.action.setIcon({
                 path: {
-                    "16": "icons/icon16_on.svg",
-                    "48": "icons/icon48_on.svg",
-                    "128": "icons/icon128_on.svg"
+                    "16": "icons/icon16_on.png",
+                    "48": "icons/icon48_on.png",
+                    "128": "icons/icon128_on.png"
                 }
             });
         } catch (e) {
