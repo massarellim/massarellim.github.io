@@ -341,7 +341,8 @@
       configuredUserIds.forEach(source => {
         // Fallback chain: Dynamic Inference Map -> Hardcoded Dictionary -> Raw String
         let expectedSource = dynamicEIDMap[source] || PREBID_EID_MAPPING[source] || source;
-        let key = 'prebid_cfg_' + expectedSource;
+        let isMissing = !foundSources.has(expectedSource);
+        let key = 'prebid_cfg_' + expectedSource + '_' + isMissing;
         if (reportedPrebidKeys.get(key) !== 'config_true') {
            reportedPrebidKeys.set(key, 'config_true');
            window.postMessage({
@@ -349,7 +350,7 @@
               type: 'HB_CONFIG',
               providerId: expectedSource,
               payload: null,
-              error: null,
+              error: isMissing ? expectedSource + ' not in eids' : null,
               origin: 'HB_CONFIG',
               timestamp: Date.now()
            }, '*');

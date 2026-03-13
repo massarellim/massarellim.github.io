@@ -346,9 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let hasValidPayload = signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '';
             if (!hasValidPayload) {
               let isSuccess = signal.error === 0;
-              let bgColor = isSuccess ? 'rgba(60, 179, 113, 0.15)' : 'rgba(220, 20, 60, 0.15)';
               let textColor = isSuccess ? '#3cb371' : '#dc143c';
-              let borderColor = isSuccess ? 'rgba(60, 179, 113, 0.3)' : 'rgba(220, 20, 60, 0.3)';
               
               let errName;
               if (typeof signal.error === 'string') {
@@ -357,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = `<span class="badge" style="background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; margin-left: 6px;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
+              errorBadgeHtml = `<span style="color: ${textColor}; margin-left: 6px; font-weight: 500; font-size: 0.85em;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
             }
           }
           
@@ -456,12 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                  let errBadge = '';
                                  if (s.error !== undefined && s.error !== null) {
                                      let isSuc = s.error === 0;
-                                     let bgC = isSuc ? 'rgba(60, 179, 113, 0.15)' : 'rgba(220, 20, 60, 0.15)';
                                      let txtC = isSuc ? '#3cb371' : '#dc143c';
-                                     let bdC = isSuc ? 'rgba(60, 179, 113, 0.3)' : 'rgba(220, 20, 60, 0.3)';
                                      
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
-                                     errBadge = ` <span class="badge" style="background: ${bgC}; color: ${txtC}; border: 1px solid ${bdC}; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
+                                     errBadge = ` <span style="color: ${txtC}; font-size: 0.85em; font-weight: 500; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }
                                  
                                  let displaySProviderId = s.provider;

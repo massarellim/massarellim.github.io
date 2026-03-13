@@ -371,6 +371,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
             } else if (request.origin === 'HB_CONFIG') {
                 existing.sources.hbConfig = true;
+                if (!existing.sources.hbCache && !existing.payload && request.error !== null && request.error !== undefined) {
+                    existing.error = request.error; // Expose calculated Misconfig logic
+                }
             }
             
             existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
