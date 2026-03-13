@@ -345,16 +345,23 @@ document.addEventListener('DOMContentLoaded', () => {
           if (signal.error !== undefined && signal.error !== null) {
             let hasValidPayload = signal.payload !== null && signal.payload !== undefined && String(signal.payload).trim() !== 'null' && String(signal.payload).trim() !== '';
             if (!hasValidPayload) {
-              let errClass = signal.error === 0 ? 'mediumseagreen' : 'crimson';
-              let errName;
+              let isSuccess = signal.error === 0;
+              let bgColor = isSuccess ? 'rgba(60, 179, 113, 0.15)' : 'rgba(220, 20, 60, 0.15)';
+              let textColor = isSuccess ? '#3cb371' : '#dc143c';
+              let borderColor = isSuccess ? 'rgba(60, 179, 113, 0.3)' : 'rgba(220, 20, 60, 0.3)';
               
+              let errName;
               if (typeof signal.error === 'string') {
                   errName = signal.error.includes('not in eids') ? 'Potential HB Misconfig' : signal.error;
               } else {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = `<div class="custom-tooltip slate"><span class="badge badge-slate">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
+              if (errName === 'SIGNAL_NULL_OR_UNDEFINED' || errName === 'Potential HB Misconfig') {
+                  errorBadgeHtml = `<span class="badge" style="background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; margin-left: 6px;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
+              } else {
+                  errorBadgeHtml = `<div class="custom-tooltip slate"><span class="badge badge-slate">Err: ${errName}</span><span class="tooltip-content">Error Code: ${signal.error}</span></div>`;
+              }
             }
           }
           
@@ -452,9 +459,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 let valString = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload);
                                  let errBadge = '';
                                  if (s.error !== undefined && s.error !== null) {
-                                     let errClass = s.error === 0 ? 'mediumseagreen' : 'crimson';
+                                     let isSuc = s.error === 0;
+                                     let bgC = isSuc ? 'rgba(60, 179, 113, 0.15)' : 'rgba(220, 20, 60, 0.15)';
+                                     let txtC = isSuc ? '#3cb371' : '#dc143c';
+                                     let bdC = isSuc ? 'rgba(60, 179, 113, 0.3)' : 'rgba(220, 20, 60, 0.3)';
+                                     
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
-                                     errBadge = ` <span class="badge" style="background: ${errClass}22; color: ${errClass}; border: 1px solid ${errClass}44; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
+                                     errBadge = ` <span class="badge" style="background: ${bgC}; color: ${txtC}; border: 1px solid ${bdC}; font-size: 8px; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }
                                  
                                  let displaySProviderId = s.provider;
