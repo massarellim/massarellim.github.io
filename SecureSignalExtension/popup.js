@@ -38,16 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const powerToggle = document.getElementById('power-toggle');
   const toggleLabel = document.getElementById('toggle-label');
   
-  chrome.storage.local.get(['extension_enabled'], (res) => {
-      const isEnabled = !!res.extension_enabled;
+  function updateUIState(isEnabled, isToggleChange = false) {
       powerToggle.checked = isEnabled;
-      toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
-      toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
-  });
-  
-  powerToggle.addEventListener('change', (e) => {
-      const isEnabled = e.target.checked;
-      chrome.storage.local.set({ extension_enabled: isEnabled });
       toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
       toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
       
@@ -73,16 +65,34 @@ document.addEventListener('DOMContentLoaded', () => {
           let emptyState = document.getElementById('empty-state');
           if (emptyState) emptyState.style.display = 'none';
           
-          document.getElementById('loading').textContent = 'Reloading page to start capturing signals...';
-          document.getElementById('loading').classList.remove('hidden');
-          document.getElementById('results').classList.add('hidden');
-          
-          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-             if (tabs && tabs[0]) {
-                 chrome.tabs.reload(tabs[0].id);
-             }
-          });
+          if (isToggleChange) {
+              document.getElementById('loading').textContent = 'Reloading page to start capturing signals...';
+              document.getElementById('loading').classList.remove('hidden');
+              document.getElementById('results').classList.add('hidden');
+              
+              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                 if (tabs && tabs[0]) {
+                     chrome.tabs.reload(tabs[0].id);
+                 }
+              });
+          } else {
+              if (!document.getElementById('results').dataset.loaded) {
+                  document.getElementById('loading').classList.remove('hidden');
+                  document.getElementById('results').classList.add('hidden');
+              }
+          }
       }
+  }
+
+  chrome.storage.local.get(['extension_enabled'], (res) => {
+      const isEnabled = res.extension_enabled === true; 
+      updateUIState(isEnabled, false);
+  });
+  
+  powerToggle.addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      chrome.storage.local.set({ extension_enabled: isEnabled });
+      updateUIState(isEnabled, true);
   });
 
   const ERROR_MAPPING = {
@@ -150,9 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let emptyState = document.getElementById('empty-state');
           if (emptyState) emptyState.style.display = 'none';
-          
-          document.getElementById('loading').classList.add('hidden');
-          document.getElementById('results').classList.remove('hidden');
+          // Hide loading, show results
+      document.getElementById('loading').classList.add('hidden');
+      const resultsEl = document.getElementById('results');
+      resultsEl.classList.remove('hidden');
+      resultsEl.dataset.loaded = "true";
       
       data = data || { injected: [], network: [], cacheWrites: {} };
       const injected = data.injected || [];
@@ -273,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        document.getElementById('stat-injected-breakdown').innerHTML = \`GAM: \${breakdownInjected.GAM} &nbsp;|&nbsp; HB: \${breakdownInjected.HB}\`;
+        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
 
         try {
           processedSignals.sort((a, b) => {
@@ -315,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           
            if (!sentInNetwork) {
-               typeBadge += \`<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment and deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>\`;
+               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment and deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>`;
            }
            
            let errorBadgeHtml = '';
@@ -332,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = \`<span style="color: \${textColor}; margin-left: 6px; font-weight: 500; font-size: 0.85em;" title="Error Code: \${signal.error}">Err: \${errName}</span>\`;
+              errorBadgeHtml = `<span style="color: ${textColor}; margin-left: 6px; font-weight: 500; font-size: 0.85em;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
             }
           }
           
@@ -340,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let displayProviderId = signal.providerId;
           if (PREBID_DISPLAY_MAPPING[displayProviderId]) {
-              displayProviderId += \`<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(\${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>\`;
+              displayProviderId += `<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
           }
           
           if (sentInNetwork) {
@@ -351,14 +363,14 @@ document.addEventListener('DOMContentLoaded', () => {
              card.style.background = 'linear-gradient(90deg, rgba(220, 20, 60, 0.08) 0%, transparent 100%)';
           }
 
-          card.innerHTML = \`
+          card.innerHTML = `
             <div style="margin-bottom: 8px;">
-               <h3 class="signal-provider-name" style="margin-bottom: 0;">\${displayProviderId} \${typeBadge}</h3>
+               <h3 class="signal-provider-name" style="margin-bottom: 0;">${displayProviderId} ${typeBadge}</h3>
             </div>
             
             <div class="data-row">
               <div class="data-value" style="display: flex; justify-content: space-between; align-items: center;">
-                 <span>\${(function() {
+                 <span>${(function() {
                     let displayValue = signal.payload;
                     if ((displayValue === null || displayValue === undefined) && matchedNetworkPayload) {
                         if (Array.isArray(matchedNetworkPayload.decoded)) {
@@ -368,19 +380,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return typeof displayValue === 'string' ? displayValue : (displayValue === null || displayValue === undefined ? 'null' : JSON.stringify(displayValue, null, 2));
                  })()}</span>
-                 \${errorBadgeHtml}
+                 ${errorBadgeHtml}
               </div>
             </div>
-          \`;
+          `;
           
           listEl.appendChild(card);
         });
        } catch(popupErr) {
-          listEl.innerHTML += \`<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">\${popupErr.stack || popupErr.message || popupErr}</code></div>\`;
+          listEl.innerHTML += `<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">${popupErr.stack || popupErr.message || popupErr}</code></div>`;
        }
         
         document.getElementById('stat-network').textContent = sentToGamCount;
-        document.getElementById('stat-network-breakdown').innerHTML = \`GAM: \${breakdownSent.GAM} &nbsp;|&nbsp; HB: \${breakdownSent.HB}\`;
+        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;
       }
       
       const networkListEl = document.getElementById('network-list');
@@ -395,32 +407,32 @@ document.addEventListener('DOMContentLoaded', () => {
           let paramName = net.type === 'secureSignal' ? 'a3p' : 'ssj';
           
           let adUnitHtml = Array.isArray(net.adUnits) 
-             ? net.adUnits.map(u => \`<div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">\${u}</div>\`).join('')
-             : \`<div style="font-weight: 600; color: var(--accent);">\${net.adUnits || net.adUnit}</div>\`;
+             ? net.adUnits.map(u => `<div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">${u}</div>`).join('')
+             : `<div style="font-weight: 600; color: var(--accent);">${net.adUnits || net.adUnit}</div>`;
             
-          card.innerHTML = \`
+          card.innerHTML = `
             <div class="data-row" style="margin-bottom: 12px;">
               <details class="raw-details">
                 <summary class="data-label raw-summary" style="cursor: pointer; margin-bottom: 0; align-items: flex-start;">
                    <div style="display: flex; flex-direction: column; width: 100%;">
                      <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="text-transform: uppercase; letter-spacing: 0.05em;">AdUnits</span>
-                        <span style="display: flex; align-items: center; gap: 4px;">View Raw (\${paramName}) <span class="expand-icon" style="margin-left: 2px;">▼</span></span>
+                        <span style="display: flex; align-items: center; gap: 4px;">View Raw (${paramName}) <span class="expand-icon" style="margin-left: 2px;">▼</span></span>
                      </div>
-                     \${adUnitHtml}
+                     ${adUnitHtml}
                    </div>
                 </summary>
-                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">\${net.rawParams}</div>
+                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
               </details>
             </div>
             
             <div class="data-row">
               <div class="data-label">Extracted Providers & IDs</div>
               <div class="provider-grid">
-                \${
+                ${
                   (function() {
                      if (net.decoded && net.decoded.format === 'protobuf/binary' && net.decoded.extracted_strings) {
-                         return net.decoded.extracted_strings.map(s => \`<div class="provider-pill">\${s}</div>\`).join('');
+                         return net.decoded.extracted_strings.map(s => `<div class="provider-pill">${s}</div>`).join('');
                      } else if (Array.isArray(net.decoded)) {
                          return net.decoded.map(s => {
                             if (s && s.provider) {
@@ -431,31 +443,31 @@ document.addEventListener('DOMContentLoaded', () => {
                                      let txtC = isSuc ? '#3cb371' : '#dc143c';
                                      
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
-                                     errBadge = \` <span style="color: \${txtC}; font-size: 0.85em; font-weight: 500; margin-left: 6px;" title="Error Code: \${s.error}">\${errName}</span>\`;
+                                     errBadge = ` <span style="color: ${txtC}; font-size: 0.85em; font-weight: 500; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
                                  }
                                  
                                  let displaySProviderId = s.provider;
                                  
-                                 return \`
-                                   <details class="raw-details provider-card">
-                                     <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
-                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">\${displaySProviderId}</span>\${errBadge}</span>
-                                       <span class="expand-icon">▼</span>
-                                     </summary>
-                                     <div class="provider-id" title="\${valString}">\${valString}</div>
-                                   </details>
-                                 \`;
-                             }
-                            return \`<div class="provider-pill">\${JSON.stringify(s)}</div>\`;
-                         }).join('');
-                     } else {
-                         return typeof net.decoded === 'object' ? JSON.stringify(net.decoded, null, 2) : String(net.decoded);
-                     }
-                  })()
+                                 return `
+                                    <details class="raw-details provider-card">
+                                      <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
+                                        <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${displaySProviderId}</span>${errBadge}</span>
+                                        <span class="expand-icon">▼</span>
+                                      </summary>
+                                      <div class="provider-id" title="${valString}">${valString}</div>
+                                    </details>
+                                  `;
+                              }
+                             return `<div class="provider-pill">${JSON.stringify(s)}</div>`;
+                          }).join('');
+                      } else {
+                          return typeof net.decoded === 'object' ? JSON.stringify(net.decoded, null, 2) : String(net.decoded);
+                      }
+                   })()
                 }
               </div>
             </div>
-          \`;
+          `;
           
           networkListEl.appendChild(card);
         });
@@ -463,13 +475,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    chrome.storage.local.get([key], (res) => {
-        renderData(res[key]);
+    chrome.storage.local.get([key, 'extension_enabled'], (res) => {
+        if (res.extension_enabled === true) {
+            renderData(res[key]);
+        }
     });
     
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes[key]) {
-            renderData(changes[key].newValue);
+            chrome.storage.local.get(['extension_enabled'], (res) => {
+                if (res.extension_enabled === true) {
+                    renderData(changes[key].newValue);
+                }
+            });
         }
     });
 

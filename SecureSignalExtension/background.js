@@ -2,7 +2,8 @@
 let isExtensionEnabled = false;
 
 chrome.storage.local.get(['extension_enabled'], async (res) => {
-    isExtensionEnabled = !!res.extension_enabled;
+    // Default to false (OFF) on fresh install
+    isExtensionEnabled = res.extension_enabled === true;
     await updateRegistration(isExtensionEnabled);
     updateBadge(isExtensionEnabled);
 });
