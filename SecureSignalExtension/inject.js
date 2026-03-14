@@ -323,6 +323,52 @@
   }
 
 
+  /**
+   * Scans localStorage for existing encrypted signals that were cached in previous sessions.
+   * This is necessary because the Storage.prototype.setItem proxy only catches new writes.
+   */
+  function __scan_gespsk_cache() {
+      try {
+          for (let i = 0; i < localStorage.length; i++) {
+              let key = localStorage.key(i);
+              if (key && key.startsWith('_GESPSK-')) {
+                  let providerName = key.replace('_GESPSK-', '');
+                  let value = localStorage.getItem(key);
+                  if (value) {
+                      try {
+                          let parsed = JSON.parse(value);
+                          if (Array.isArray(parsed) && parsed.length >= 2) {
+                              let errorCode = null;
+                              if (parsed.length > 8) {
+                                  let errContainer = parsed[9];
+                                  if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
+                                  else if (typeof errContainer === 'number') errorCode = errContainer;
+                              }
+                              
+                              let keyId = 'gespsk_' + providerName;
+                              let payloadStr = JSON.stringify({ p: parsed[1], e: errorCode });
+                              
+                              if (reportedPrebidKeys.get(keyId) !== payloadStr) {
+                                  reportedPrebidKeys.set(keyId, payloadStr);
+                                  window.postMessage({
+                                     source: 'secure-signal-validator',
+                                     type: 'GAM_CACHE',
+                                     providerId: providerName,
+                                     payload: parsed[1],
+                                     error: typeof errorCode === 'number' ? errorCode : null,
+                                     origin: 'GAM_CACHE',
+                                     timestamp: Date.now()
+                                  }, '*');
+                              }
+                          }
+                      } catch(e) {}
+                  }
+              }
+          }
+      } catch(e) {}
+  }
+
+
   // Exponential Backoff Loop instead of infinite polling
   let scanCount = 0;
   const maxScans = 15; // Scan for first ~12-15 seconds of page load max
@@ -333,6 +379,8 @@
       __enc_sig_monitor();
       // Scan Prebid's memory map
       __scan_prebid();
+      // Scan localStorage for previously cached signals that didn't trigger the real-time setter
+      __scan_gespsk_cache();
       
       scanCount++;
       if (scanCount >= maxScans) return; // Terminate loop
