@@ -1,76 +1,72 @@
-# Comprehensive Guide: Secure Signal Inspector
+# GAM Secure Signals: Architecture & Mechanics
 
-The **Secure Signal Inspector** is a robust Manifest V3 Chrome Extension engineered to intercept, decode, validate, and reconcile Secure Signals (`a3p`) and Encrypted Signals (`ssj`) sent to Google Ad Manager (GAM) and Prebid.js. 
-
-By running simultaneous checks against local page execution and live network requests, it provides explicit visibility into whether publisher signal configurations are successfully transmitted to ad servers or if they are failing silently.
+This document outlines the operational mechanics of the Secure Signal Inspector extension. The extension is designed to provide visibility into the lifecycle of Google Ad Manager (GAM) Secure Signals (`a3p`) and Encrypted Signals (`ssj`), from local collection to network transmission.
 
 ---
 
-## 1. High-Level Architecture
-The extension operates across four primary distinct layers:
-1. **MAIN World Injection (`inject.js`)**: Penetrates the publisher's live javascript environment synchronously at `document_start` to intercept function calls and memory modifications in real-time.
-2. **Content Script Relay (`content.js`)**: An isolated messenger bridge that relays objects from the MAIN world out to the extension environment securely.
-3. **Background Service Worker (`background.js`)**: Intercepts physical network traffic, decodes highly obfuscated payloads (Base64/Protobuf), and manages global state synchronization.
-4. **Presentation Engine (`popup.js` & HTML/CSS)**: The user interface that performs deep reconciliation matrix processing between local execution claims and physical network reality.
+## 1. Core Architecture Overview
+
+The extension operates across three synchronized execution layers to capture and reconcile signal data:
+
+1. **Local Interception (`inject.js`)**: Executes synchronously in the publisher's page environment to capture signals at the exact moment they are passed to Google's arrays.
+2. **Network Interception (`background.js`)**: Runs in the background service worker to capture and decode the physical HTTP requests sent to Google Ad Manager.
+3. **Reconciliation Engine (`popup.js`)**: Processes data from both the injected script and the background worker to determine if locally generated signals were successfully transmitted over the network.
 
 ---
 
-## 2. In-Depth Component Analysis
+## 2. Local Interception Mechanics (`inject.js`)
 
-### A. Real-Time Interception Engine (`inject.js`)
-This script operates directly in the publisher's namespace. It is aggressively constructed to capture data before any third-party script can push arrays undetected.
+The objective is to capture signals before they leave the publisher's site or get lost in ad execution. 
 
-**Key Mechanics:**
-*   **Symbol-Guarded Proxy Interception**: It replaces the native `googletag.secureSignalProviders.push` and `encryptedSignalProviders.push` arrays with a JavaScript `Proxy`. Furthermore, it intercepts the `collectorFunction` Promise chains. When a collector resolves, the proxy chains a `.then()` observer to copy the payload *without* returning the mutation back to GAM, ensuring flawless preservation of original ad requests.
-*   **Storage API Proxy (`Storage.prototype.setItem`)**: Directly hooks into the browser's native `localStorage.setItem` to catch the exact millisecond GAM writes to cache (`_GESPSK-*`). It extracts deeply nested error codes inside the JSON arrays (often hidden at index 9).
-*   **Prebid.js Polling & Dynamic EID Inference**:
-    *   Rigorously polls `pbjs.getConfig().userSync` and `pbjs.getUserIdsAsEids()` via an internal `requestIdleCallback` loop.
-    *   **Inference Engine**: When encountering an unknown provider, it mathematically cross-references raw string payloads from submodules against final emitted EID objects, deducting unknown routing maps on the fly and caching them.
-*   **Cross-Origin Isolation Safety**: Safely clones payloads using a deep `JSON.parse` to strip out proxies/DOM nodes which would ordinarily trigger browser `DataCloneError` exceptions during `postMessage` relaying.
+### A. Array Interception
+The script creates a JavaScript Proxy around the native `googletag.secureSignalProviders` and `encryptedSignalProviders` arrays. 
+- When a publisher pushes a configuration object into these arrays, the proxy intercepts the event. 
+- It wraps the `collectorFunction` payload resolution in an observer pattern. When the collector's Promise resolves, the script securely duplicates the payload data without interrupting the original flow to GAM.
 
-### B. Messaging Bridge (`content.js`)
-*   Resides in the isolated world and purely listens for `window.postMessage` events tagged with `secure-signal-validator`.
-*   Immediately bundles these messages and forwards them using `chrome.runtime.sendMessage` into the background worker.
-*   Requests cross-tab state mappings from the background and drops them *down* into the window namespace.
+### B. Cache Observation
+GAM natively writes signal data to local storage using strict keys beginning with `_GESPSK-`. 
+- The script hooks directly into `Storage.prototype.setItem` to actively monitor and log these writes in real-time. 
+- This enables the extension to expose exactly what GAM has cached natively, including inner error codes (e.g. 106, 100) embedded within the cached JSON payloads before they are cleared.
 
-### C. Network Introspection & Parsing (`background.js`)
-*   **Network Sniffing**: Uses `chrome.webRequest.onBeforeRequest` targeted precisely at `securepubads.g.doubleclick.net` and `*.doubleclick.net`.
-*   **AdUnit Reconstruction**: Reads the request parameters (`iu`, `iu_parts`, `enc_prev_ius`) to construct exactly which AdUnits the request is tied to.
-*   **Deep Decoding Mechanics**:
-    *   Extracts `a3p` and `ssj` URL parameters.
-    *   Applies a proprietary URL-Safe Base64 decoder that fixes padding, trailing dots, and decodes URI strings dynamically.
-*   **Native Protobuf Byte-Stream Decoder**:
-    *   When standard JSON parsing inevitably fails on Encrypted signals, the extension employs a custom **Length-Delimited Wire Type 2 Data Parser**.
-    *   It literally steps through GAM Protocol Buffer binary streams bit-by-bit (utilizing Bitwise operations like `& 0x7F << shift`) to natively uncover the embedded `Provider` (field 1) and payload/error strings (field 2) without relying on huge protobuf libraries.
-*   **Storage & Mutex Locks**: Employs an asynchronous `Promise` based Mutex lock (`runWithLock`) to ensure parallel network events and local injections don't overwrite each other in `chrome.storage.local`.
-
-### D. The Reconciliation Matrix (`popup.js`)
-This is the analytical nucleus of the extension. It receives two isolated datasets: the **Injected Stream** (what the page *says* happened) and the **Network Stream** (what *actually* happened).
-
-It joins these datasets algorithmically to surface four distinct operational origins:
-1.  **LIVE (Secure/Encrypted Signal)**: Successfully pushed into GPT proxy.
-2.  **GAM CACHE**: Located natively in localStorage key `_GESPSK-*`.
-3.  **HB CONFIG**: Found via deep inspection of Prebid's userSync arrays.
-4.  **HB SYNC**: Found materialized mechanically inside `getUserIdsAsEids()`.
-
-**Scoring & Feedback Evaluation:**
-*   **Green Output (Perfect Match)**: The injected code matched a payload physically found floating over the network.
-*   **Red Output (Not Sent)**: The signal was locally collected by Prebid/GPT, but physical observation proves GAM *did not* append it to the outgoing HTTP query.
-*   **Miracle Success Detection**: An edge-case condition where the local `_GESPSK` cache definitively threw an error code, yet the Network stream proves GAM's server magically validated and sent the signal anyway. The UI intelligently suppresses the false-positive local error.
-
-### E. Lifecycle & Stability
-*   Listens to `chrome.webNavigation.onBeforeNavigate` to forcefully obliterate cache arrays *before* the new page loads. This solves Race Conditions preventing stale data from the previous page bleeding into the UI.
-*   **Master Power Switch**: Enables/disables the `inject.js` script actively via Declarative Scripting API (`chrome.scripting.registerContentScripts`), leaving no footprint on the publisher site when disabled.
+### C. Prebid.js Polling
+For Header Bidding environments, the script actively polls the `pbjs` object. 
+- It continuously extracts User IDs via `pbjs.getConfig().userSync` and `pbjs.getUserIdsAsEids()`. 
+- By cross-referencing submodule payload strings against final User ID objects, the extension dynamically infers and maps vendor configurations to their final EID routing logic.
 
 ---
 
-## 3. Summary of Supported Error Matrices
-If a payload contains an error, the extension maps internal GAM failure digits into human-readable definitions:
-*   `106` - `COLLECTOR_FUNCTION_REJECTED` (Often caused by ID vendor timeout or privacy opt-outs).
-*   `100` - `COLLECTOR_FUNCTION_TIMEDOUT`
-*   `101` - `COLLECTOR_NOT_REGISTERED`
-*   `111` - `SIGNAL_NULL_OR_UNDEFINED`
-*   (And more 100/200 series Internal Google Array Exceptions).
+## 3. Network Interception & Decoding (`background.js`)
 
-## 4. Conclusion
-The Secure Signal Inspector achieves surgical validation by flanking the ad execution lifecycle from both sides: deep client-side memory proxies and hard physical network extraction. Its custom Protobuf parser and real-time reconciliation UI make it an indispensable weapon for debugging advanced ID integrations under Google Ad Manager.
+The background service worker validates the ground truth of what actually left the browser.
+
+### A. Network Event Sniffing
+The extension uses the Manifest V3 `chrome.webRequest.onBeforeRequest` API to monitor outbound traffic matching `securepubads.g.doubleclick.net` and `*.doubleclick.net`.
+
+### B. Payload Decoding Mechanism
+GAM signal payloads (`a3p`, `ssj`) are heavily encoded. The extension implements robust decoders to translate them into readable JSON:
+1. **URL-Safe Base64 Decoder**: Extracts the parameter, repairs standard padding discrepancies, and decodes the string to uncover standard JSON arrays.
+2. **Custom Protobuf Parser**: Because Encrypted Signals typically utilize Google Protocol Buffers, standard JSON parsing fails. The extension implements a native, bit-level Length-Delimited wire-type 2 byte-stream reader to extract the actual Provider Name and encoded strings directly from the raw binary stream.
+
+---
+
+## 4. Reconciliation and UI Validation (`popup.js`)
+
+The popup acts as the command center, matching local observations against physical network evidence.
+
+### Source Synchronization
+Signals are bucketed into four specific source origins:
+- **LIVE**: Data captured directly intersecting the GPT proxy.
+- **GAM CACHE**: Data observed natively in the `_GESPSK-` storage buffers.
+- **HB CONFIG / HB SYNC**: Prebid Header Bidding objects evaluated mechanically during page load.
+
+### Match Validation Responses
+1. **Sent to GAM**: The extension successfully verifies that the signal ID logged on the client side matches an ID decoded directly from the outbound HTTP request.
+2. **Not Sent**: The signal was successfully collected locally by the proxy, but it was not present in the outbound GAM request.
+3. **Natively Filtered Local Errors**: The extension maps internal Google arrays back into logical failure definitions:
+   - `100`: Collector Function Timed Out
+   - `101`: Collector Not Registered
+   - `106`: Collector Function Rejected
+   - `111`: Signal Null or Undefined 
+
+### Summary
+The extension verifies the end-to-end signal deployment logic by proving that local integrations successfully reach the GAM server.
