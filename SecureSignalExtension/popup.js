@@ -1,10 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Tooltip Click Handler ---
     document.addEventListener('click', (e) => {
         const tooltip = e.target.closest('.custom-tooltip');
         
-        // If clicking outside any tooltip, close all active tooltips
         if (!tooltip) {
             document.querySelectorAll('.custom-tooltip.active').forEach(t => t.classList.remove('active'));
             return;
@@ -13,29 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const content = tooltip.querySelector('.tooltip-content');
         if (!content) return;
         
-        // Toggle the clicked one
         const isActive = tooltip.classList.contains('active');
         
-        // Close others
         document.querySelectorAll('.custom-tooltip.active').forEach(t => t.classList.remove('active'));
         
         if (!isActive) {
             tooltip.classList.add('active');
             
-            // Re-center before measuring to avoid compounded shifts
             content.style.left = '50%';
             content.style.transform = 'translateX(-50%)';
             content.style.marginLeft = '0px';
 
             const rect = content.getBoundingClientRect();
-            const padding = 10; // Safe distance from window edge
+            const padding = 10;
             
-            // If the element bleeds off the right edge of the window
             if (rect.right > window.innerWidth - padding) {
                 const overflow = rect.right - (window.innerWidth - padding);
                 content.style.transform = `translateX(calc(-50% - ${overflow}px))`;
             } 
-            // If the element bleeds off the left edge
             else if (rect.left < padding) {
                 const underflow = padding - rect.left;
                 content.style.transform = `translateX(calc(-50% + ${underflow}px))`;
@@ -46,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const powerToggle = document.getElementById('power-toggle');
   const toggleLabel = document.getElementById('toggle-label');
   
-  // Initialize toggle state (default OFF)
   chrome.storage.local.get(['extension_enabled'], (res) => {
       const isEnabled = !!res.extension_enabled;
       powerToggle.checked = isEnabled;
@@ -54,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleLabel.style.color = isEnabled ? 'var(--success)' : 'var(--text-muted)';
   });
   
-  // Listen for toggle changes
   powerToggle.addEventListener('change', (e) => {
       const isEnabled = e.target.checked;
       chrome.storage.local.set({ extension_enabled: isEnabled });
@@ -117,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     112: 'INVALID_PROVIDER_TYPE',
     113: 'SIGNAL_INVALID_TYPE',
     114: 'COLLECTOR_ENDPOINT_LOAD_FAILED',
-    114: 'COLLECTOR_ENDPOINT_LOAD_FAILED',
     200: 'URL_PARAM_SECURE_SIGNALS_PARSING_FAILED',
     201: 'URL_PARAM_SECURE_SIGNALS_JSON_PARSING_FAILED'
   };
@@ -178,11 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
         listEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No secure or encrypted signals intercepted on this page yet.</p>';
         document.getElementById('stat-network').textContent = '0';
       } else {
-        listEl.innerHTML = ''; // Wipe DOM before re-rendering
+        listEl.innerHTML = '';
         
-        // --- Pre-compute properties for sorting ---
         const processedSignals = injected.map(signal => {
-          // Find if this signal exists in the decoded network stream
           let sentInNetwork = false;
           let matchedNetworkPayload = null;
           let networkErrorPayload = null;
@@ -204,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
              if (Array.isArray(net.decoded)) {
                  const found = net.decoded.find(s => s && s.provider === signal.providerId);
                  if (found) {
-                     // Check if BOTH are errors, and if their error codes match
                      let injectedHasError = signal.error !== undefined && signal.error !== null;
                      let networkHasError = found.error !== undefined && found.error !== null;
                      
@@ -215,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
                      } else if (!injectedHasError && !networkHasError) {
                          matched = true;
                      } else if (!injectedHasError && networkHasError) {
-                         // The local script SUCCEEDED, but GAM sent an ERROR over the network!
                          networkErrorPayload = found;
                          matched = true;
                      }
@@ -224,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  const netStr = JSON.stringify(net.decoded);
                  let injectedHasError = signal.error !== undefined && signal.error !== null;
                  
-                 // Fallback string matching securely bounded by quotes to prevent esp.criteo matching criteo
                  if (netStr && netStr.includes('"' + signal.providerId + '"')) {
                      if (injectedHasError) {
                          if (netStr.includes(String(signal.error))) matched = true;
@@ -241,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
              }
           }
           
-          // Initialize sources for backwards compatibility
           if (!signal.sources) {
               signal.sources = { live: signal.origin === 'GAM', gamCache: signal.origin === 'CACHE' || signal.origin === 'GAM_CACHE', hbCache: signal.origin === 'HB' || signal.origin === 'HB_CACHE', hbConfig: signal.origin === 'HB_CONFIG' };
               signal.liveType = signal.sources.live ? signal.type : null;
@@ -253,18 +236,16 @@ document.addEventListener('DOMContentLoaded', () => {
               else if (signal.sources.hbCache || signal.sources.hbConfig) renderOrigin = 'HB_CACHE';
           }
           
-          // Origin Score: GAM (1) > GAM CACHE (2) > HB (3)
           let originScore = 3;
           if (renderOrigin === 'GAM') originScore = 1;
           else if (renderOrigin === 'GAM_CACHE') originScore = 2;
           
-          // Match Status Score: Green (1) > Red no-error (2) > Red error (3)
           let matchScore = 3;
           if (sentInNetwork) {
-              matchScore = 1; // Green
+              matchScore = 1;
           } else {
               let hasError = signal.error !== undefined && signal.error !== null;
-              if (!hasError) matchScore = 2; // Red without error
+              if (!hasError) matchScore = 2;
           }
           
           return {
@@ -292,9 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
+        document.getElementById('stat-injected-breakdown').innerHTML = \`GAM: \${breakdownInjected.GAM} &nbsp;|&nbsp; HB: \${breakdownInjected.HB}\`;
 
-        // Perform sorting logic
         try {
           processedSignals.sort((a, b) => {
               if (a.originScore !== b.originScore) return a.originScore - b.originScore;
@@ -304,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
               return aStr.localeCompare(bStr);
           });
 
-        // Loop over sorted signals and generate DOM
         processedSignals.forEach(item => {
           const signal = item.signal;
           const sentInNetwork = item.sentInNetwork;
@@ -316,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let typeBadge = '';
           
-          // Unified Taxonomy Implementation (Decoupled & Stackable)
           if (signal.sources.live) {
               if (signal.liveType === 'secureSignal') {
                  typeBadge += '<div class="custom-tooltip teal"><span class="badge badge-teal">SECURE SIGNAL</span><span class="tooltip-content">Captured live via googletag.secureSignalProviders.push()</span></div>';
@@ -336,9 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
              typeBadge += '<div class="custom-tooltip purple"><span class="badge badge-purple">HB SYNC</span><span class="tooltip-content">Extracted actively from memory via pbjs.getUserIdsAsEids()</span></div>';
           }
           
-          // Diagnostics
            if (!sentInNetwork) {
-               typeBadge += `<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment and deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>`;
+               typeBadge += \`<div class="custom-tooltip pink"><span class="badge badge-pink">NOT SENT</span><span class="tooltip-content" style="width: 240px; white-space: normal; text-transform:none;">Signal collected but NOT SENT to GAM. Check GAM Secure Signal UI to ensure the provider is enabled for the current environment and deployment method (publisher/google/prebid), or verify if the identity script is resolving after the GAM request already fired.</span></div>\`;
            }
            
            let errorBadgeHtml = '';
@@ -355,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   errName = ERROR_MAPPING[signal.error] || 'UNKNOWN_ERROR_CODE';
               }
               
-              errorBadgeHtml = `<span style="color: ${textColor}; margin-left: 6px; font-weight: 500; font-size: 0.85em;" title="Error Code: ${signal.error}">Err: ${errName}</span>`;
+              errorBadgeHtml = \`<span style="color: \${textColor}; margin-left: 6px; font-weight: 500; font-size: 0.85em;" title="Error Code: \${signal.error}">Err: \${errName}</span>\`;
             }
           }
           
@@ -363,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let displayProviderId = signal.providerId;
           if (PREBID_DISPLAY_MAPPING[displayProviderId]) {
-              displayProviderId += `<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
+              displayProviderId += \`<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(\${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>\`;
           }
           
           if (sentInNetwork) {
@@ -373,18 +350,16 @@ document.addEventListener('DOMContentLoaded', () => {
              card.style.borderLeft = '3px solid crimson';
              card.style.background = 'linear-gradient(90deg, rgba(220, 20, 60, 0.08) 0%, transparent 100%)';
           }
-          // End of diagnostic tags (removed)
 
-          card.innerHTML = `
+          card.innerHTML = \`
             <div style="margin-bottom: 8px;">
-               <h3 class="signal-provider-name" style="margin-bottom: 0;">${displayProviderId} ${typeBadge}</h3>
+               <h3 class="signal-provider-name" style="margin-bottom: 0;">\${displayProviderId} \${typeBadge}</h3>
             </div>
             
             <div class="data-row">
               <div class="data-value" style="display: flex; justify-content: space-between; align-items: center;">
-                 <span>${(function() {
+                 <span>\${(function() {
                     let displayValue = signal.payload;
-                    // Miracle Success: The local cache threw an error (is null), but the network matched and succeeded!
                     if ((displayValue === null || displayValue === undefined) && matchedNetworkPayload) {
                         if (Array.isArray(matchedNetworkPayload.decoded)) {
                              let foundNet = matchedNetworkPayload.decoded.find(s => s && s.provider === signal.providerId);
@@ -393,27 +368,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return typeof displayValue === 'string' ? displayValue : (displayValue === null || displayValue === undefined ? 'null' : JSON.stringify(displayValue, null, 2));
                  })()}</span>
-                 ${errorBadgeHtml}
+                 \${errorBadgeHtml}
               </div>
             </div>
-          `;
+          \`;
           
           listEl.appendChild(card);
         });
        } catch(popupErr) {
-          listEl.innerHTML += `<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">${popupErr.stack || popupErr.message || popupErr}</code></div>`;
+          listEl.innerHTML += \`<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">\${popupErr.stack || popupErr.message || popupErr}</code></div>\`;
        }
         
         document.getElementById('stat-network').textContent = sentToGamCount;
-        document.getElementById('stat-network-breakdown').innerHTML = `GAM: ${breakdownSent.GAM} &nbsp;|&nbsp; HB: ${breakdownSent.HB}`;
+        document.getElementById('stat-network-breakdown').innerHTML = \`GAM: \${breakdownSent.GAM} &nbsp;|&nbsp; HB: \${breakdownSent.HB}\`;
       }
       
-      // Render all raw network signals
       const networkListEl = document.getElementById('network-list');
       if (network.length === 0) {
         networkListEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No network signals intercepted.</p>';
       } else {
-        networkListEl.innerHTML = ''; // Wipe DOM before re-rendering
+        networkListEl.innerHTML = '';
         network.forEach((net) => {
           const card = document.createElement('div');
           card.className = 'card';
@@ -421,32 +395,32 @@ document.addEventListener('DOMContentLoaded', () => {
           let paramName = net.type === 'secureSignal' ? 'a3p' : 'ssj';
           
           let adUnitHtml = Array.isArray(net.adUnits) 
-             ? net.adUnits.map(u => `<div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">${u}</div>`).join('')
-             : `<div style="font-weight: 600; color: var(--accent);">${net.adUnits || net.adUnit}</div>`;
+             ? net.adUnits.map(u => \`<div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">\${u}</div>\`).join('')
+             : \`<div style="font-weight: 600; color: var(--accent);">\${net.adUnits || net.adUnit}</div>\`;
             
-          card.innerHTML = `
+          card.innerHTML = \`
             <div class="data-row" style="margin-bottom: 12px;">
               <details class="raw-details">
                 <summary class="data-label raw-summary" style="cursor: pointer; margin-bottom: 0; align-items: flex-start;">
                    <div style="display: flex; flex-direction: column; width: 100%;">
                      <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="text-transform: uppercase; letter-spacing: 0.05em;">AdUnits</span>
-                        <span style="display: flex; align-items: center; gap: 4px;">View Raw (${paramName}) <span class="expand-icon" style="margin-left: 2px;">▼</span></span>
+                        <span style="display: flex; align-items: center; gap: 4px;">View Raw (\${paramName}) <span class="expand-icon" style="margin-left: 2px;">▼</span></span>
                      </div>
-                     ${adUnitHtml}
+                     \${adUnitHtml}
                    </div>
                 </summary>
-                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">${net.rawParams}</div>
+                <div class="data-value" style="opacity: 0.7; font-size: 10px; word-break: break-all; margin-top: 8px;">\${net.rawParams}</div>
               </details>
             </div>
             
             <div class="data-row">
               <div class="data-label">Extracted Providers & IDs</div>
               <div class="provider-grid">
-                ${
+                \${
                   (function() {
                      if (net.decoded && net.decoded.format === 'protobuf/binary' && net.decoded.extracted_strings) {
-                         return net.decoded.extracted_strings.map(s => `<div class="provider-pill">${s}</div>`).join('');
+                         return net.decoded.extracted_strings.map(s => \`<div class="provider-pill">\${s}</div>\`).join('');
                      } else if (Array.isArray(net.decoded)) {
                          return net.decoded.map(s => {
                             if (s && s.provider) {
@@ -457,22 +431,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                      let txtC = isSuc ? '#3cb371' : '#dc143c';
                                      
                                      let errName = ERROR_MAPPING[s.error] || 'UNKNOWN_ERROR_CODE';
-                                     errBadge = ` <span style="color: ${txtC}; font-size: 0.85em; font-weight: 500; margin-left: 6px;" title="Error Code: ${s.error}">${errName}</span>`;
+                                     errBadge = \` <span style="color: \${txtC}; font-size: 0.85em; font-weight: 500; margin-left: 6px;" title="Error Code: \${s.error}">\${errName}</span>\`;
                                  }
                                  
                                  let displaySProviderId = s.provider;
                                  
-                                 return `
+                                 return \`
                                    <details class="raw-details provider-card">
                                      <summary class="data-label prominent-summary" style="cursor: pointer; margin-bottom: 0;">
-                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">${displaySProviderId}</span>${errBadge}</span>
+                                       <span class="provider-title"><span class="provider-name" style="color: inherit; font-size: inherit;">\${displaySProviderId}</span>\${errBadge}</span>
                                        <span class="expand-icon">▼</span>
                                      </summary>
-                                     <div class="provider-id" title="${valString}">${valString}</div>
+                                     <div class="provider-id" title="\${valString}">\${valString}</div>
                                    </details>
-                                 `;
+                                 \`;
                              }
-                            return `<div class="provider-pill">${JSON.stringify(s)}</div>`;
+                            return \`<div class="provider-pill">\${JSON.stringify(s)}</div>\`;
                          }).join('');
                      } else {
                          return typeof net.decoded === 'object' ? JSON.stringify(net.decoded, null, 2) : String(net.decoded);
@@ -481,20 +455,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
               </div>
             </div>
-          `;
+          \`;
           
           networkListEl.appendChild(card);
         });
       }
       });
-    } // End of renderData
+    }
 
-    // 1. Initial render on popup open
     chrome.storage.local.get([key], (res) => {
         renderData(res[key]);
     });
     
-    // 2. Live auto-refresh if native scripts overwrite cache while popup is open
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes[key]) {
             renderData(changes[key].newValue);

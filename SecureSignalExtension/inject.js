@@ -1,15 +1,9 @@
-/**
- * This script is injected into the MAIN world to intercept Google Ad Manager secure signals.
- * It strictly uses the provided official Secure Signal GPT Monitor implementation.
- */
+// Injected immediately into the MAIN world to intercept GAM and Prebid signals
 (function() {
   const SCRIPT_ID = 'secure-signal-validator-inject';
   if (window[SCRIPT_ID]) return;
   window[SCRIPT_ID] = true;
 
-  // INITIALIZE IMMEDIATELY
-  // This physically blocks any third-party script from pushing to the raw array undetected 
-  // before the first 67ms loop fires.
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
@@ -19,13 +13,11 @@
     try {
       let safePayload = payload;
       try {
-        // Deep clone to strip out functions/proxies/DOM nodes that break postMessage
         safePayload = JSON.parse(JSON.stringify(payload));
       } catch(e) {
         safePayload = String(payload);
       }
       
-      // If it's a prebid wrapper array [1, "ID", 1], extract just the ID
       if (Array.isArray(safePayload) && safePayload.length >= 2 && typeof safePayload[0] === 'number') {
         safePayload = safePayload[1];
       }
@@ -38,20 +30,16 @@
         origin: 'LIVE',
         timestamp: Date.now()
       }, '*');
-    } catch (e) {
-      // silent catch
-    }
+    } catch (e) {}
   }
 
   const __monitor_symbol__ = Symbol('monitor_symbol');
 
-  // Immediately apply proxy right after initialization
-  // so no synchronous block from publisher code can beat us.
   __sec_sig_monitor();
   __enc_sig_monitor();
 
+  // Proxy wrapper for google tag arrays
   function __sec_sig_monitor() {
-    const log_label = '[Secure Signal Validator Monitor]';
     if ('function' === typeof window.googletag?.secureSignalProviders?.push
          && !window.googletag?.secureSignalProviders?.push[__monitor_symbol__]) {
       try {
@@ -69,15 +57,11 @@
                 callArgs[0].collectorFunction = function() {
                   const promiseResult = originalFn.apply(this, arguments);
                   if (promiseResult && typeof promiseResult.then === 'function') {
-                    // Start an isolated observer chain, DO NOT return it!
                     promiseResult.then(
-                      o => {
-                        sendInterceptedSignal('secureSignal', providerFor, o);
-                      },
+                      o => { sendInterceptedSignal('secureSignal', providerFor, o); },
                       err => {}
                     );
                   }
-                  // Return the exact original object to GAM unaltered
                   return promiseResult;
                 };
               }
@@ -86,12 +70,9 @@
             }
           }
         );
-      } catch(error) {
-        // proxy err
-      }
+      } catch(error) {}
     }
     
-    // Always schedule the next check so we survive GPT overwriting the array/push method
     if (typeof window.requestIdleCallback === 'function') {
       window.requestIdleCallback(() => {
           __sec_sig_monitor();
@@ -108,7 +89,6 @@
   }
 
   function __enc_sig_monitor() {
-    const log_label = '[Secure Signal Validator Monitor]';
     if ('function' === typeof window.googletag?.encryptedSignalProviders?.push
          && !window.googletag?.encryptedSignalProviders?.push[__monitor_symbol__]) {
       try {
@@ -126,15 +106,11 @@
                 callArgs[0].collectorFunction = function() {
                   const promiseResult = originalFn.apply(this, arguments);
                   if (promiseResult && typeof promiseResult.then === 'function') {
-                    // Start an isolated observer chain, DO NOT return it!
                     promiseResult.then(
-                      o => {
-                        sendInterceptedSignal('encryptedSignal', providerFor, o);
-                      },
+                      o => { sendInterceptedSignal('encryptedSignal', providerFor, o); },
                       err => {}
                     );
                   }
-                  // Return the exact original object to GAM unaltered
                   return promiseResult;
                 };
               }
@@ -143,12 +119,9 @@
             }
           }
         );
-      } catch(error) {
-        // proxy err
-      }
+      } catch(error) {}
     }
     
-    // Always schedule the next check so we survive GPT overwriting the array/push method
     if (typeof window.requestIdleCallback === 'function') {
       window.requestIdleCallback(() => {
           __enc_sig_monitor();
@@ -166,7 +139,7 @@
 
   const reportedCacheKeys = new Map();
   
-  // Directly proxy Storage.prototype.setItem to catch the exact millisecond GAM writes the timeout error
+  // Real-time Storage hook to catch exact GAM writes
   const originalSetItem = Storage.prototype.setItem;
   Storage.prototype.setItem = function(key, value) {
     try {
@@ -180,7 +153,6 @@
                    if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
                    else if (typeof errContainer === 'number') errorCode = errContainer;
                }
-               // Used specifically for race-condition delta timing in popup
                window.postMessage({
                    source: 'secure-signal-validator',
                    action: 'log_cache_write',
@@ -189,7 +161,6 @@
                    timestamp: Date.now()
                }, '*');
                
-               // Keep the UI fully synchronized with the real-time cache memory
                window.postMessage({
                  source: 'secure-signal-validator',
                  type: 'GAM_CACHE',
@@ -263,10 +234,8 @@
     'uid2': 'uidapi.com'
   };
   
-  // Dynamic inference map for discovering unknown EID sources
   let dynamicEIDMap = {};
   
-  // Listen for sync from background.js (via content.js)
   window.addEventListener('message', function(event) {
       if (event.source !== window || !event.data || event.data.source !== 'secure-signal-validator-sync') return;
       if (event.data.action === 'sync_eid_map' && event.data.payload) {
@@ -274,6 +243,7 @@
       }
   });
 
+  // Exhaustive Prebid extraction mapping
   function __scan_prebid() {
     try {
       if (typeof window.pbjs === 'undefined' || typeof window.pbjs.getConfig !== 'function' || typeof window.pbjs.getUserIdsAsEids !== 'function') return;
@@ -291,9 +261,6 @@
          eids = window.pbjs.getUserIdsAsEids() || [];
       } catch(e) {}
 
-      // DYNAMIC EID INFERENCE ENGINE
-      // Mathematically cross-references raw string payloads from submodules
-      // against final EID objects to deduce unknown routing maps
       try {
         let uids = window.pbjs.getUserIds() || {};
         for (let configName in uids) {
@@ -313,7 +280,6 @@
                         searchTokens.forEach(token => {
                             if (eidStr.includes(token) && eid.source) {
                                 dynamicEIDMap[configName] = eid.source;
-                                // Emit the discovery upward so background.js can save it permanently
                                 window.postMessage({
                                     source: 'secure-signal-validator',
                                     action: 'log_inferred_eid',
@@ -337,7 +303,6 @@
           if (reportedPrebidKeys.get(key) !== payloadStr) {
              reportedPrebidKeys.set(key, payloadStr);
              let payload = eid.uids ? eid.uids : null;
-             // Try to unpack array if it's a single item for cleaner UI
              if (Array.isArray(payload) && payload.length === 1 && payload[0].id) payload = payload[0].id;
              
              window.postMessage({
@@ -354,7 +319,6 @@
       });
 
       configuredUserIds.forEach(source => {
-        // Fallback chain: Dynamic Inference Map -> Hardcoded Dictionary -> Raw String
         let expectedSource = dynamicEIDMap[source] || PREBID_EID_MAPPING[source] || source;
         let isMissing = !foundSources.has(expectedSource);
         let key = 'prebid_cfg_' + expectedSource + '_' + isMissing;

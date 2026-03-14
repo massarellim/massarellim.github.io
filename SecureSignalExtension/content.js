@@ -1,8 +1,4 @@
-/**
- * Content script to relay messages.
- * We no longer inject manually since manifest.json handles it via `world: "MAIN"`.
- */
-
+// Relays intercepted signals from the injected MAIN world script to the background service worker
 window.addEventListener('message', function(event) {
   if (event.source !== window || !event.data || event.data.source !== 'secure-signal-validator') {
     return;
@@ -23,7 +19,7 @@ window.addEventListener('message', function(event) {
   });
 });
 
-// Run once on load to fetch the persistent map and sync it DOWN to inject.js
+// Sync inferred EID maps from local storage down to the injected script
 chrome.runtime.sendMessage({ action: 'request_eid_map' }, (response) => {
     if (response && response.map) {
         window.postMessage({
