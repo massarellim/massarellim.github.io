@@ -54,18 +54,28 @@ async function updateBadge(enabled) {
  */
 async function updateRegistration(enabled) {
     try {
-        const existing = await chrome.scripting.getRegisteredContentScripts({ ids: ["secure_signal_inject"] });
+        const existing = await chrome.scripting.getRegisteredContentScripts({ ids: ["secure_signal_inject_main"] });
         if (enabled && existing.length === 0) {
-            await chrome.scripting.registerContentScripts([{
-                id: "secure_signal_inject",
-                js: ["inject.js"],
-                matches: ["<all_urls>"],
-                runAt: "document_start",
-                world: "MAIN",
-                allFrames: true
-            }]);
+            await chrome.scripting.registerContentScripts([
+                {
+                    id: "secure_signal_inject_main",
+                    js: ["inject.js"],
+                    matches: ["<all_urls>"],
+                    runAt: "document_start",
+                    world: "MAIN",
+                    allFrames: true
+                },
+                {
+                    id: "secure_signal_inject_isolated",
+                    js: ["content.js"],
+                    matches: ["<all_urls>"],
+                    runAt: "document_start",
+                    world: "ISOLATED",
+                    allFrames: true
+                }
+            ]);
         } else if (!enabled && existing.length > 0) {
-            await chrome.scripting.unregisterContentScripts({ ids: ["secure_signal_inject"] });
+            await chrome.scripting.unregisterContentScripts({ ids: ["secure_signal_inject_main", "secure_signal_inject_isolated"] });
         }
     } catch (e) {}
 }
