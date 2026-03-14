@@ -108,10 +108,6 @@ The payloads intercepted by Prebid's UserSync modules possess varying lifespans 
 
 <br>
 <br>
-<br>
-
-<br>
-<br>
 
 ---
 
@@ -193,10 +189,6 @@ The extension verifies the end-to-end signal deployment logic by proving that lo
 
 <br>
 <br>
-<br>
-
-<br>
-<br>
 
 ---
 
@@ -249,7 +241,6 @@ A list of **Reconciled Signals** is displayed below the summary statistics, feat
 | **Error Flags** | Code-specific error messages for script failures |
 
 <br>
-<br>
 
 ### Verification Colors
 
@@ -280,8 +271,6 @@ Every card displays one or more colored badges identifying the **Integration Met
 | **Null Payload** | Verify authentication with the signal provider and confirm that all required parameters have been added to the page or in the Prebid config. |
 | **Err: Code** | To avoid network strain, GAM caches a `null` value if an error occurs during signal collection, which prevents subsequent calls to that provider. The collection script can be forced to run again by clearing Local Storage. Additionally, a generic HB error is triggered if a signal provider exists in the Prebid configuration but its signal is never actually requested. |
 
-<br>
-<br>
 <br>
 
 ## 6. Decoded Network Requests
