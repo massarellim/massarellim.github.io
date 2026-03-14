@@ -1,3 +1,5 @@
+<br>
+
 # GAM Secure Signals: Integration Mechanics & Data Lifecycle
 
 This document summarizes the internal mechanisms of Google Ad Manager (GAM) regarding Secure and Encrypted Signals, Prebid Header Bidding integrations, caching behaviors, and common deployment pitfalls. 
