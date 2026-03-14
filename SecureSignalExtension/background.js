@@ -1,13 +1,19 @@
-// Provides background interception architecture and decoding capabilities
+// background.js
+// 
+// ROLE: Manages the extension's enablement state, intercepts outbound GAM network requests,
+// receives live signals from the injected publisher page, and attempts to reconcile/decode them. 
+// Uses an in-memory debounced caching strategy to minimize expensive Chrome Storage API calls.
+
 let isExtensionEnabled = false;
 
+// Initialize on load
 chrome.storage.local.get(['extension_enabled'], async (res) => {
-    // Default to false (OFF) on fresh install
     isExtensionEnabled = res.extension_enabled === true;
     await updateRegistration(isExtensionEnabled);
     updateBadge(isExtensionEnabled);
 });
 
+// React to user toggling the extension UI
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
     if (changes.extension_enabled) {
         isExtensionEnabled = changes.extension_enabled.newValue;
@@ -16,9 +22,12 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
     }
 });
 
+/**
+ * Updates the extension icon (green if ON, gray if OFF)
+ */
 async function updateBadge(enabled) {
+    chrome.action.setBadgeText({ text: '' });
     if (enabled) {
-        chrome.action.setBadgeText({ text: '' });
         try {
             chrome.action.setIcon({
                 path: {
@@ -29,7 +38,6 @@ async function updateBadge(enabled) {
             });
         } catch (e) {}
     } else {
-        chrome.action.setBadgeText({ text: '' });
         chrome.action.setIcon({
             path: {
                 "16": "icons/icon16.png",
@@ -40,6 +48,10 @@ async function updateBadge(enabled) {
     }
 }
 
+/**
+ * Registers `inject.js` to automatically load into the main webpage context 
+ * before any other scripts run (document_start), but ONLY if the extension is currently ON.
+ */
 async function updateRegistration(enabled) {
     try {
         const existing = await chrome.scripting.getRegisteredContentScripts({ ids: ["secure_signal_inject"] });
@@ -58,7 +70,182 @@ async function updateRegistration(enabled) {
     } catch (e) {}
 }
 
-// Deep decoding module (Base64 + Proprietary Protobuf Parsers)
+
+// --- DECODING MODULE ---
+
+/**
+ * Manually parses Google Ad Manager's proprietary internal Protobuf structure.
+ * It strictly expects a format where Field 1 is SDK data and Field 2 is JavaScript data.
+ * @param {Uint8Array} buf The binary protobuf payload
+ * @returns {Array} Array of extracted signal objects
+ */
+function parseGAMProtobuf(buf) {
+  let results = [];
+  let cursor = 0;
+
+  function readVarInt() {
+      let result = 0, shift = 0;
+      while (cursor < buf.length) {
+          let b = buf[cursor++];
+          result |= (b & 0x7F) << shift;
+          if ((b & 0x80) === 0) break;
+          shift += 7;
+      }
+      return result;
+  }
+
+  function skipField(wireType) {
+      if (wireType === 0) readVarInt();
+      else if (wireType === 2) { let len = readVarInt(); cursor += len; }
+      else if (wireType === 1) cursor += 8;
+      else if (wireType === 5) cursor += 4;
+  }
+
+  function parseError(sliceBuf, errorFieldNum) {
+      let errCursor = 0;
+      let errorType = null;
+
+      function readInnerVarInt() {
+          let result = 0, shift = 0;
+          while (errCursor < sliceBuf.length) {
+              let b = sliceBuf[errCursor++];
+              result |= (b & 0x7F) << shift;
+              if ((b & 0x80) === 0) break;
+              shift += 7;
+          }
+          return result;
+      }
+
+      while (errCursor < sliceBuf.length) {
+          let tag = readInnerVarInt();
+          let wType = tag & 0x07;
+          let fNum = tag >> 3;
+          
+          if (wType === 0 && fNum === errorFieldNum) {
+              errorType = readInnerVarInt();
+          } else if (wType === 0) {
+              readInnerVarInt();
+          } else if (wType === 2) { 
+              let len = readInnerVarInt(); 
+              errCursor += len; 
+          } else if (wType === 1) errCursor += 8;
+            else if (wType === 5) errCursor += 4;
+            else break;
+      }
+      return errorType;
+  }
+
+  function parseMessage(sliceBuf, providerTag, payloadTag, errorTag, errorInnerTag) {
+      let msgCursor = 0;
+      let signal = { provider: null, payload: null, error: null };
+      
+      function readInnerVarInt() {
+          let result = 0, shift = 0;
+          while (msgCursor < sliceBuf.length) {
+              let b = sliceBuf[msgCursor++];
+              result |= (b & 0x7F) << shift;
+              if ((b & 0x80) === 0) break;
+              shift += 7;
+          }
+          return result;
+      }
+
+      while (msgCursor < sliceBuf.length) {
+          let tag = readInnerVarInt();
+          let wType = tag & 0x07;
+          let fNum = tag >> 3;
+          
+          if (wType === 2) {
+              let len = readInnerVarInt();
+              let fieldBuf = sliceBuf.subarray(msgCursor, msgCursor + len);
+              msgCursor += len;
+              
+              if (fNum === providerTag) {
+                  // TextDecoder is faster and safer than String.fromCharCode.apply for arbitrary binary data
+                  signal.provider = new TextDecoder().decode(fieldBuf);
+              } else if (fNum === payloadTag) {
+                  signal.payload = new TextDecoder().decode(fieldBuf);
+              } else if (fNum === errorTag) {
+                  signal.error = parseError(fieldBuf, errorInnerTag);
+              }
+          } else if (wType === 0) readInnerVarInt();
+          else if (wType === 1) msgCursor += 8;
+          else if (wType === 5) msgCursor += 4;
+          else break;
+      }
+      return signal;
+  }
+
+  while (cursor < buf.length) {
+      let tag = readVarInt();
+      let wireType = tag & 0x07;
+      let fieldNum = tag >> 3;
+      
+      if (wireType === 2) {
+          let len = readVarInt();
+          let slice = buf.subarray(cursor, cursor + len);
+          cursor += len;
+          
+          // Field 1: SDK Data, Field 2: JS Data (Browser Signals)
+          if (fieldNum === 1) results.push(parseMessage(slice, 5, 4, 7, 4));
+          else if (fieldNum === 2) results.push(parseMessage(slice, 1, 2, 10, 1));
+      } else {
+          skipField(wireType);
+      }
+  }
+  return results;
+}
+
+/**
+ * Re-formats deeply nested arrays common in publisher-provided encrypted signals
+ * down into structured { provider, payload, error } objects.
+ */
+function normalizeJsonPayload(parsedArr) {
+    // If it's a single raw string wrapper: ["value"], unwrap it
+    if (parsedArr.length >= 2 && typeof parsedArr[0] === 'string' && !Array.isArray(parsedArr[1])) {
+        parsedArr = [parsedArr];
+    }
+    
+    return parsedArr.map(signalObj => {
+        if (Array.isArray(signalObj) && signalObj.length >= 2) {
+           let providerName = String(signalObj[0]);
+           let payloadValue = signalObj[1];
+           let extractedError = null;
+           
+           // Extract GAM error code if present (usually at index 2 or deeply nested at index 9)
+           if (signalObj.length >= 3) {
+               if (typeof signalObj[2] === 'number' && signalObj[2] < 1000000) extractedError = signalObj[2]; 
+               else if (typeof signalObj[2] === 'string') extractedError = signalObj[2];
+               
+               if (signalObj.length > 8) {
+                    let errContainer = signalObj[9];
+                    if (Array.isArray(errContainer) && errContainer.length > 0 && typeof errContainer[0] === 'number') {
+                        extractedError = errContainer[0];
+                    } else if (typeof errContainer === 'number') {
+                        extractedError = errContainer;
+                    }
+               }
+           }
+           
+           // If the payload is itself a Base64 string masquerading as JSON, unroll it
+           let finalPayload = payloadValue;
+           if (typeof payloadValue === 'string') {
+               try {
+                   let innerB64 = payloadValue.replace(/-/g, '+').replace(/_/g, '/');
+                   while (innerB64.length % 4) innerB64 += '=';
+                   let innerDecoded = atob(innerB64);
+                   finalPayload = JSON.parse(innerDecoded);
+               } catch(e) {}
+           }
+           return { provider: providerName, payload: finalPayload, error: extractedError };
+        }
+        return signalObj;
+    });
+}
+
+/**
+ * Main router for decoding the URL parameter string (either JSON or Protobuf format)
+ */
 function decodeBase64UrlSafe(str) {
   if (!str || typeof str !== 'string') return null;
   try {
@@ -71,144 +258,32 @@ function decodeBase64UrlSafe(str) {
     
     let parsedArr = null;
     try {
+      // First, try plain JSON parsing
       if (decodedStr) parsedArr = JSON.parse(decodedStr);
       else throw new Error("No decoded string");
+      
     } catch(e) {
+      // If JSON fails, assume it's Google's Protobuf binary serialization
       if (decodedStr) {
           const buffer = new Uint8Array(decodedStr.length);
           for (let i = 0; i < decodedStr.length; i++) buffer[i] = decodedStr.charCodeAt(i);
           
-          function parseGAMProtobuf(buf) {
-              let results = [];
-              let state = { cursor: 0 };
-              function readVarInt() {
-                  let result = 0, shift = 0;
-                  while (state.cursor < buf.length) {
-                      let b = buf[state.cursor++];
-                      result |= (b & 0x7F) << shift;
-                      if ((b & 0x80) === 0) break;
-                      shift += 7;
-                  }
-                  return result;
-              }
-              function skipField(wireType) {
-                  if (wireType === 0) readVarInt();
-                  else if (wireType === 2) { let len = readVarInt(); state.cursor += len; }
-                  else if (wireType === 1) state.cursor += 8;
-                  else if (wireType === 5) state.cursor += 4;
-              }
-              function parseError(sliceBuf, errorFieldNum) {
-                  let errState = { cursor: 0 };
-                  let errorType = null;
-                  function readInnerVarInt() {
-                      let result = 0, shift = 0;
-                      while (errState.cursor < sliceBuf.length) {
-                          let b = sliceBuf[errState.cursor++];
-                          result |= (b & 0x7F) << shift;
-                          if ((b & 0x80) === 0) break;
-                          shift += 7;
-                      }
-                      return result;
-                  }
-                  while (errState.cursor < sliceBuf.length) {
-                      let tag = readInnerVarInt();
-                      let wType = tag & 0x07;
-                      let fNum = tag >> 3;
-                      if (wType === 0 && fNum === errorFieldNum) errorType = readInnerVarInt();
-                      else if (wType === 0) readInnerVarInt();
-                      else if (wType === 2) { let len = readInnerVarInt(); errState.cursor += len; }
-                      else if (wType === 1) errState.cursor += 8;
-                      else if (wType === 5) errState.cursor += 4;
-                      else break;
-                  }
-                  return errorType;
-              }
-              function parseMessage(sliceBuf, typeName, providerTag, payloadTag, errorTag, errorInnerTag) {
-                  let msgState = { cursor: 0 };
-                  let signal = { provider: null, payload: null, error: null };
-                  function readInnerVarInt() {
-                      let result = 0, shift = 0;
-                      while (msgState.cursor < sliceBuf.length) {
-                          let b = sliceBuf[msgState.cursor++];
-                          result |= (b & 0x7F) << shift;
-                          if ((b & 0x80) === 0) break;
-                          shift += 7;
-                      }
-                      return result;
-                  }
-                  while (msgState.cursor < sliceBuf.length) {
-                      let tag = readInnerVarInt();
-                      let wType = tag & 0x07;
-                      let fNum = tag >> 3;
-                      if (wType === 2) {
-                          let len = readInnerVarInt();
-                          let fieldBuf = sliceBuf.subarray(msgState.cursor, msgState.cursor + len);
-                          msgState.cursor += len;
-                          if (fNum === providerTag) signal.provider = String.fromCharCode.apply(null, fieldBuf);
-                          else if (fNum === payloadTag) signal.payload = String.fromCharCode.apply(null, fieldBuf);
-                          else if (fNum === errorTag) signal.error = parseError(fieldBuf, errorInnerTag);
-                      } else if (wType === 0) readInnerVarInt();
-                      else if (wType === 1) msgState.cursor += 8;
-                      else if (wType === 5) msgState.cursor += 4;
-                      else break;
-                  }
-                  return signal;
-              }
-              while (state.cursor < buf.length) {
-                  let tag = readVarInt();
-                  let wireType = tag & 0x07;
-                  let fieldNum = tag >> 3;
-                  if (wireType === 2) {
-                      let len = readVarInt();
-                      let slice = buf.subarray(state.cursor, state.cursor + len);
-                      state.cursor += len;
-                      if (fieldNum === 1) results.push(parseMessage(slice, 'SDK', 5, 4, 7, 4));
-                      else if (fieldNum === 2) results.push(parseMessage(slice, 'JavaScript', 1, 2, 10, 1));
-                  } else skipField(wireType);
-              }
-              return results;
-          }
           let results = parseGAMProtobuf(buffer);
-          if (results.length > 0) return results.map(p => ({ provider: p.provider, payload: p.payload || '[No Value/Zero-byte ID]', error: p.error }));
+          if (results.length > 0) {
+              return results.map(p => ({ 
+                  provider: p.provider, 
+                  payload: p.payload || '[No Value/Zero-byte ID]', 
+                  error: p.error 
+              }));
+          }
       }
       return null;
     }
     
-    if (Array.isArray(parsedArr)) {
-        if (parsedArr.length >= 2 && typeof parsedArr[0] === 'string' && !Array.isArray(parsedArr[1])) parsedArr = [parsedArr];
-        
-        return parsedArr.map(signalObj => {
-            if (Array.isArray(signalObj) && signalObj.length >= 2) {
-               let providerValue = signalObj[0];
-               let payloadValue = signalObj[1];
-               let providerName = String(providerValue);
-               let extractedError = null;
-               
-               if (signalObj.length >= 3) {
-                   if (typeof signalObj[2] === 'number' && signalObj[2] < 1000000) extractedError = signalObj[2]; 
-                   else if (typeof signalObj[2] === 'string') extractedError = signalObj[2];
-                   if (signalObj.length > 8) {
-                        let errContainer = signalObj[9];
-                        if (Array.isArray(errContainer) && errContainer.length > 0 && typeof errContainer[0] === 'number') extractedError = errContainer[0];
-                        else if (typeof errContainer === 'number') extractedError = errContainer;
-                   }
-               }
-               
-               let finalPayload = payloadValue;
-               if (typeof payloadValue === 'string') {
-                   try {
-                       let innerB64 = payloadValue.replace(/-/g, '+').replace(/_/g, '/');
-                       while (innerB64.length % 4) innerB64 += '=';
-                       let innerDecoded = atob(innerB64);
-                       finalPayload = JSON.parse(innerDecoded);
-                   } catch(e) {}
-               }
-               return { provider: providerName, payload: finalPayload, error: extractedError };
-            }
-            return signalObj;
-        });
-    }
+    // If it was successfully parsed as JSON config
+    if (Array.isArray(parsedArr)) return normalizeJsonPayload(parsedArr);
 
+    // If it's a flat object (like an ad-hoc custom payload map), cast it to an array
     if (parsedArr && typeof parsedArr === 'object' && !Array.isArray(parsedArr)) {
         let mapped = [];
         for (const [key, val] of Object.entries(parsedArr)) mapped.push({ provider: key, payload: val });
@@ -217,20 +292,57 @@ function decodeBase64UrlSafe(str) {
 
     return parsedArr;
   } catch(e) {
+    console.error("Failed to decode base 64 wrapper:", e);
     return null;
   }
 }
 
-// Concurrency mutex lock
-const tabLocks = {};
-function runWithLock(tabId, asyncFn) {
-  if (!tabLocks[tabId]) tabLocks[tabId] = Promise.resolve();
-  tabLocks[tabId] = tabLocks[tabId].then(async () => {
-    try { await asyncFn(); } catch (e) { }
-  });
+
+// --- DEBOUNCED STATE MANAGEMENT ---
+
+/**
+ * IN-MEMORY CACHE
+ * Problem: Extension APIs (chrome.storage.local) have significant overhead. 
+ * Repeatedly locking, reading, and writing to the disk for every signal creates bottlenecks.
+ * Solution: Accumulate signals in RAM instantly, and flush to disk periodically.
+ */
+const tabStateCache = {};     // { tabId: { injected: [], network: [], cacheWrites: {} } }
+const tabFlushTimers = {};    // { tabId: setTimeout_ID }
+const FLUSH_DELAY_MS = 300;   // Wait 300ms before writing to Chrome storage
+
+/**
+ * Triggers a debounced write to chrome.storage.local
+ */
+function scheduleFlush(tabId) {
+    if (tabFlushTimers[tabId]) {
+        clearTimeout(tabFlushTimers[tabId]);
+    }
+    tabFlushTimers[tabId] = setTimeout(() => {
+        const state = tabStateCache[tabId];
+        if (state) {
+            chrome.storage.local.set({ [`tab_${tabId}`]: state }).catch(() => {});
+        }
+        delete tabFlushTimers[tabId];
+    }, FLUSH_DELAY_MS);
 }
 
-// Inbound Messaging Channels
+/**
+ * Initializes state if it doesn't exist, either from RAM or pulling from Storage on first touch
+ */
+async function ensureTabState(tabId) {
+    if (!tabStateCache[tabId]) {
+        try {
+            const key = `tab_${tabId}`;
+            const res = await chrome.storage.local.get([key]);
+            tabStateCache[tabId] = res[key] || { injected: [], network: [], cacheWrites: {} };
+        } catch(e) {
+            tabStateCache[tabId] = { injected: [], network: [], cacheWrites: {} };
+        }
+    }
+    return tabStateCache[tabId];
+}
+
+// Inbound Messaging Channels from content.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'request_eid_map') {
       chrome.storage.local.get(['global_eid_map']).then((res) => sendResponse({ map: res.global_eid_map || {} }));
@@ -245,13 +357,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
   } else if (request.action === 'log_injected_signal' && sender.tab) {
     const tabId = sender.tab.id;
-    const key = `tab_${tabId}`;
     
-    runWithLock(tabId, async () => {
-        const res = await chrome.storage.local.get([key]);
-        let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
+    // Process completely synchronously in memory
+    ensureTabState(tabId).then(state => {
         let requestGroup = (request.origin === 'HB_CACHE' || request.origin === 'HB_CONFIG') ? 'HB' : 'GAM';
-        let existing = tabData.injected.find(s => {
+        
+        let existing = state.injected.find(s => {
             if (s.providerId !== request.providerId) return false;
             let sGroup = 'GAM';
             if (s.sources) {
@@ -260,15 +371,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return sGroup === requestGroup;
         });
         
+        // Log event history for debugging popup inspection
         let timestampStr = new Date().toISOString().split('T')[1].replace('Z', '');
         let eventLog = `[${timestampStr}] payload:${request.payload ? (typeof request.payload === 'object' ? 'OBJ' : 'STR') : 'NULL'}, err:${request.error}, src:${request.origin}`;
         
+        // Update existing record if found, otherwise create a new one
         if (existing) {
-            tabData.injected = tabData.injected.filter(s => s === existing || !(s.providerId === request.providerId && ((s.sources?.hbCache && !s.sources?.live && !s.sources?.gamCache ? 'HB' : 'GAM') === requestGroup)));
+            state.injected = state.injected.filter(s => s === existing || !(s.providerId === request.providerId && ((s.sources?.hbCache && !s.sources?.live && !s.sources?.gamCache ? 'HB' : 'GAM') === requestGroup)));
             
             if (!existing.events) existing.events = [];
             existing.events.push(eventLog);
-            if (existing.events.length > 5) existing.events.shift();
+            if (existing.events.length > 5) existing.events.shift(); // Keep last 5 events
             
             if (!existing.sources) {
                 existing.sources = { live: existing.origin === 'GAM', gamCache: existing.origin === 'CACHE' || existing.origin === 'GAM_CACHE', hbCache: existing.origin === 'HB_CACHE', hbConfig: existing.origin === 'HB_CONFIG' };
@@ -326,49 +439,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 },
                 liveType: request.origin === 'LIVE' ? request.type : null
             };
-            tabData.injected.push(signalData);
+            state.injected.push(signalData);
         }
-        await chrome.storage.local.set({ [key]: tabData }).catch(() => {});
+        scheduleFlush(tabId);
     });
+
   } else if (request.action === 'log_cache_write' && sender.tab) {
     const tabId = sender.tab.id;
-    const key = `tab_${tabId}`;
-    runWithLock(tabId, async () => {
-        const res = await chrome.storage.local.get([key]);
-        let tabData = res[key] || { injected: [], network: [], cacheWrites: {} };
-        if (!tabData.cacheWrites) tabData.cacheWrites = {};
-        tabData.cacheWrites[request.providerId] = { timestamp: request.timestamp, error: request.error };
-        await chrome.storage.local.set({ [key]: tabData }).catch(() => {});
+    ensureTabState(tabId).then(state => {
+        if (!state.cacheWrites) state.cacheWrites = {};
+        state.cacheWrites[request.providerId] = { timestamp: request.timestamp, error: request.error };
+        scheduleFlush(tabId);
     });
   }
 });
 
-// Purge cache actively before navigation commit
-chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-  if (details.frameId === 0) {
-    const tabId = details.tabId;
-    const key = `tab_${tabId}`;
-    runWithLock(tabId, async () => {
-      await chrome.storage.local.set({ [key]: { injected: [], network: [], cacheWrites: {} } });
-    });
-  }
-});
 
-// Network Egress Interception
+// Network Egress Interception: Sniff Google ad requests for signal payloads
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     if (!isExtensionEnabled) return;
     if (details.tabId === -1) return;
     
     const url = new URL(details.url);
-    const a3ps = url.searchParams.getAll('a3p');
-    const ssjs = url.searchParams.getAll('ssj');
+    const a3ps = url.searchParams.getAll('a3p');       // 'a3p' = secure signals
+    const ssjs = url.searchParams.getAll('ssj');       // 'ssj' = encrypted signals
     
     const iuPartsRaw = url.searchParams.get('iu_parts');
     const encPrevIusRaw = url.searchParams.get('enc_prev_ius');
     const prevIusRaw = url.searchParams.get('prev_ius');
     const singleIu = url.searchParams.get('iu');
     
+    // Attempt to reconstruct Single Request Architecture (SRA) ad strings
     let adUnitsList = [];
     if (singleIu) {
       adUnitsList.push(singleIu);
@@ -386,31 +488,27 @@ chrome.webRequest.onBeforeRequest.addListener(
     
     if (a3ps.length > 0 || ssjs.length > 0) {
       const tabId = details.tabId;
-      const key = `tab_${tabId}`;
-      
-      runWithLock(tabId, async () => {
-        const res = await chrome.storage.local.get([key]);
-        let tabData = res[key] || { injected: [], network: [] };
-        
+      ensureTabState(tabId).then(state => {
         const processParam = (paramValue, type) => {
           if (!paramValue) return;
           let decoded = decodeBase64UrlSafe(paramValue);
           let assignedAdUnits = adUnitsList.length > 0 ? adUnitsList : ['Unknown AdUnit'];
           if (decoded) {
-             tabData.network.push({ type: type, rawParams: paramValue, decoded: decoded, adUnits: assignedAdUnits, timestamp: Date.now() });
+             state.network.push({ type: type, rawParams: paramValue, decoded: decoded, adUnits: assignedAdUnits, timestamp: Date.now() });
           } else {
-             tabData.network.push({ type: type, rawParams: paramValue, decoded: "Failed to decode Base64: " + paramValue, adUnits: assignedAdUnits, timestamp: Date.now() });
+             state.network.push({ type: type, rawParams: paramValue, decoded: "Failed to decode Base64: " + paramValue, adUnits: assignedAdUnits, timestamp: Date.now() });
           }
         };
 
         a3ps.forEach((val) => processParam(val, 'secureSignal'));
         ssjs.forEach((val) => processParam(val, 'encryptedSignal'));
-        await chrome.storage.local.set({ [key]: tabData });
+        scheduleFlush(tabId);
       });
     }
   },
   { 
     urls: [
+        // Google Ad Manager network patterns
       "*://securepubads.g.doubleclick.net/gampad/ads*",
       "*://*.doubleclick.net/gampad/ads*"
     ],
@@ -418,9 +516,18 @@ chrome.webRequest.onBeforeRequest.addListener(
   }
 );
 
+// Purge cache cleanly when the user navigates to a new page
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     if (details.frameId === 0) {
-        const key = `tab_${details.tabId}`;
+        const tabId = details.tabId;
+        const key = `tab_${tabId}`;
+        
+        // Clear in-memory buffers
+        if (tabFlushTimers[tabId]) clearTimeout(tabFlushTimers[tabId]);
+        delete tabFlushTimers[tabId];
+        delete tabStateCache[tabId];
+
+        // Clear disk cache
         await chrome.storage.local.remove([key]).catch(() => {});
     }
 });

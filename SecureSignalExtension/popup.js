@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Basic tooltip placement logic (keeps tooltips inside the viewport bounds)
     document.addEventListener('click', (e) => {
         const tooltip = e.target.closest('.custom-tooltip');
         
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const powerToggle = document.getElementById('power-toggle');
   const toggleLabel = document.getElementById('toggle-label');
   
+  // Controls the primary ON/OFF state of the extension UI
   function updateUIState(isEnabled, isToggleChange = false) {
       powerToggle.checked = isEnabled;
       toggleLabel.textContent = isEnabled ? 'ON' : 'OFF';
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
               document.getElementById('loading').classList.remove('hidden');
               document.getElementById('results').classList.add('hidden');
               
+              // Force page reload so inject.js can attach to googletag arrays before GAM loads
               chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                  if (tabs && tabs[0]) {
                      chrome.tabs.reload(tabs[0].id);
@@ -95,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUIState(isEnabled, true);
   });
 
+  // Official GAM Error Mapping table
   const ERROR_MAPPING = {
     0: 'NO_ERROR',
     1: 'ADAPTER_CREATION_FAILURE',
@@ -130,11 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'uidapi.com': 'UID2.0API'
   };
 
+  // Bind to the currently active tab
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs[0]) return;
     const tabId = tabs[0].id;
     const key = `tab_${tabId}`;
     
+    // Core render loop triggered on every state update from background.js
     function renderData(data) {
       chrome.storage.local.get(['extension_enabled'], (res) => {
           if (!res.extension_enabled) {
@@ -160,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let emptyState = document.getElementById('empty-state');
           if (emptyState) emptyState.style.display = 'none';
-          // Hide loading, show results
+          
+      // Hide loading text and show real data block
       document.getElementById('loading').classList.add('hidden');
       const resultsEl = document.getElementById('results');
       resultsEl.classList.remove('hidden');
@@ -181,6 +188,35 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         listEl.innerHTML = '';
         
+        // 1. PRE-INDEX NETWORK SIGNALS
+        // Build an O(1) lookup dictionary of network payloads keyed by Provider ID
+        // This eliminates the expensive O(n*m) nested loops and stringify matches.
+        const networkDict = new Map();
+        
+        for (const net of network) {
+            if (Array.isArray(net.decoded)) {
+                for (const s of net.decoded) {
+                    if (s && s.provider) {
+                        // Aggregate multiple network requests for the same provider
+                        let existing = networkDict.get(s.provider) || [];
+                        existing.push({ networkPayload: net, decodedSignal: s });
+                        networkDict.set(s.provider, existing);
+                    }
+                }
+            } else {
+                // Fuzzy fallback for unstructured JSON payloads
+                const netStr = JSON.stringify(net.decoded);
+                injected.forEach(sig => {
+                    if (netStr && netStr.includes('"' + sig.providerId + '"')) {
+                        let existing = networkDict.get(sig.providerId) || [];
+                        existing.push({ networkPayload: net, decodedSignal: net.decoded, rawStr: netStr });
+                        networkDict.set(sig.providerId, existing);
+                    }
+                });
+            }
+        }
+
+        // 2. RECONCILE INJECTED SIGNALS
         const processedSignals = injected.map(signal => {
           let sentInNetwork = false;
           let matchedNetworkPayload = null;
@@ -193,50 +229,52 @@ document.addEventListener('DOMContentLoaded', () => {
               stringifiedInjectedPayload = String(signal.payload);
           }
 
-          let rawIDToSearch = stringifiedInjectedPayload;
-          if (typeof signal.payload === 'string') rawIDToSearch = signal.payload;
-          else if (Array.isArray(signal.payload)) rawIDToSearch = signal.payload[0] || stringifiedInjectedPayload;
-
-         for (const net of network) {
-             let matched = false;
-             
-             if (Array.isArray(net.decoded)) {
-                 const found = net.decoded.find(s => s && s.provider === signal.providerId);
-                 if (found) {
-                     let injectedHasError = signal.error !== undefined && signal.error !== null;
-                     let networkHasError = found.error !== undefined && found.error !== null;
-                     
-                     if (injectedHasError && networkHasError) {
-                         if (String(signal.error) === String(found.error)) {
-                             matched = true;
-                         }
-                     } else if (!injectedHasError && !networkHasError) {
-                         matched = true;
-                     } else if (!injectedHasError && networkHasError) {
-                         networkErrorPayload = found;
-                         matched = true;
-                     }
-                 }
-             } else {
-                 const netStr = JSON.stringify(net.decoded);
-                 let injectedHasError = signal.error !== undefined && signal.error !== null;
-                 
-                 if (netStr && netStr.includes('"' + signal.providerId + '"')) {
-                     if (injectedHasError) {
-                         if (netStr.includes(String(signal.error))) matched = true;
-                     } else {
-                         matched = true; 
-                     }
-                 }
-             }
-             
-             if (matched) {
-               sentInNetwork = true;
-               matchedNetworkPayload = net;
-               break;
-             }
+          // Use O(1) lookup
+          const matchingNetworks = networkDict.get(signal.providerId);
+          
+          if (matchingNetworks && matchingNetworks.length > 0) {
+              for (const match of matchingNetworks) {
+                  if (match.decodedSignal && typeof match.decodedSignal === 'object' && 'error' in match.decodedSignal) {
+                      // Structured array matching
+                      let injectedHasError = signal.error !== undefined && signal.error !== null;
+                      let networkHasError = match.decodedSignal.error !== undefined && match.decodedSignal.error !== null;
+                      
+                      if (injectedHasError && networkHasError) {
+                          if (String(signal.error) === String(match.decodedSignal.error)) {
+                              sentInNetwork = true;
+                              matchedNetworkPayload = match.networkPayload;
+                              break;
+                          }
+                      } else if (!injectedHasError && !networkHasError) {
+                          sentInNetwork = true;
+                          matchedNetworkPayload = match.networkPayload;
+                          break;
+                      } else if (!injectedHasError && networkHasError) {
+                          // Edge case: Injected was success, but network carried an error
+                          networkErrorPayload = match.decodedSignal;
+                          sentInNetwork = true;
+                          matchedNetworkPayload = match.networkPayload;
+                          break;
+                      }
+                  } else if (match.rawStr) {
+                      // Unstructured fallback matching
+                      let injectedHasError = signal.error !== undefined && signal.error !== null;
+                      if (injectedHasError) {
+                          if (match.rawStr.includes(String(signal.error))) {
+                              sentInNetwork = true;
+                              matchedNetworkPayload = match.networkPayload;
+                              break;
+                          }
+                      } else {
+                          sentInNetwork = true; 
+                          matchedNetworkPayload = match.networkPayload;
+                          break;
+                      }
+                  }
+              }
           }
           
+          // Recreate metadata hierarchy if missing
           if (!signal.sources) {
               signal.sources = { live: signal.origin === 'GAM', gamCache: signal.origin === 'CACHE' || signal.origin === 'GAM_CACHE', hbCache: signal.origin === 'HB' || signal.origin === 'HB_CACHE', hbConfig: signal.origin === 'HB_CONFIG' };
               signal.liveType = signal.sources.live ? signal.type : null;
@@ -248,10 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
               else if (signal.sources.hbCache || signal.sources.hbConfig) renderOrigin = 'HB_CACHE';
           }
           
+          // SCORING SYSTEM for UI SORTING
+          // 1 = High Priority (Live GAM Array), 2 = Medium (GAM Cache fallback), 3 = Low (Header Bidding)
           let originScore = 3;
           if (renderOrigin === 'GAM') originScore = 1;
           else if (renderOrigin === 'GAM_CACHE') originScore = 2;
           
+          // 1 = Complete Success, 2 = Warning (Never hit network), 3 = Error hit network
           let matchScore = 3;
           if (sentInNetwork) {
               matchScore = 1;
@@ -288,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stat-injected-breakdown').innerHTML = `GAM: ${breakdownInjected.GAM} &nbsp;|&nbsp; HB: ${breakdownInjected.HB}`;
 
         try {
+          // SORTING LOGIC: Best signals (Live, No Errors, Sent to Network) bubble to the top
           processedSignals.sort((a, b) => {
               if (a.originScore !== b.originScore) return a.originScore - b.originScore;
               if (a.matchScore !== b.matchScore) return a.matchScore - b.matchScore;
@@ -295,6 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
               let bStr = b.signal && b.signal.providerId ? String(b.signal.providerId) : '';
               return aStr.localeCompare(bStr);
           });
+
+        // Use a DocumentFragment to drastically reduce layout thrashing on DOM append
+        const fragment = document.createDocumentFragment();
 
         processedSignals.forEach(item => {
           const signal = item.signal;
@@ -355,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
               displayProviderId += `<span style="color: var(--text-muted); font-weight: 400; font-size: 0.75em; margin-left: 4px;">(${PREBID_DISPLAY_MAPPING[displayProviderId]})</span>`;
           }
           
+          // Green border if present in network egress, crimson otherwise 
           if (sentInNetwork) {
              card.style.borderLeft = '3px solid mediumseagreen';
              card.style.background = 'linear-gradient(90deg, rgba(60, 179, 113, 0.05) 0%, transparent 100%)';
@@ -385,8 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           `;
           
-          listEl.appendChild(card);
+          fragment.appendChild(card);
         });
+        
+        // Append all cards to the DOM at once
+        listEl.appendChild(fragment);
+        
        } catch(popupErr) {
           listEl.innerHTML += `<div class="card" style="border-left: 3px solid red; background: #ffeeee;"><h3 style="color:red;">Renderer Crashed</h3><code style="word-break: break-all; white-space: pre-wrap; display: block; margin-top: 10px;">${popupErr.stack || popupErr.message || popupErr}</code></div>`;
        }
@@ -400,6 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
         networkListEl.innerHTML = '<p class="text-center" style="color: var(--text-muted); margin-top: 20px;">No network signals intercepted.</p>';
       } else {
         networkListEl.innerHTML = '';
+        
+        const netFragment = document.createDocumentFragment();
+        
         network.forEach((net) => {
           const card = document.createElement('div');
           card.className = 'card';
@@ -469,18 +522,22 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           `;
           
-          networkListEl.appendChild(card);
+          netFragment.appendChild(card);
         });
+        
+        networkListEl.appendChild(netFragment);
       }
       });
     }
 
+    // Trigger initial render
     chrome.storage.local.get([key, 'extension_enabled'], (res) => {
         if (res.extension_enabled === true) {
             renderData(res[key]);
         }
     });
     
+    // Listen for storage changes from the debounced flush in background.js
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes[key]) {
             chrome.storage.local.get(['extension_enabled'], (res) => {
