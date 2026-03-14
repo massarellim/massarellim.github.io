@@ -2,6 +2,8 @@
 
 This document summarizes the internal mechanisms of Google Ad Manager (GAM) regarding Secure and Encrypted Signals, Prebid Header Bidding integrations, caching behaviors, and common deployment pitfalls. 
 
+<br>
+
 ## 1. The Core Lifecycle of a GAM Secure Signal
 
 When GAM initializes an ad request, it executes a strict sequence for processing Secure Signals:
@@ -15,6 +17,8 @@ When GAM initializes an ad request, it executes a strict sequence for processing
    - If the script finishes within the timeout duration, GAM validates the payload, sends it over the network via the `a3p` or `ssj` parameters, and caches it in `_GESPSK` for future use.
    - If the timeout expires before the script responds, GAM fires the network request *without* that specific payload.
 
+<br>
+
 ## 2. Asynchronous Race Conditions (Late Arrivals)
 
 A frequent issue on publisher sites occurs when native collection scripts fail to resolve before GAM's internal timeout threshold expires.
@@ -22,6 +26,8 @@ A frequent issue on publisher sites occurs when native collection scripts fail t
 - **The Cutoff**: When the timeout hits, GAM fires the ad request devoid of the signal.
 - **The Late Arrival**: Milliseconds later, the native script may finally finish downloading its token, authenticate, and push the valid payload into the array.
 - **The Caching Mechanic**: While the signal missed the *current* network request, GAM still listens to the resolved Promise. It successfully collects the late payload and caches it inside `_GESPSK`. Therefore, the payload will be readily available for the *next* subsequent ad request on the page.
+
+<br>
 
 ## 3. Persistent Error Caching 
 
@@ -31,6 +37,8 @@ GAM assumes that a script returning a hard error is structurally unstable. To pr
 
 **The Result**: Because GAM's internal `gpt.js` caching logic prioritizes page performance, a cached error state can prevent the native script from executing synchronously prior to the ad request, instantly deferring to the cached error and yielding an empty payload for the duration of that 12-hour window. However, due to Google's opaque, closed-source refreshing policies (such as stale-while-revalidate), GAM *may* still attempt to execute the script in the background to refresh the cache dynamically. To strictly guarantee GAM cleanly retries native scripts for the current ad request during testing, you must manually clear the DOM's Local Storage by deleting all keys matching `_GESPSK` or manually overriding the expiration timestamp.
 
+<br>
+
 ## 4. UI Deployment Modes & Environment Mismatches
 
 A common source of dropped signals stems from misconfigurations between the publisher's site architecture and the GAM UI setup.
@@ -39,12 +47,16 @@ A common source of dropped signals stems from misconfigurations between the publ
 2. **Deployment Method Mismatch**: GAM requires the deployment method selected in the UI (Publisher / Google / Prebid) to exactly match how the script is executed on the page. 
    - **Example**: If a publisher selects "Google Deploy" in the GAM UI, but fails to add the required provider script to their site's header, the signal will fail. Conversely, if they select "Google Deploy" but instead rely on a Prebid module to collect the ID, GAM may reject or drop the signal because the source origin conflicts with the expected deployment settings.
 
+<br>
+
 ## 5. Missing Configurations and Authentication Failures
 
 Even when a signal collector is perfectly injected and executed on time, it may still return a `null` payload. This commonly occurs due to authentication or configuration omissions:
 
 - **Missing Provider Credentials**: Most signal collectors require publishers to register an account with their platform to obtain a specific Client ID. This ID must authenticate the script with the vendor's servers to release the identity payload. If this configuration is missing, the script executes but returns `null`.
 - **Prebid Ghost Configurations**: A payload will return `null` if the publisher successfully configures the Prebid UserSync array for the provider in their code, but the required physical script for that specific vendor is never called or included on the page (often the result of the incorrect deployment method being selected).
+
+<br>
 
 ## 6. Prebid Integration vs. Native Execution
 
@@ -61,6 +73,8 @@ This architectural disconnect can result in overlapping signals for the exact sa
 - Prebid rapidly pulls from its own cache, generates an object, and pushes it into the GAM array right before the ad request leaves the browser.
 - This creates internal validation logs where a provider appears to both fail (via native Cache evaluation) and succeed (via Header Bidding injection) on the exact same page load.
 
+<br>
+
 ## 7. Strict Validation Matching
 
 When utilizing validation tools, simple string matching (e.g., verifying if a provider name exists in the network request) is insufficient due to error codes. 
@@ -72,6 +86,8 @@ Because GAM frequently drops internal error codes into the outgoing array alongs
 
 Only when the specific Provider ID precisely correlates with identical payload values—without intersecting with error objects—can a signal be verified as successfully transmitted to Google Ad Manager.
 
+<br>
+
 ## 8. Prebid UserSync & EID Inference
 
 A challenge in verifying Header Bidding signals is that Prebid modules (e.g., `id5Id`) do not natively share their nomenclature with the final outgoing EID source strings (e.g., `id5-sync.com`). The Secure Signal Inspector bridges this gap dynamically:
@@ -79,6 +95,8 @@ A challenge in verifying Header Bidding signals is that Prebid modules (e.g., `i
 1. **Static Dictionary**: A hardcoded string map evaluates the industry's most common Prebid configuration modules against their canonical EID origin domains.
 2. **Dynamic EID Inference**: The extension mathematically cross-references the generic string contents of the raw `pbjs.getUserIds()` tree against the final EID nested array produced by `pbjs.getUserIdsAsEids()`. 
 3. **Permanent Caching**: If both objects share an identical payload string, the extension automatically learns that configuration routing and permanently caches it. Upon every subsequent extension boot, the engine is explicitly hydrated with these historical learnings.
+
+<br>
 
 ## 9. Memory Lifespans & Browser Attrition
 
@@ -88,11 +106,23 @@ The payloads intercepted by Prebid's UserSync modules possess varying lifespans 
 - **Privacy Attrition (ITP/ETP)**: Modern browsers (Safari ITP, Brave, Firefox ETP) will aggressively intercept and truncate client-side storage objects, frequently expiring valid IDs within 7 days or 24 hours regardless of publisher configuration.
 - **Consent Syncing (CMP)**: If a user interacts with a Consent Management Platform and revokes cookies, Prebid's core consent module immediately signals the individual ID submodules to dump their payloads and clear browser storage entirely.
 
+<br>
+<br>
+<br>
+
+<br>
+<br>
+
 ---
+
+<br>
+<br>
 
 # GAM Secure Signals: Architecture & Mechanics
 
 This document outlines the operational mechanics of the Secure Signal Inspector extension. The extension is designed to provide visibility into the lifecycle of Google Ad Manager (GAM) Secure Signals (`a3p`) and Encrypted Signals (`ssj`), from local collection to network transmission.
+
+<br>
 
 ## 1. Core Architecture Overview
 
@@ -101,6 +131,8 @@ The extension operates across three synchronized execution layers to capture and
 1. **Local Interception (`inject.js`)**: Executes synchronously in the publisher's page environment to capture signals at the exact moment they are passed to Google's arrays.
 2. **Network Interception (`background.js`)**: Runs in the background service worker to capture and decode the physical HTTP requests sent to Google Ad Manager.
 3. **Reconciliation Engine (`popup.js`)**: Processes data from both the injected script and the background worker to determine if locally generated signals were successfully transmitted over the network.
+
+<br>
 
 ## 2. Local Interception Mechanics (`inject.js`)
 
@@ -121,6 +153,8 @@ For Header Bidding environments, the script actively polls the `pbjs` object.
 - It continuously extracts User IDs via `pbjs.getConfig().userSync` and `pbjs.getUserIdsAsEids()`. 
 - By cross-referencing submodule payload strings against final User ID objects, the extension dynamically infers and maps vendor configurations to their final EID routing logic.
 
+<br>
+
 ## 3. Network Interception & Decoding (`background.js`)
 
 The background service worker validates the ground truth of what actually left the browser.
@@ -132,6 +166,8 @@ The extension uses the Manifest V3 `chrome.webRequest.onBeforeRequest` API to mo
 GAM signal payloads (`a3p`, `ssj`) are heavily encoded. The extension implements robust decoders to translate them into readable JSON:
 1. **URL-Safe Base64 Decoder**: Extracts the parameter, repairs standard padding discrepancies, and decodes the string to uncover standard JSON arrays.
 2. **Custom Protobuf Parser**: Because Encrypted Signals typically utilize Google Protocol Buffers, standard JSON parsing fails. The extension implements a native, bit-level Length-Delimited wire-type 2 byte-stream reader to extract the actual Provider Name and encoded strings directly from the raw binary stream.
+
+<br>
 
 ## 4. Reconciliation and UI Validation (`popup.js`)
 
@@ -155,11 +191,23 @@ Signals are bucketed into four specific source origins:
 ### Summary
 The extension verifies the end-to-end signal deployment logic by proving that local integrations successfully reach the GAM server.
 
+<br>
+<br>
+<br>
+
+<br>
+<br>
+
 ---
+
+<br>
+<br>
 
 # Secure Signal Inspector Usage Guide
 
 Secure Signal Inspector is a specialized diagnostic tool designed to streamline troubleshooting for Secure Signals implementations. It provides transparency by intercepting and decoding identity signals as they are transmitted to Google Ad Manager (GAM).
+
+<br>
 
 ## 1. Core Operations
 
@@ -174,6 +222,8 @@ The extension operates with **zero passive overhead**. When inactive, it removes
 2. Open the extension popup and flip the switch to **ON**.  
 3. The extension will automatically refresh the page and begin monitoring.
 
+<br>
+
 ## 2. Summary Stats
 
 The **Summary Stats** section provides an immediate high-level overview of the page’s identity signal health through two primary metrics:
@@ -182,6 +232,8 @@ The **Summary Stats** section provides an immediate high-level overview of the p
   * **GAM:** Signals natively integrated into GAM or retrieved from Local Storage.  
   * **HB:** Signals identified by polling the Prebid Identity module.  
 * **Signals Actually Sent to GAM:** Confirms the number of signals that successfully reached the Ad Server. This metric excludes signals that exist locally but failed to transmit due to timeouts or errors.
+
+<br>
 
 ## 3. Reconciled Signals
 
@@ -196,10 +248,15 @@ A list of **Reconciled Signals** is displayed below the summary statistics, feat
 | **Payload String** | The decoded ID value, if any |
 | **Error Flags** | Code-specific error messages for script failures |
 
+<br>
+<br>
+
 ### Verification Colors
 
 * **Green Cards:** The collector script generated the identity signal and the signal was successfully sent to GAM.  
 * **Red Cards:** The signal collection script executed correctly but the resulting payload (if any) was **not** sent to GAM.
+
+<br>
 
 ## 4. Integration Methods
 
@@ -213,6 +270,8 @@ Every card displays one or more colored badges identifying the **Integration Met
 
 > **Pro Tip:** Click any badge for an explanatory tooltip!
 
+<br>
+
 ## 5. Troubleshooting Guide
 
 | Error | Issue / Fix |
@@ -220,6 +279,10 @@ Every card displays one or more colored badges identifying the **Integration Met
 | **Not Sent** | The signal was not sent to the Ad Server. Verify whether ad requests are actually being sent to GAM, check the Secure Signals settings in the UI to ensure the signal provider is enabled and the correct deployment method is implemented. This is common on the first pageview as signals are often collected after the GAM request to prevent latency. |
 | **Null Payload** | Verify authentication with the signal provider and confirm that all required parameters have been added to the page or in the Prebid config. |
 | **Err: Code** | To avoid network strain, GAM caches a `null` value if an error occurs during signal collection, which prevents subsequent calls to that provider. The collection script can be forced to run again by clearing Local Storage. Additionally, a generic HB error is triggered if a signal provider exists in the Prebid configuration but its signal is never actually requested. |
+
+<br>
+<br>
+<br>
 
 ## 6. Decoded Network Requests
 
