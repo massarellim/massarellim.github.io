@@ -155,9 +155,6 @@
 
             pbjs.requestBids({
               bidsBackHandler: function(){
-                if (pbjs.initAdserverSet) return;
-                pbjs.initAdserverSet = true;
-                
                 pbjs.setTargetingForGPTAsync();
                 googletag.pubads().refresh();
               },
@@ -165,9 +162,6 @@
             });
             
             setTimeout(function() {
-              if (pbjs.initAdserverSet) return;
-              pbjs.initAdserverSet = true;
-              
               pbjs.setTargetingForGPTAsync();
               googletag.pubads().refresh();
             }, 2500);
