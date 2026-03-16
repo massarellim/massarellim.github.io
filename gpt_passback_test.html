@@ -163,6 +163,14 @@
               },
               timeout: 1500
             });
+            
+            setTimeout(function() {
+              if (pbjs.initAdserverSet) return;
+              pbjs.initAdserverSet = true;
+              
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+            }, 2500);
          
           })    
         });
