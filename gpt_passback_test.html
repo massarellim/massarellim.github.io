@@ -158,6 +158,19 @@
 
           // Request bids and refresh the slot
           pbjs.que.push(function() {
+            // Need to define at least one dummy ad unit so Prebid actually fires bidders
+            // and completes the requestBids flow
+            var adUnits = [{
+              code: '/6353/massarellim_test',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              bids: [] // Empty bids is fine if we just want it to run identity modules
+            }];
+
+            pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
               bidsBackHandler: function() {
                 pbjs.setTargetingForGPTAsync([slot]);
