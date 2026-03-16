@@ -80,6 +80,20 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           debug: true,
+          debugging: {
+            enabled: true,
+            intercept: [
+              {
+                when: {
+                  adUnitCode: '/6353/massarellim_test',
+                  bidder: 'appnexus'
+                },
+                then: {
+                  cpm: 9.90
+                }
+              }
+            ]
+          },
           consentManagement: {
             gdpr: {
               cmpApi: 'iab',
@@ -158,8 +172,6 @@
 
           // Request bids and refresh the slot
           pbjs.que.push(function() {
-            // Need to define at least one dummy ad unit so Prebid actually fires bidders
-            // and completes the requestBids flow
             var adUnits = [{
               code: '/6353/massarellim_test',
               mediaTypes: {
@@ -167,16 +179,32 @@
                   sizes: [[300, 250]]
                 }
               },
-              bids: [] // Empty bids is fine if we just want it to run identity modules
+              bids: [{
+                bidder: 'appnexus',
+                params: {
+                   placementId: 13144370 // Test placement ID
+                }
+              }]
             }];
 
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
               bidsBackHandler: function() {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                
                 pbjs.setTargetingForGPTAsync([slot]);
                 googletag.pubads().refresh([slot]);
               }
             });
+
+            // Fallback timeout in case Prebid fails or takes too long
+            setTimeout(function() {
+              if (pbjs.initAdserverSet) return;
+              pbjs.initAdserverSet = true;
+              pbjs.setTargetingForGPTAsync([slot]);
+              googletag.pubads().refresh([slot]);
+            }, 2000);
           });
         });
       </script>
