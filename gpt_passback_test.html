@@ -184,8 +184,10 @@
                 if (pbjs.initAdserverSet) return;
                 pbjs.initAdserverSet = true;
                 
-                pbjs.setTargetingForGPTAsync([slot]);
-                googletag.pubads().refresh([slot]);
+                googletag.cmd.push(function() {
+                  pbjs.setTargetingForGPTAsync([slot]);
+                  googletag.pubads().refresh([slot]);
+                });
               }
             });
 
@@ -193,8 +195,11 @@
             setTimeout(function() {
               if (pbjs.initAdserverSet) return;
               pbjs.initAdserverSet = true;
-              pbjs.setTargetingForGPTAsync([slot]);
-              googletag.pubads().refresh([slot]);
+              
+              googletag.cmd.push(function() {
+                pbjs.setTargetingForGPTAsync([slot]);
+                googletag.pubads().refresh([slot]);
+              });
             }, 2000);
           });
         });
