@@ -42,6 +42,34 @@
       };
     </script>
 
+    <!-- Standalone ID5 API (for Google Deploy use cases) -->
+    <script async src="https://cdn.id5-sync.com/api/1.0/id5-api.js"></script>
+    <script>
+      var id5Status = id5Status || {};
+      id5Status.ready = id5Status.ready || false;
+      
+      window.id5Callback = function() {
+        if (!id5Status.ready) {
+           id5Status.ready = true;
+           window.ID5.init({
+             partnerId: 173,
+             cmpApi: 'iab',
+             abTesting: {
+               enabled: false
+             }
+           });
+        }
+      };
+
+      // Poll or wait for the script to load
+      var checkId5 = setInterval(function() {
+        if (window.ID5 && window.ID5.init) {
+          clearInterval(checkId5);
+          window.id5Callback();
+        }
+      }, 50);
+    </script>
+
     <!-- Prebid.js Setup -->
     <!-- Using a CDN hosted Prebid.js. Note: standard CDNs may not have all optional modules built-in. -->
     <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/prebid.js"></script>
@@ -71,6 +99,18 @@
               },
               {
                 name: "criteo"
+              },
+              {
+                name: "id5Id",
+                params: {
+                  partner: 173 // ID5 often uses 173 in their test/example configurations
+                },
+                storage: {
+                  type: "html5",
+                  name: "id5id",
+                  expires: 90,
+                  refreshInSeconds: 8 * 3600
+                }
               }
             ],
             syncEnabled: true,
