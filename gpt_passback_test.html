@@ -6,6 +6,14 @@
     <title>GPT Passback Test</title>
     <!-- Fake CMP always returning full consent -->
     <script>
+      // Add locator frame to ensure GPT and Prebid can detect the CMP's presence
+      if (!window.__tcfapiLocator) {
+        var frame = document.createElement('iframe');
+        frame.name = '__tcfapiLocator';
+        frame.style.display = 'none';
+        document.head.appendChild(frame);
+      }
+
       window.__tcfapi = function(command, version, callback, parameter) {
         if (command === 'addEventListener' || command === 'getTCData') {
           var tcData = {
@@ -26,10 +34,9 @@
               legitimateInterests: {755: true}
             }
           };
-          if (callback) {
-            setTimeout(function() {
-              callback(tcData, true);
-            }, 0);
+          // Synchronous callback is often more reliable for simple static fake CMPs
+          if (typeof callback === 'function') {
+            callback(tcData, true);
           }
         }
       };
@@ -45,6 +52,13 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           debug: true,
+          consentManagement: {
+            gdpr: {
+              cmpApi: 'iab',
+              timeout: 1000,
+              defaultGdprScope: true
+            }
+          },
           userSync: {
             userIds: [
               {
@@ -95,9 +109,22 @@
       <script>
         window.googletag = window.googletag || {cmd: []};
         googletag.cmd.push(function() {
-        googletag.defineSlot('/6353/massarellim_test', [[300, 600], [160, 600], 'fluid', [300, 250]], 'gpt-passback').addService(googletag.pubads());
-        googletag.enableServices();
-        googletag.display('gpt-passback');
+          var slot = googletag.defineSlot('/6353/massarellim_test', [[300, 600], [160, 600], 'fluid', [300, 250]], 'gpt-passback').addService(googletag.pubads());
+          
+          // Disable initial load so we can wait for Prebid
+          googletag.pubads().disableInitialLoad();
+          googletag.enableServices();
+          googletag.display('gpt-passback');
+
+          // Request bids and refresh the slot
+          pbjs.que.push(function() {
+            pbjs.requestBids({
+              bidsBackHandler: function() {
+                pbjs.setTargetingForGPTAsync([slot]);
+                googletag.pubads().refresh([slot]);
+              }
+            });
+          });
         });
       </script>
     </div>
