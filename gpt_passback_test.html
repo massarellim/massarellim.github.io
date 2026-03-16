@@ -74,8 +74,8 @@
     </script>
 
     <!-- Prebid.js Setup -->
-    <!-- Using a CDN hosted Prebid.js. Note: standard CDNs may not have all optional modules built-in. -->
-    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/prebid.js"></script>
+    <!-- Using the not-for-prod build which includes all optional modules natively -->
+    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     <script>
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
