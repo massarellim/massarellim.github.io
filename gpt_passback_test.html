@@ -21,7 +21,7 @@
             cmpId: 999,
             cmpVersion: 1,
             tcfPolicyVersion: 2,
-            gdprApplies: true,
+            gdprApplies: false,
             eventStatus: 'tcloaded',
             cmpStatus: 'loaded',
             listenerId: 1,
@@ -30,8 +30,8 @@
               legitimateInterests: {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true}
             },
             vendor: {
-              consents: {32: true, 91: true, 755: true}, // AppNexus, Criteo, Google
-              legitimateInterests: {32: true, 91: true, 755: true}
+              consents: {32: true, 91: true, 131: true, 755: true}, // AppNexus, Criteo, ID5, Google
+              legitimateInterests: {32: true, 91: true, 131: true, 755: true}
             }
           };
           // GPT's TCF listener often crashes if the callback fires synchronously.
