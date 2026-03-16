@@ -76,94 +76,22 @@
     <!-- Prebid.js Setup -->
     <!-- Using the not-for-prod build which includes all optional modules natively -->
     <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-    <script>
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
-      
-      pbjs.que.push(function() {
-        pbjs.setConfig({
-          debug: true,
-          debugging: {
-            enabled: true,
-            intercept: [
-              {
-                when: {
-                  adUnitCode: '/6353/massarellim_test',
-                  bidder: 'appnexus'
-                },
-                then: {
-                  cpm: 9.90
-                }
-              }
-            ]
-          },
-          consentManagement: {
-            gdpr: {
-              cmpApi: 'iab',
-              timeout: 1000,
-              defaultGdprScope: true
-            }
-          },
-          userSync: {
-            userIds: [
-              {
-                name: "pubCommonId",
-                storage: {
-                  type: "html5",
-                  name: "_pubcid",
-                  expires: 365
-                }
-              },
-              {
-                name: "criteo"
-              }
-            ],
-            syncEnabled: true,
-            filterSettings: {
-              all: {
-                bidders: '*',
-                filter: 'include'
-              }
-            }
-          }
-        });
-      });
-    </script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        #gpt-passback {
-            border: 1px dashed #ccc;
-            min-height: 250px;
-            min-width: 300px;
-            display: inline-block;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>GPT Passback Test Page</h1>
-    <p>This page contains the GPT passback tag provided.</p>
-
-    <!-- GPT Passback Tag -->
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>
-    <div id="gpt-passback">
       <script>
         window.googletag = window.googletag || {cmd: []};
+        var pbjs = pbjs || {};
+        pbjs.cmd = pbjs.cmd || [];
+        
         googletag.cmd.push(function() {
-          var slot = googletag.defineSlot('/6353/massarellim_test', [[300, 250]], 'gpt-passback').addService(googletag.pubads());
-          
-          // Disable initial load so we can wait for Prebid
+          var slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback')
+             .addService(googletag.pubads());
+             
           googletag.pubads().disableInitialLoad();
           googletag.enableServices();
+          
           googletag.display('gpt-passback');
 
-          // Request bids and refresh the slot
-          pbjs.que.push(function() {
-            var adUnits = [{
+          pbjs.cmd.push(function() {
+            pbjs.addAdUnits([{
               code: '/6353/massarellim_test',
               mediaTypes: {
                 banner: {
@@ -173,35 +101,70 @@
               bids: [{
                 bidder: 'appnexus',
                 params: {
-                   placementId: 13144370 // Test placement ID
+                   placementId: 13144370 
                 }
               }]
-            }];
-
-            pbjs.addAdUnits(adUnits);
-            pbjs.requestBids({
-              bidsBackHandler: function() {
-                if (pbjs.initAdserverSet) return;
-                pbjs.initAdserverSet = true;
-                
-                googletag.cmd.push(function() {
-                  pbjs.setTargetingForGPTAsync();
-                  googletag.pubads().refresh([slot]);
-                });
+            }]);
+            
+            pbjs.setConfig({
+              debug: true,
+              debugging: {
+                enabled: true,
+                intercept: [
+                  {
+                    when: {
+                      adUnitCode: '/6353/massarellim_test',
+                      bidder: 'appnexus'
+                    },
+                    then: {
+                      cpm: 9.90
+                    }
+                  }
+                ]
+              },
+              consentManagement: {
+                gdpr: {
+                  cmpApi: 'iab',
+                  timeout: 1000,
+                  defaultGdprScope: true
+                }
+              },
+              userSync: {
+                userIds: [
+                  {
+                    name: "pubCommonId",
+                    storage: {
+                      type: "html5",
+                      name: "_pubcid",
+                      expires: 365
+                    }
+                  },
+                  {
+                    name: "criteo"
+                  }
+                ],
+                syncEnabled: true,
+                filterSettings: {
+                  all: {
+                    bidders: '*',
+                    filter: 'include'
+                  }
+                }
               }
             });
 
-            // Fallback timeout in case Prebid fails or takes too long
-            setTimeout(function() {
-              if (pbjs.initAdserverSet) return;
-              pbjs.initAdserverSet = true;
-              
-              googletag.cmd.push(function() {
+            pbjs.requestBids({
+              bidsBackHandler: function(){
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                
                 pbjs.setTargetingForGPTAsync();
-                googletag.pubads().refresh([slot]);
-              });
-            }, 2000);
-          });
+                googletag.pubads().refresh();
+              },
+              timeout: 1500
+            });
+         
+          })    
         });
       </script>
     </div>
