@@ -44,133 +44,40 @@
         }
       };
     </script>
-
-    <!-- Standalone ID5 API (for Google Deploy use cases) -->
-    <script async src="https://cdn.id5-sync.com/api/1.0/id5-api.js"></script>
+    <!-- Simplified ID5 ESP Configuration -->
     <script>
-      var id5Status = id5Status || {};
-      id5Status.ready = id5Status.ready || false;
-      
-      window.id5Callback = function() {
-        if (!id5Status.ready) {
-           id5Status.ready = true;
-           window.ID5.init({
-             partnerId: 173,
-             cmpApi: 'iab',
-             abTesting: {
-               enabled: false
-             }
-           });
-        }
+      window.ID5EspConfig = {
+        partnerId: 173 // Using the test partnerId 173
       };
-
-      // Poll or wait for the script to load
-      var checkId5 = setInterval(function() {
-        if (window.ID5 && window.ID5.init) {
-          clearInterval(checkId5);
-          window.id5Callback();
-        }
-      }, 50);
     </script>
-
-    <!-- Prebid.js Setup -->
-    <!-- Using the not-for-prod build which includes all optional modules natively -->
-    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #gpt-passback {
+            border: 1px dashed #ccc;
+            min-height: 250px;
+            min-width: 300px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>GPT Passback Test Page</h1>
+    <p>This page tests the standalone ID5 ESP config injection.</p>
 
     <!-- GPT Passback Tag -->
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>
-
+    <div id="gpt-passback">
       <script>
         window.googletag = window.googletag || {cmd: []};
-        var pbjs = pbjs || {};
-        pbjs.cmd = pbjs.cmd || [];
-        
         googletag.cmd.push(function() {
-          var slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback')
-             .addService(googletag.pubads());
-             
-          googletag.pubads().disableInitialLoad();
+          googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback').addService(googletag.pubads());
           googletag.enableServices();
-          
           googletag.display('gpt-passback');
-
-          pbjs.cmd.push(function() {
-            pbjs.addAdUnits([{
-              code: '/6353/massarellim_test',
-              mediaTypes: {
-                banner: {
-                  sizes: [[300, 250]]
-                }
-              },
-              bids: [{
-                bidder: 'appnexus',
-                params: {
-                   placementId: 13144370 
-                }
-              }]
-            }]);
-            
-            pbjs.setConfig({
-              debug: true,
-              debugging: {
-                enabled: true,
-                intercept: [
-                  {
-                    when: {
-                      adUnitCode: '/6353/massarellim_test',
-                      bidder: 'appnexus'
-                    },
-                    then: {
-                      cpm: 9.90
-                    }
-                  }
-                ]
-              },
-              consentManagement: {
-                gdpr: {
-                  cmpApi: 'iab',
-                  timeout: 1000,
-                  defaultGdprScope: true
-                }
-              },
-              userSync: {
-                userIds: [
-                  {
-                    name: "pubCommonId",
-                    storage: {
-                      type: "html5",
-                      name: "_pubcid",
-                      expires: 365
-                    }
-                  },
-                  {
-                    name: "criteo"
-                  }
-                ],
-                syncEnabled: true,
-                filterSettings: {
-                  all: {
-                    bidders: '*',
-                    filter: 'include'
-                  }
-                }
-              }
-            });
-
-            pbjs.requestBids({
-              bidsBackHandler: function(){
-                pbjs.setTargetingForGPTAsync();
-                googletag.pubads().refresh();
-              },
-              timeout: 1500
-            });
-            
-            setTimeout(function() {
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
-            }, 2500);
-         
-          })    
         });
       </script>
     </div>
