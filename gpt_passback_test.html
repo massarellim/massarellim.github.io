@@ -185,7 +185,7 @@
                 pbjs.initAdserverSet = true;
                 
                 googletag.cmd.push(function() {
-                  pbjs.setTargetingForGPTAsync([slot]);
+                  pbjs.setTargetingForGPTAsync();
                   googletag.pubads().refresh([slot]);
                 });
               }
@@ -197,7 +197,7 @@
               pbjs.initAdserverSet = true;
               
               googletag.cmd.push(function() {
-                pbjs.setTargetingForGPTAsync([slot]);
+                pbjs.setTargetingForGPTAsync();
                 googletag.pubads().refresh([slot]);
               });
             }, 2000);
