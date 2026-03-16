@@ -30,8 +30,8 @@
               legitimateInterests: {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true}
             },
             vendor: {
-              consents: {755: true}, // Google
-              legitimateInterests: {755: true}
+              consents: {32: true, 91: true, 755: true}, // AppNexus, Criteo, Google
+              legitimateInterests: {32: true, 91: true, 755: true}
             }
           };
           // GPT's TCF listener often crashes if the callback fires synchronously.
@@ -75,7 +75,7 @@
 
     <!-- Prebid.js Setup -->
     <!-- Using the not-for-prod build which includes all optional modules natively -->
-    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     <script>
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
@@ -154,7 +154,7 @@
       <script>
         window.googletag = window.googletag || {cmd: []};
         googletag.cmd.push(function() {
-          var slot = googletag.defineSlot('/6353/massarellim_test', [[300, 600], [160, 600], 'fluid', [300, 250]], 'gpt-passback').addService(googletag.pubads());
+          var slot = googletag.defineSlot('/6353/massarellim_test', [[300, 250]], 'gpt-passback').addService(googletag.pubads());
           
           // Disable initial load so we can wait for Prebid
           googletag.pubads().disableInitialLoad();
