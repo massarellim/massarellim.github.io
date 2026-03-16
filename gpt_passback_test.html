@@ -34,9 +34,12 @@
               legitimateInterests: {755: true}
             }
           };
-          // Synchronous callback is often more reliable for simple static fake CMPs
+          // GPT's TCF listener often crashes if the callback fires synchronously.
+          // Using a setTimeout ensures the script doesn't blow up the call stack.
           if (typeof callback === 'function') {
-            callback(tcData, true);
+            setTimeout(function() {
+              callback(tcData, true);
+            }, 0);
           }
         }
       };
@@ -113,18 +116,6 @@
               },
               {
                 name: "criteo"
-              },
-              {
-                name: "id5Id",
-                params: {
-                  partner: 173 // ID5 often uses 173 in their test/example configurations
-                },
-                storage: {
-                  type: "html5",
-                  name: "id5id",
-                  expires: 90,
-                  refreshInSeconds: 8 * 3600
-                }
               }
             ],
             syncEnabled: true,
