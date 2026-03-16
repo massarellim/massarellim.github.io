@@ -75,7 +75,9 @@
       <script>
         window.googletag = window.googletag || {cmd: []};
         googletag.cmd.push(function() {
-          googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback').addService(googletag.pubads());
+          googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback')
+            .setTargeting('hb_pb', '9.90')
+            .addService(googletag.pubads());
           googletag.enableServices();
           googletag.display('gpt-passback');
         });
