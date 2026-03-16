@@ -21,7 +21,7 @@
             cmpId: 999,
             cmpVersion: 1,
             tcfPolicyVersion: 2,
-            gdprApplies: true,
+            gdprApplies: false,
             eventStatus: 'tcloaded',
             cmpStatus: 'loaded',
             listenerId: 1,
@@ -30,61 +30,149 @@
               legitimateInterests: {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true}
             },
             vendor: {
-              consents: {755: true}, // Google
-              legitimateInterests: {755: true}
+              consents: {32: true, 91: true, 131: true, 755: true}, // AppNexus, Criteo, ID5, Google
+              legitimateInterests: {32: true, 91: true, 131: true, 755: true}
             }
           };
-          // Synchronous callback is often more reliable for simple static fake CMPs
+          // GPT's TCF listener often crashes if the callback fires synchronously.
+          // Using a setTimeout ensures the script doesn't blow up the call stack.
           if (typeof callback === 'function') {
-            callback(tcData, true);
+            setTimeout(function() {
+              callback(tcData, true);
+            }, 0);
           }
         }
       };
     </script>
 
-    <!-- Prebid.js Setup -->
-    <!-- Using a CDN hosted Prebid.js. Note: standard CDNs may not have all optional modules built-in. -->
-    <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/prebid.js"></script>
+    <!-- Standalone ID5 API (for Google Deploy use cases) -->
+    <script async src="https://cdn.id5-sync.com/api/1.0/id5-api.js"></script>
     <script>
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
+      var id5Status = id5Status || {};
+      id5Status.ready = id5Status.ready || false;
       
-      pbjs.que.push(function() {
-        pbjs.setConfig({
-          debug: true,
-          consentManagement: {
-            gdpr: {
-              cmpApi: 'iab',
-              timeout: 1000,
-              defaultGdprScope: true
-            }
-          },
-          userSync: {
-            userIds: [
-              {
-                name: "pubCommonId",
-                storage: {
-                  type: "html5",
-                  name: "_pubcid",
-                  expires: 365
-                }
-              },
-              {
-                name: "criteo"
-              }
-            ],
-            syncEnabled: true,
-            filterSettings: {
-              all: {
-                bidders: '*',
-                filter: 'include'
-              }
-            }
-          }
-        });
-      });
+      window.id5Callback = function() {
+        if (!id5Status.ready) {
+           id5Status.ready = true;
+           window.ID5.init({
+             partnerId: 173,
+             cmpApi: 'iab',
+             abTesting: {
+               enabled: false
+             }
+           });
+        }
+      };
+
+      // Poll or wait for the script to load
+      var checkId5 = setInterval(function() {
+        if (window.ID5 && window.ID5.init) {
+          clearInterval(checkId5);
+          window.id5Callback();
+        }
+      }, 50);
     </script>
 
+    <!-- Prebid.js Setup -->
+    <!-- Using the not-for-prod build which includes all optional modules natively -->
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+
+    <!-- GPT Passback Tag -->
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>
+
+      <script>
+        window.googletag = window.googletag || {cmd: []};
+        var pbjs = pbjs || {};
+        pbjs.cmd = pbjs.cmd || [];
+        
+        googletag.cmd.push(function() {
+          var slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'gpt-passback')
+             .addService(googletag.pubads());
+             
+          googletag.pubads().disableInitialLoad();
+          googletag.enableServices();
+          
+          googletag.display('gpt-passback');
+
+          pbjs.cmd.push(function() {
+            pbjs.addAdUnits([{
+              code: '/6353/massarellim_test',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              bids: [{
+                bidder: 'appnexus',
+                params: {
+                   placementId: 13144370 
+                }
+              }]
+            }]);
+            
+            pbjs.setConfig({
+              debug: true,
+              debugging: {
+                enabled: true,
+                intercept: [
+                  {
+                    when: {
+                      adUnitCode: '/6353/massarellim_test',
+                      bidder: 'appnexus'
+                    },
+                    then: {
+                      cpm: 9.90
+                    }
+                  }
+                ]
+              },
+              consentManagement: {
+                gdpr: {
+                  cmpApi: 'iab',
+                  timeout: 1000,
+                  defaultGdprScope: true
+                }
+              },
+              userSync: {
+                userIds: [
+                  {
+                    name: "pubCommonId",
+                    storage: {
+                      type: "html5",
+                      name: "_pubcid",
+                      expires: 365
+                    }
+                  },
+                  {
+                    name: "criteo"
+                  }
+                ],
+                syncEnabled: true,
+                filterSettings: {
+                  all: {
+                    bidders: '*',
+                    filter: 'include'
+                  }
+                }
+              }
+            });
+
+            pbjs.requestBids({
+              bidsBackHandler: function(){
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+              },
+              timeout: 1500
+            });
+            
+            setTimeout(function() {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+            }, 2500);
+         
+          })    
+        });
+      </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -102,31 +190,7 @@
 <body>
     <h1>GPT Passback Test Page</h1>
     <p>This page contains the GPT passback tag provided.</p>
-
-    <!-- GPT Passback Tag -->
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>
     <div id="gpt-passback">
-      <script>
-        window.googletag = window.googletag || {cmd: []};
-        googletag.cmd.push(function() {
-          var slot = googletag.defineSlot('/6353/massarellim_test', [[300, 600], [160, 600], 'fluid', [300, 250]], 'gpt-passback').addService(googletag.pubads());
-          
-          // Disable initial load so we can wait for Prebid
-          googletag.pubads().disableInitialLoad();
-          googletag.enableServices();
-          googletag.display('gpt-passback');
-
-          // Request bids and refresh the slot
-          pbjs.que.push(function() {
-            pbjs.requestBids({
-              bidsBackHandler: function() {
-                pbjs.setTargetingForGPTAsync([slot]);
-                googletag.pubads().refresh([slot]);
-              }
-            });
-          });
-        });
-      </script>
     </div>
 </body>
 </html>
