@@ -242,10 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
           
           if (matchingNetworks && matchingNetworks.length > 0) {
               for (const match of matchingNetworks) {
+                  if (match.used) continue;
+                  
                   if (match.decodedSignal && typeof match.decodedSignal === 'object' && 'error' in match.decodedSignal) {
                       // Structured array matching
                       let injectedHasError = signal.error !== undefined && signal.error !== null;
                       let networkHasError = match.decodedSignal.error !== undefined && match.decodedSignal.error !== null;
+                      
+                      let netPayloadStr = '';
+                      try { netPayloadStr = typeof match.decodedSignal.payload === 'object' ? JSON.stringify(match.decodedSignal.payload) : String(match.decodedSignal.payload || ''); } catch(e) {}
+                      
+                      let payloadMatches = stringifiedInjectedPayload === netPayloadStr || 
+                                           networkHasError || 
+                                           stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined';
                       
                       if (injectedHasError && networkHasError) {
                           if (String(signal.error) === String(match.decodedSignal.error)) {
@@ -254,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
                               match.used = true;
                               break;
                           }
-                      } else if (!injectedHasError && !networkHasError) {
+                      } else if (!injectedHasError && !networkHasError && payloadMatches) {
                           sentInNetwork = true;
                           matchedNetworkPayload = match.networkPayload;
                           match.used = true;
@@ -270,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   } else if (match.rawStr) {
                       // Unstructured fallback matching
                       let injectedHasError = signal.error !== undefined && signal.error !== null;
+                      
                       if (injectedHasError) {
                           if (match.rawStr.includes(String(signal.error))) {
                               sentInNetwork = true;
@@ -278,10 +288,18 @@ document.addEventListener('DOMContentLoaded', () => {
                               break;
                           }
                       } else {
-                          sentInNetwork = true; 
-                          matchedNetworkPayload = match.networkPayload;
-                          match.used = true;
-                          break;
+                          // For unstructured, check if the raw network string contains the actual payload
+                          if (stringifiedInjectedPayload && stringifiedInjectedPayload !== 'null' && stringifiedInjectedPayload !== 'undefined' && match.rawStr.includes(stringifiedInjectedPayload)) {
+                              sentInNetwork = true; 
+                              matchedNetworkPayload = match.networkPayload;
+                              match.used = true;
+                              break;
+                          } else if (!stringifiedInjectedPayload || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined') {
+                              sentInNetwork = true; 
+                              matchedNetworkPayload = match.networkPayload;
+                              match.used = true;
+                              break;
+                          }
                       }
                   }
               }

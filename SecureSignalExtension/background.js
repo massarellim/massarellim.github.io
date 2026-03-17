@@ -374,6 +374,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         let existing = state.injected.find(s => {
             if (s.providerId !== request.providerId) return false;
+            
+            // Prevent aggressive deduplication: Only merge if payloads are identical, 
+            // or if one of the payloads hasn't been resolved yet (null/undefined/empty string).
+            let reqPayloadStr = '';
+            try { reqPayloadStr = typeof request.payload === 'object' ? JSON.stringify(request.payload) : String(request.payload || ''); } catch(e) {}
+            
+            let sPayloadStr = '';
+            try { sPayloadStr = typeof s.payload === 'object' ? JSON.stringify(s.payload) : String(s.payload || ''); } catch(e) {}
+            
+            let isReqEmpty = reqPayloadStr === '' || reqPayloadStr === 'null' || reqPayloadStr === 'undefined';
+            let isSEmpty = sPayloadStr === '' || sPayloadStr === 'null' || sPayloadStr === 'undefined';
+            
+            if (!isReqEmpty && !isSEmpty && reqPayloadStr !== sPayloadStr) {
+                return false; // Distinct payloads for the same provider -> keep as separate signals
+            }
+
             let sGroup = 'GAM';
             if (s.sources) {
                 if ((s.sources.hbCache || s.sources.hbConfig) && !s.sources.live && !s.sources.gamCache) sGroup = 'HB';
