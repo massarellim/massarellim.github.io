@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // This eliminates the expensive O(n*m) nested loops and stringify matches.
         function normalizeProvider(name) {
             if (!name) return '';
-            return String(name).replace(/\.pbjs$/, '').replace(/^_+/, '').toLowerCase();
+            return String(name).toLowerCase();
         }
 
         const networkDict = new Map();
@@ -253,26 +253,19 @@ document.addEventListener('DOMContentLoaded', () => {
                       
                       let payloadMatches = stringifiedInjectedPayload === netPayloadStr || 
                                            networkHasError || 
-                                           stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined';
+                                           stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined' ||
+                                           netPayloadStr === '' || netPayloadStr === 'null' || netPayloadStr === 'undefined';
                       
-                      if (injectedHasError && networkHasError) {
-                          if (String(signal.error) === String(match.decodedSignal.error)) {
-                              sentInNetwork = true;
-                              matchedNetworkPayload = match.networkPayload;
-                              match.used = true;
-                              break;
+                      let errMatches = injectedHasError && networkHasError && String(signal.error) === String(match.decodedSignal.error);
+                      
+                      if (errMatches || payloadMatches) {
+                          sentInNetwork = true;
+                          matchedNetworkPayload = match.networkPayload;
+                          match.used = true;
+                          
+                          if (!injectedHasError && networkHasError) {
+                              networkErrorPayload = match.decodedSignal;
                           }
-                      } else if (!injectedHasError && !networkHasError && payloadMatches) {
-                          sentInNetwork = true;
-                          matchedNetworkPayload = match.networkPayload;
-                          match.used = true;
-                          break;
-                      } else if (!injectedHasError && networkHasError) {
-                          // Edge case: Injected was success, but network carried an error
-                          networkErrorPayload = match.decodedSignal;
-                          sentInNetwork = true;
-                          matchedNetworkPayload = match.networkPayload;
-                          match.used = true;
                           break;
                       }
                   } else if (match.rawStr) {
@@ -280,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       let injectedHasError = signal.error !== undefined && signal.error !== null;
                       
                       if (injectedHasError) {
-                          if (match.rawStr.includes(String(signal.error))) {
+                          if (match.rawStr.includes(String(signal.error)) || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'undefined') {
                               sentInNetwork = true;
                               matchedNetworkPayload = match.networkPayload;
                               match.used = true;
