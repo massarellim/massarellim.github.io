@@ -291,37 +291,49 @@
               if (key && key.startsWith('_GESPSK-')) {
                   let value = localStorage.getItem(key);
                   if (value) {
+                      let providerName = key.replace('_GESPSK-', '');
+                      let payloadValue = null;
+                      let errorCode = null;
+
                       try {
                           let parsed = JSON.parse(value);
-                          if (Array.isArray(parsed) && parsed.length >= 2) {
-                              let providerName = String(parsed[0]);
-                              let payloadValue = parsed[1];
-                              let errorCode = null;
-
-                              if (parsed.length > 3) {
-                                  let lastElem = parsed[parsed.length - 1];
-                                  if (Array.isArray(lastElem) && lastElem.length > 0) errorCode = lastElem[0];
-                                  else if (typeof lastElem === 'number') errorCode = lastElem;
-                              }
-
-                              let keyId = 'gespsk_' + providerName;
-                              let payloadStr = typeof payloadValue === 'object' ? JSON.stringify(payloadValue) : String(payloadValue);
-                              let trackedState = payloadStr + '_' + errorCode;
+                          if (Array.isArray(parsed)) {
+                              if (parsed.length > 0) providerName = String(parsed[0]);
+                              if (parsed.length > 1) payloadValue = parsed[1];
                               
-                              if (reportedPrebidKeys.get(keyId) !== trackedState) {
-                                  reportedPrebidKeys.set(keyId, trackedState);
-
-                                  window.postMessage({
-                                     source: 'secure-signal-validator',
-                                     type: 'GAM_CACHE',
-                                     providerId: providerName,
-                                     payload: payloadValue,
-                                     error: typeof errorCode === 'number' ? errorCode : null,
-                                     origin: 'GAM_CACHE'
-                                  }, '*');
+                              if (parsed.length > 2) {
+                                  let lastElem = parsed[parsed.length - 1];
+                                  if (Array.isArray(lastElem) && lastElem.length > 0) {
+                                      errorCode = lastElem[0];
+                                  } else if (typeof lastElem === 'number') {
+                                      errorCode = lastElem;
+                                  }
                               }
+                          } else {
+                              payloadValue = parsed; // Fallback to raw unstructured value
                           }
-                      } catch(e) {}
+                      } catch(e) {
+                          payloadValue = value; // Fallback to pure string
+                      }
+
+                      let keyId = 'gespsk_' + providerName;
+                      let payloadStr = '';
+                      try { payloadStr = typeof payloadValue === 'object' ? JSON.stringify(payloadValue) : String(payloadValue); } catch(e) { payloadStr = String(payloadValue); }
+                      
+                      let trackedState = payloadStr + '_' + String(errorCode);
+                      
+                      if (reportedPrebidKeys.get(keyId) !== trackedState) {
+                          reportedPrebidKeys.set(keyId, trackedState);
+                          
+                          window.postMessage({
+                             source: 'secure-signal-validator',
+                             type: 'GAM_CACHE',
+                             providerId: providerName,
+                             payload: payloadValue,
+                             error: errorCode,
+                             origin: 'GAM_CACHE'
+                          }, '*');
+                      }
                   }
               }
           }
