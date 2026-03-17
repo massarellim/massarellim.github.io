@@ -289,42 +289,35 @@
           for (let i = 0; i < localStorage.length; i++) {
               let key = localStorage.key(i);
               if (key && key.startsWith('_GESPSK-')) {
-                  let providerName = key.replace('_GESPSK-', '');
                   let value = localStorage.getItem(key);
                   if (value) {
                       try {
                           let parsed = JSON.parse(value);
-                          if (Array.isArray(parsed) && parsed.length >= 2) {
+                          if (Array.isArray(parsed) && parsed.length >= 3) {
+                              let providerName = String(parsed[0]);
+                              let payloadValue = parsed[1];
                               let errorCode = null;
-                              if (parsed.length > 8) {
-                                  let errContainer = parsed[9];
-                                  if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
-                                  else if (typeof errContainer === 'number') errorCode = errContainer;
+
+                              if (parsed.length > 3) {
+                                  let lastElem = parsed[parsed.length - 1];
+                                  if (Array.isArray(lastElem) && lastElem.length > 0) errorCode = lastElem[0];
+                                  else if (typeof lastElem === 'number') errorCode = lastElem;
                               }
-                              
+
                               let keyId = 'gespsk_' + providerName;
-                              let payloadStr = JSON.stringify({ p: parsed[1], e: errorCode });
+                              let payloadStr = typeof payloadValue === 'object' ? JSON.stringify(payloadValue) : String(payloadValue);
+                              let trackedState = payloadStr + '_' + errorCode;
                               
-                              if (reportedPrebidKeys.get(keyId) !== payloadStr) {
-                                  reportedPrebidKeys.set(keyId, payloadStr);
-                                  
-                                  // Log the apparent write
-                                  window.postMessage({
-                                      source: 'secure-signal-validator',
-                                      action: 'log_cache_write',
-                                      providerId: providerName,
-                                      error: typeof errorCode === 'number' ? errorCode : null,
-                                      timestamp: Date.now()
-                                  }, '*');
+                              if (reportedPrebidKeys.get(keyId) !== trackedState) {
+                                  reportedPrebidKeys.set(keyId, trackedState);
 
                                   window.postMessage({
                                      source: 'secure-signal-validator',
                                      type: 'GAM_CACHE',
                                      providerId: providerName,
-                                     payload: parsed[1],
+                                     payload: payloadValue,
                                      error: typeof errorCode === 'number' ? errorCode : null,
-                                     origin: 'GAM_CACHE',
-                                     timestamp: Date.now()
+                                     origin: 'GAM_CACHE'
                                   }, '*');
                               }
                           }

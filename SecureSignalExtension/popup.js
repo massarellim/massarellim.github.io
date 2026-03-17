@@ -173,10 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
       resultsEl.classList.remove('hidden');
       resultsEl.dataset.loaded = "true";
       
-      data = data || { injected: [], network: [], cacheWrites: {} };
+      data = data || { injected: [], network: [] };
       const injected = data.injected || [];
       const network = data.network || [];
-      const cacheWrites = data.cacheWrites || {};
       
       document.getElementById('stat-injected').textContent = injected.length;
       

@@ -397,17 +397,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return sGroup === requestGroup;
         });
         
-        // Log event history for debugging popup inspection
-        let timestampStr = new Date().toISOString().split('T')[1].replace('Z', '');
-        let eventLog = `[${timestampStr}] payload:${request.payload ? (typeof request.payload === 'object' ? 'OBJ' : 'STR') : 'NULL'}, err:${request.error}, src:${request.origin}`;
-        
         // Update existing record if found, otherwise create a new one
         if (existing) {
             state.injected = state.injected.filter(s => s === existing || !(s.providerId === request.providerId && ((s.sources?.hbCache && !s.sources?.live && !s.sources?.gamCache ? 'HB' : 'GAM') === requestGroup)));
-            
-            if (!existing.events) existing.events = [];
-            existing.events.push(eventLog);
-            if (existing.events.length > 5) existing.events.shift(); // Keep last 5 events
             
             if (!existing.sources) {
                 existing.sources = { live: existing.origin === 'GAM', gamCache: existing.origin === 'CACHE' || existing.origin === 'GAM_CACHE', hbCache: existing.origin === 'HB_CACHE', hbConfig: existing.origin === 'HB_CONFIG' };
@@ -447,7 +439,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     existing.error = request.error;
                 }
             }
-            existing.timestamp = Math.max(existing.timestamp || 0, request.timestamp || 0);
+
         } else {
             let signalData = {
                 type: request.type,
@@ -455,8 +447,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 payload: request.payload,
                 error: request.error,
                 origin: request.origin,
-                timestamp: request.timestamp,
-                events: [eventLog],
                 sources: {
                     live: request.origin === 'LIVE',
                     gamCache: request.origin === 'GAM_CACHE',
@@ -470,13 +460,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         scheduleFlush(tabId);
     });
 
-  } else if (request.action === 'log_cache_write' && sender.tab) {
-    const tabId = sender.tab.id;
-    ensureTabState(tabId).then(state => {
-        if (!state.cacheWrites) state.cacheWrites = {};
-        state.cacheWrites[request.providerId] = { timestamp: request.timestamp, error: request.error };
-        scheduleFlush(tabId);
-    });
   }
 });
 
@@ -520,9 +503,9 @@ chrome.webRequest.onBeforeRequest.addListener(
           let decoded = decodeBase64UrlSafe(paramValue);
           let assignedAdUnits = adUnitsList.length > 0 ? adUnitsList : ['Unknown AdUnit'];
           if (decoded) {
-             state.network.push({ type: type, rawParams: paramValue, decoded: decoded, adUnits: assignedAdUnits, timestamp: Date.now() });
+             state.network.push({ type: type, rawParams: paramValue, decoded: decoded, adUnits: assignedAdUnits });
           } else {
-             state.network.push({ type: type, rawParams: paramValue, decoded: "Failed to decode Base64: " + paramValue, adUnits: assignedAdUnits, timestamp: Date.now() });
+             state.network.push({ type: type, rawParams: paramValue, decoded: "Failed to decode Base64: " + paramValue, adUnits: assignedAdUnits });
           }
         };
 
