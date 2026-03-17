@@ -191,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. PRE-INDEX NETWORK SIGNALS
         // Build an O(1) lookup dictionary of network payloads keyed by Provider ID
         // This eliminates the expensive O(n*m) nested loops and stringify matches.
+        function normalizeProvider(name) {
+            if (!name) return '';
+            return String(name).replace(/\.pbjs$/, '').replace(/^_+/, '').toLowerCase();
+        }
+
         const networkDict = new Map();
         
         for (const net of network) {
@@ -198,9 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const s of net.decoded) {
                     if (s && s.provider) {
                         // Aggregate multiple network requests for the same provider
-                        let existing = networkDict.get(s.provider) || [];
-                        existing.push({ networkPayload: net, decodedSignal: s });
-                        networkDict.set(s.provider, existing);
+                        let normProvider = normalizeProvider(s.provider);
+                        let existing = networkDict.get(normProvider) || [];
+                        existing.push({ networkPayload: net, decodedSignal: s, used: false, originalProvider: s.provider });
+                        networkDict.set(normProvider, existing);
                     }
                 }
             } else {
@@ -208,9 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const netStr = JSON.stringify(net.decoded);
                 injected.forEach(sig => {
                     if (netStr && netStr.includes('"' + sig.providerId + '"')) {
-                        let existing = networkDict.get(sig.providerId) || [];
-                        existing.push({ networkPayload: net, decodedSignal: net.decoded, rawStr: netStr });
-                        networkDict.set(sig.providerId, existing);
+                        let normProvider = normalizeProvider(sig.providerId);
+                        let existing = networkDict.get(normProvider) || [];
+                        existing.push({ networkPayload: net, decodedSignal: net.decoded, rawStr: netStr, used: false, originalProvider: sig.providerId });
+                        networkDict.set(normProvider, existing);
                     }
                 });
             }
@@ -229,8 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
               stringifiedInjectedPayload = String(signal.payload);
           }
 
-          // Use O(1) lookup
-          const matchingNetworks = networkDict.get(signal.providerId);
+          // Use O(1) lookup with normalized provider ID
+          const normProviderId = normalizeProvider(signal.providerId);
+          const matchingNetworks = networkDict.get(normProviderId);
           
           if (matchingNetworks && matchingNetworks.length > 0) {
               for (const match of matchingNetworks) {
@@ -243,17 +251,20 @@ document.addEventListener('DOMContentLoaded', () => {
                           if (String(signal.error) === String(match.decodedSignal.error)) {
                               sentInNetwork = true;
                               matchedNetworkPayload = match.networkPayload;
+                              match.used = true;
                               break;
                           }
                       } else if (!injectedHasError && !networkHasError) {
                           sentInNetwork = true;
                           matchedNetworkPayload = match.networkPayload;
+                          match.used = true;
                           break;
                       } else if (!injectedHasError && networkHasError) {
                           // Edge case: Injected was success, but network carried an error
                           networkErrorPayload = match.decodedSignal;
                           sentInNetwork = true;
                           matchedNetworkPayload = match.networkPayload;
+                          match.used = true;
                           break;
                       }
                   } else if (match.rawStr) {
@@ -263,11 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
                           if (match.rawStr.includes(String(signal.error))) {
                               sentInNetwork = true;
                               matchedNetworkPayload = match.networkPayload;
+                              match.used = true;
                               break;
                           }
                       } else {
                           sentInNetwork = true; 
                           matchedNetworkPayload = match.networkPayload;
+                          match.used = true;
                           break;
                       }
                   }

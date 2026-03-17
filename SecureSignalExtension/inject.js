@@ -369,10 +369,7 @@
   }
 
 
-  // Exponential Backoff Loop instead of infinite polling
-  let scanCount = 0;
-  const maxScans = 15; // Scan for first ~12-15 seconds of page load max
-  
+  // Continuous polling every 60ms instead of exponential backoff
   function runScheduledScans() {
       // Re-apply array intercepts in case third-party scripts replaced the array object natively
       __sec_sig_monitor();
@@ -381,24 +378,17 @@
       __scan_prebid();
       // Scan localStorage for previously cached signals that didn't trigger the real-time setter
       __scan_gespsk_cache();
-      
-      scanCount++;
-      if (scanCount >= maxScans) return; // Terminate loop
-      
-      // Calculate delay: 100ms, then 200ms, then 400ms... capped at 2000ms
-      let delay = Math.min(100 * Math.pow(1.5, scanCount), 2000);
-      
-      setTimeout(runScheduledScans, delay);
   }
 
-  // Hook into Prebid queue if it exists for instant validation, otherwise start backoff loop
+  // Hook into Prebid queue if it exists for instant validation, otherwise start interval
   if (typeof window.pbjs !== 'undefined' && window.pbjs.que) {
     window.pbjs.que.push(() => {
         runScheduledScans();
+        setInterval(runScheduledScans, 60);
     });
   } else {
-    // Start exponential backoff
-    setTimeout(runScheduledScans, 150);
+    // Start continuous polling
+    setInterval(runScheduledScans, 60);
   }
 
 })();
