@@ -251,10 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
                       let netPayloadStr = '';
                       try { netPayloadStr = typeof match.decodedSignal.payload === 'object' ? JSON.stringify(match.decodedSignal.payload) : String(match.decodedSignal.payload || ''); } catch(e) {}
                       
-                      let payloadMatches = stringifiedInjectedPayload === netPayloadStr || 
-                                           networkHasError || 
-                                           stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined' ||
-                                           netPayloadStr === '' || netPayloadStr === 'null' || netPayloadStr === 'undefined';
+                      let isInjEmpty = stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === 'undefined';
+                      let isNetEmpty = netPayloadStr === '' || netPayloadStr === 'null' || netPayloadStr === 'undefined';
+                      
+                      let payloadMatches = (!isInjEmpty && !isNetEmpty && stringifiedInjectedPayload === netPayloadStr) || 
+                                           (isInjEmpty && isNetEmpty);
                       
                       let errMatches = injectedHasError && networkHasError && String(signal.error) === String(match.decodedSignal.error);
                       
@@ -273,7 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
                       let injectedHasError = signal.error !== undefined && signal.error !== null;
                       
                       if (injectedHasError) {
-                          if (match.rawStr.includes(String(signal.error)) || stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'undefined') {
+                          let isInjEmpty = stringifiedInjectedPayload === 'null' || stringifiedInjectedPayload === '' || stringifiedInjectedPayload === 'undefined';
+                          // For unstructured, only match if it contains the error, OR if we know it's a generic empty payload matching another empty payload 
+                          // (but we can't reliably detect empty unstructured network payloads easily, so we only match if injected is empty AND network string is suspiciously short/empty)
+                          if (match.rawStr.includes(String(signal.error)) || (isInjEmpty && match.rawStr.length < 25)) {
                               sentInNetwork = true;
                               matchedNetworkPayload = match.networkPayload;
                               match.used = true;
@@ -441,12 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="data-value" style="display: flex; justify-content: space-between; align-items: center;">
                  <span>${(function() {
                     let displayValue = signal.payload;
-                    if ((displayValue === null || displayValue === undefined) && matchedNetworkPayload) {
-                        if (Array.isArray(matchedNetworkPayload.decoded)) {
-                             let foundNet = matchedNetworkPayload.decoded.find(s => s && s.provider === signal.providerId);
-                             if (foundNet && foundNet.payload) displayValue = foundNet.payload;
-                        }
-                    }
                     return typeof displayValue === 'string' ? displayValue : (displayValue === null || displayValue === undefined ? 'null' : JSON.stringify(displayValue, null, 2));
                  })()}</span>
                  ${errorBadgeHtml}
