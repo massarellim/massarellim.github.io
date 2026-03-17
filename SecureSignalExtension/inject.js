@@ -293,7 +293,7 @@
                   if (value) {
                       try {
                           let parsed = JSON.parse(value);
-                          if (Array.isArray(parsed) && parsed.length >= 3) {
+                          if (Array.isArray(parsed) && parsed.length >= 2) {
                               let providerName = String(parsed[0]);
                               let payloadValue = parsed[1];
                               let errorCode = null;
