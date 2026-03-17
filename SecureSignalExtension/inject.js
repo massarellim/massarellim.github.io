@@ -301,7 +301,7 @@
                               if (parsed.length > 0) providerName = String(parsed[0]);
                               if (parsed.length > 1) payloadValue = parsed[1];
                               
-                              if (parsed.length > 2) {
+                              if (parsed.length > 3) {
                                   let lastElem = parsed[parsed.length - 1];
                                   if (Array.isArray(lastElem) && lastElem.length > 0) {
                                       errorCode = lastElem[0];
@@ -352,12 +352,10 @@
       __scan_gespsk_cache();
   }
 
-  let scanInterval = 50;
-  const MAX_INTERVAL = 2500;
+  let scanInterval = 60;
   
   function scheduleNextScan() {
       runScheduledScans();
-      scanInterval = Math.min(scanInterval * 1.5, MAX_INTERVAL);
       setTimeout(scheduleNextScan, scanInterval);
   }
 
