@@ -133,48 +133,6 @@
     }
   }
 
-  // Real-time Storage hook to synchronously catch exact GAM cache writes
-  // This completely eliminates the need for CPU-heavy polling of localStorage.
-  const originalSetItem = Storage.prototype.setItem;
-  Storage.prototype.setItem = function(key, value) {
-    try {
-        if (key && key.startsWith('_GESPSK-')) {
-            let providerName = key.replace('_GESPSK-', '');
-            // GAM stores complex JSON structures: typically [provName, payload, ts, ... error]
-            let parsed = JSON.parse(value);
-            if (Array.isArray(parsed) && parsed.length >= 2) {
-               let errorCode = null;
-               // Error code is typically deeply nested in the 9th index container
-               if (parsed.length > 8) {
-                   let errContainer = parsed[9];
-                   if (Array.isArray(errContainer) && errContainer.length > 0) errorCode = errContainer[0];
-                   else if (typeof errContainer === 'number') errorCode = errContainer;
-               }
-               // Log the write exactly when it happens
-               window.postMessage({
-                   source: 'secure-signal-validator',
-                   action: 'log_cache_write',
-                   providerId: providerName,
-                   error: typeof errorCode === 'number' ? errorCode : null,
-                   timestamp: Date.now()
-               }, '*');
-               
-               // Treat the cache write as a definitive signal update
-               window.postMessage({
-                 source: 'secure-signal-validator',
-                 type: 'GAM_CACHE',
-                 providerId: providerName,
-                 payload: parsed[1],
-                 error: typeof errorCode === 'number' ? errorCode : null,
-                 origin: 'GAM_CACHE',
-                 timestamp: Date.now()
-               }, '*');
-            }
-        }
-    } catch(e) {}
-    return originalSetItem.apply(this, arguments);
-  };
-
 
   const reportedPrebidKeys = new Map();
   // Standard mappings for translating prebid config keys to normalized module/publisher names
@@ -324,8 +282,7 @@
 
 
   /**
-   * Scans localStorage for existing encrypted signals that were cached in previous sessions.
-   * This is necessary because the Storage.prototype.setItem proxy only catches new writes.
+   * Scans localStorage for existing encrypted signals that were cached.
    */
   function __scan_gespsk_cache() {
       try {
@@ -350,6 +307,16 @@
                               
                               if (reportedPrebidKeys.get(keyId) !== payloadStr) {
                                   reportedPrebidKeys.set(keyId, payloadStr);
+                                  
+                                  // Log the apparent write
+                                  window.postMessage({
+                                      source: 'secure-signal-validator',
+                                      action: 'log_cache_write',
+                                      providerId: providerName,
+                                      error: typeof errorCode === 'number' ? errorCode : null,
+                                      timestamp: Date.now()
+                                  }, '*');
+
                                   window.postMessage({
                                      source: 'secure-signal-validator',
                                      type: 'GAM_CACHE',
@@ -380,15 +347,23 @@
       __scan_gespsk_cache();
   }
 
-  // Hook into Prebid queue if it exists for instant validation, otherwise start interval
+  let scanInterval = 50;
+  const MAX_INTERVAL = 2500;
+  
+  function scheduleNextScan() {
+      runScheduledScans();
+      scanInterval = Math.min(scanInterval * 1.5, MAX_INTERVAL);
+      setTimeout(scheduleNextScan, scanInterval);
+  }
+
+  // Hook into Prebid queue if it exists for instant validation, otherwise start polling
   if (typeof window.pbjs !== 'undefined' && window.pbjs.que) {
     window.pbjs.que.push(() => {
-        runScheduledScans();
-        setInterval(runScheduledScans, 60);
+        scheduleNextScan();
     });
   } else {
-    // Start continuous polling
-    setInterval(runScheduledScans, 60);
+    // Start polling with exponential backoff
+    scheduleNextScan();
   }
 
 })();
