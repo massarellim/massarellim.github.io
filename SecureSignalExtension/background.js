@@ -339,15 +339,25 @@ function scheduleFlush(tabId) {
 /**
  * Initializes state if it doesn't exist, either from RAM or pulling from Storage on first touch
  */
+// To avoid race conditions where concurrent `log_injected_signal` events 
+// overwrite state while waiting for Chrome storage, we track pending promises.
+let pendingStateFetches = {};
+
 async function ensureTabState(tabId) {
     if (!tabStateCache[tabId]) {
-        try {
+        if (!pendingStateFetches[tabId]) {
             const key = `tab_${tabId}`;
-            const res = await chrome.storage.local.get([key]);
-            tabStateCache[tabId] = res[key] || { injected: [], network: [], cacheWrites: {} };
-        } catch(e) {
-            tabStateCache[tabId] = { injected: [], network: [], cacheWrites: {} };
+            pendingStateFetches[tabId] = chrome.storage.local.get([key]).then(res => {
+                if (res[key]) {
+                    tabStateCache[tabId] = res[key];
+                } else {
+                    tabStateCache[tabId] = { injected: [], network: [] };
+                }
+                delete pendingStateFetches[tabId];
+                return tabStateCache[tabId];
+            });
         }
+        return await pendingStateFetches[tabId];
     }
     return tabStateCache[tabId];
 }
