@@ -346,3 +346,61 @@ body {
   from { top: -60px; opacity: 0; }
   to { top: 24px; opacity: 1; }
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-close-modal {
+  background: #eee; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer;
+}
+
+.modifiers-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+.modifier-btn {
+  padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; background: white; font-weight: bold; cursor: pointer;
+}
+
+.modifier-btn.active {
+  border-color: var(--primary-color); background: rgba(255, 94, 58, 0.1); color: var(--primary-color);
+}
+
+.cart-item-modifiers {
+  color: var(--primary-color); font-size: 0.85rem; font-weight: 600; margin-top: 4px; line-height: 1.2;
+}
+
+.cart-item-actions {
+  display: flex; gap: 10px; margin-top: 8px;
+}
+
+.btn-text {
+  background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 0.85rem; font-weight: bold; padding: 0;
+}
+
+.btn-text.danger {
+  color: #e74c3c;
+}
