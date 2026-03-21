@@ -4,12 +4,26 @@
  * Qui simuliamo la creazione del payload XML per la stampante.
  */
 
-export async function printFiscalReceiptCustom({ orderItems, total, paymentType }) {
+export async function printFiscalReceiptCustom({ orderItems, total, paymentType, customer }) {
   console.log('--- EMISSIONE SCONTRINO FISCALE CUSTOM K3 ---');
   console.log(`Totale: ${total.toFixed(2)}€ | Pagamento in: ${paymentType}`);
+  if (customer) {
+    console.log(`Intestatario: ${customer.name}`);
+  }
 
   // Esempio di Payload XML da inviare alla stampante (il tracciato varia in base al firmware)
   // Per l'implementazione reale, di solito si effettua un POST HTTP sulla porta della K3.
+  
+  let customerXml = '';
+  if (customer) {
+    customerXml += `
+    <printRecMessageText>Cliente: ${customer.name}</printRecMessageText>`;
+    if (customer.phone) customerXml += `
+    <printRecMessageText>Tel: ${customer.phone}</printRecMessageText>`;
+    if (customer.address) customerXml += `
+    <printRecMessageText>Indirizzo: ${customer.address}</printRecMessageText>`;
+  }
+
   let itemsXml = orderItems.map(item => `
     <printRecItem>
       <description>${item.name}</description>
@@ -22,6 +36,7 @@ export async function printFiscalReceiptCustom({ orderItems, total, paymentType 
   let xmlDoc = `<?xml version="1.0" encoding="utf-8"?>
 <printer>
   <printRecMessage>
+    ${customerXml}
     ${itemsXml}
     <printRecTotal>
       <description>Totale</description>

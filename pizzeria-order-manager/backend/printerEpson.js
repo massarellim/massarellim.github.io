@@ -6,11 +6,16 @@ import escposNetwork from 'escpos-network';
 escpos.USB = escposUsb;
 escpos.Network = escposNetwork;
 
-export async function printOrderEpson({ orderItems, orderId, table, notes }) {
+export async function printOrderEpson({ orderItems, orderId, table, notes, customer }) {
   // Simulazione/Placeholder per il collegamento alla stampante Epson.
   // Devi configurare se usi USB (new escpos.USB()) o LAN (new escpos.Network('192.168.1.X'))
   console.log('--- STAMPA EPSON IN CORSO ---');
   console.log(`Ordine #${orderId} - Tavolo: ${table}`);
+  if (customer) {
+    console.log(`Cliente: ${customer.name}`);
+    if (customer.phone) console.log(`Tel: ${customer.phone}`);
+    if (customer.address) console.log(`Indirizzo: ${customer.address}`);
+  }
   orderItems.forEach(item => {
     console.log(`- ${item.quantity}x ${item.name} `);
   });

@@ -9,10 +9,12 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "express": "^4.19.0",
     "cors": "^2.8.5",
     "escpos": "^3.0.0-alpha.6",
+    "escpos-network": "^3.0.0-alpha.5",
     "escpos-usb": "^3.0.0-alpha.4",
-    "escpos-network": "^3.0.0-alpha.5"
+    "express": "^4.19.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
   }
 }
