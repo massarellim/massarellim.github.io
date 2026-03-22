@@ -1,0 +1,1522 @@
+diff --git a/pizzeria-order-manager/frontend/src/App.jsx b/pizzeria-order-manager/frontend/src/App.jsx
+index cda4b87..5684dd1 100644
+--- a/pizzeria-order-manager/frontend/src/App.jsx
++++ b/pizzeria-order-manager/frontend/src/App.jsx
+@@ -1,145 +1,201 @@
+-import React, { useState, useEffect } from 'react';
++import React, { useState, useEffect, useRef } from 'react';
+ import './App.css';
++import Logo from './assets/logo.svg';
++
++const IconEdit = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
++const IconTrash = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
++const IconReceipt = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1Z"></path><path d="M16 14h-6"></path><path d="M16 10h-8"></path><path d="M16 18h-8"></path></svg>;
++const IconMoney = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>;
++const IconPOS = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>;
++const IconMotorcycle = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 16A3 3 0 1 0 5 22 3 3 0 1 0 5 16zM19 16A3 3 0 1 0 19 22 3 3 0 1 0 19 16zM15 6.5A2.5 2.5 0 0 0 12.5 9v3L17 12l2 4M9 12H5l1-5h4M5 16H2M19 16h3M12 12V3h2v4l5 3"></path></svg>;
++const IconBag = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>;
++const IconTable = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 13h18"></path><path d="M4 13v6"></path><path d="M20 13v6"></path><path d="M8 13v6"></path><path d="M16 13v6"></path><path d="M6 9h12a2 2 0 0 0 0-4H6a2 2 0 0 0 0 4z"></path></svg>;
++const IconPizza = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.2 5.8a1.5 1.5 0 0 0-2.4 0L12 14.6 5.2 5.8A1.5 1.5 0 0 0 2.8 5.8 14 14 0 0 0 12 21a14 14 0 0 0 9.2-15.2z"></path><path d="m14 11 .5.5"></path><path d="m10 8.5.5.5"></path><path d="m13 7.5.5.5"></path></svg>;
++const IconPlus = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
++const IconMinus = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
++const IconDollar = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
++const IconTruck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>;
++const IconMoto = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 7c0-1.1-.9-2-2-2h-3v2h3v2.65L13.52 14H10V9H6c-2.21 0-4 1.79-4 4v3h2c0 1.66 1.34 3 3 3s3-1.34 3-3h4.48L19 10.35V7zM7 17c-.55 0-1-.45-1-1h2c0 .55-.45 1-1 1z"/><path d="M5 6h5v2H5zM19 13c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>;
+ 
+ const MENU_ITEMS = [
+-  // Pizze Classiche
+-  { id: 100, name: 'Margherita', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella'] },
+-  { id: 101, name: 'Marinara', price: 4.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Aglio', 'Olio', 'Origano'] },
+-  { id: 102, name: 'Pomodoro', price: 4.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Olio', 'Origano'] },
+-  { id: 103, name: 'Napoli', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Origano'] },
+-  { id: 104, name: 'Romana', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Capperi', 'Origano'] },
+-  { id: 105, name: 'Siciliana', price: 6.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Capperi', 'Olive', 'Origano'] },
+-  { id: 106, name: 'Pugliese', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Cipolla'] },
+-  { id: 107, name: 'Olive', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Olive'] },
+-  { id: 108, name: 'Funghi', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Funghi'] },
+-  { id: 109, name: 'Porcini', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Porcini'] },
+-  { id: 110, name: 'Pomodorini', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pomodorini'] },
+-  { id: 111, name: 'Verd. Grigliate', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Verdure Grigliate'] },
+-  { id: 112, name: 'Parmigiana', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Melanzane', 'Grana'] },
+-  { id: 1122, name: 'Wurstel', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Wurstel'] },
+-  
+-  // Salumi e Carni
+-  { id: 113, name: 'Prosciutto', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto'] },
+-  { id: 114, name: 'Prosc. e Funghi', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Funghi'] },
+-  { id: 115, name: 'Prosc. e Carciofi', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Carciofi'] },
+-  { id: 116, name: 'Salamino Piccante', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salamino Piccante'] },
+-  { id: 117, name: 'Salsiccia', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia'] },
+-  { id: 119, name: 'Speck', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck'] },
+-  { id: 120, name: 'Crudo', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma'] },
+-  { id: 121, name: 'Bresaola', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola'] },
+-  
+-  // Affettati Speciali
+-  { id: 122, name: 'Crudo e Grana', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Grana'] },
+-  { id: 123, name: 'Crudo e Rucola', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Rucola'] },
+-  { id: 124, name: 'Crudo, gr. e ruc.', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Grana', 'Rucola'] },
+-  { id: 125, name: 'Bresaola e Brie', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Brie'] },
+-  { id: 126, name: 'Bresaola e Grana', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Grana'] },
+-  { id: 1266, name: 'Bresa., gr., ruc', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Grana', 'Rucola'] },
+-  { id: 127, name: 'Speck e Brie', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Brie'] },
+-  { id: 128, name: 'Grana e Rucola', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Grana', 'Rucola'] },
+-  { id: 1281, name: 'Crudo e Panna', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Panna'] },
+-  { id: 1282, name: 'Crudo e Porcini', price: 9.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Porcini'] },
+-  { id: 1283, name: 'Speck e Panna', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Panna'] },
+-  { id: 1284, name: 'Speck e Porcini', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Porcini'] },
+-  { id: 1285, name: 'Speck, porc, ruc', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Porcini', 'Rucola'] },
+-  
+-  // Formaggi
+-  { id: 129, name: 'Zola', price: 6.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Zola'] },
+-  { id: 130, name: 'Zola e Noci', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Zola', 'Noci'] },
+-  { id: 131, name: 'Caprese', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella di Bufala', 'Pomodorini', 'Basilico'] },
+-  
+-  // Pesce
+-  { id: 132, name: 'Tonno', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno'] },
+-  { id: 133, name: 'Tonno e Cipolle', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno', 'Cipolla'] },
+-  { id: 134, name: 'Frutti di mare', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Frutti di Mare'] },
+-  { id: 135, name: 'Gamberetti', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gamberetti'] },
+-  { id: 1355, name: 'Gamberetti e Panna', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gamberetti', 'Panna'] },
+-  { id: 1356, name: 'Gamber. e Zucchine', price: 9.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gamberetti', 'Zucchine'] },
+-  { id: 136, name: 'Mari e Monti', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Frutti di Mare', 'Porcini'] },
+-
+-  // Speciali / Gourmet
+-  { id: 137, name: 'Affumicata', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Provola Affumicata', 'Speck'] },
+-  { id: 138, name: 'Boscaiola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Porcini', 'Grana'] },
+-  { id: 139, name: 'Carpaccio', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Rucola', 'Grana'] },
+-  { id: 140, name: 'Gustosa', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Patatine Fritte'] },
+-  { id: 141, name: 'Enjoy', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Zucchine', 'Salmone', 'Panna'] },
+-  { id: 142, name: 'Tricolore', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella di Bufala', 'Pomodorini', 'Basilico'] },
+-  { id: 143, name: 'Saporita', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Cipolla', 'Zola'] },
+-  { id: 144, name: 'Tedesca', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Salamino', 'Wurstel'] },
+-  { id: 145, name: 'Briscola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta', 'Melanzane', 'Zola', 'Grana'] },
+-  { id: 146, name: 'Zucchinella', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo di Parma', 'Zucchine', 'Provola'] },
+-  { id: 147, name: 'Adige', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Zola'] },
+-  { id: 148, name: 'Contadina', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Asiago'] },
+-  { id: 149, name: 'Giudea', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Carciofi', 'Acciughe', 'Grana'] },
+-  { id: 150, name: 'Pizza Pazza', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Provola Aff.', 'Salame Nostrano'] },
+-  { id: 151, name: 'Top', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta', 'Trevisana', 'Zola'] },
+-  { id: 152, name: 'Blitz', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Trevisana', 'Provola'] },
+-  { id: 153, name: 'Crazy', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Trevisana', 'Zola', 'Grana'] },
+-  { id: 154, name: 'Appetitosa', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta', 'Provola', 'Pomodorini'] },
+-  { id: 155, name: 'Pancetta Paradise', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta', 'Cipolla'] },
+-  { id: 156, name: 'Montana', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta', 'Porcini', 'Grana'] },
+-  { id: 157, name: 'Veneta', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salamino', 'Peperoni Grigliati'] },
+-  { id: 158, name: 'Italia', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Salamino', 'Bufala'] },
+-  { id: 159, name: 'Svizzera', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno', 'Wurstel', 'Olive'] },
+-  { id: 160, name: 'Profumata', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Crudo', 'Pomodorini', 'Rucola'] },
+-
+-  // Bevande e Dolci (Mantenuti dal mock per testabilità)
+-  { id: 6, name: 'Coca Cola', price: 3.00, category: 'bevande', icon: '🥤' },
+-  { id: 7, name: 'Birra Media', price: 5.00, category: 'bevande', icon: '🍺' },
+-  { id: 8, name: 'Acqua Naturale', price: 2.00, category: 'bevande', icon: '💧' },
+-  { id: 9, name: 'Tiramisù', price: 5.00, category: 'dolci', icon: '🍰' },
+-  { id: 10, name: 'Panna Cotta', price: 4.50, category: 'dolci', icon: '🍮' },
++{ id: 100, name: 'Calzone Liscio', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Prosciutto Cotto', 'Sale', 'Olio', 'Pomodoro'] },
++  { id: 101, name: 'Calzone ai Formaggi', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Fontina', 'Emmenthal', 'Grana', 'Pomodoro'] },
++  { id: 102, name: 'Calzone Delicato', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Pomodorini', 'Brie', 'Prosciutto Crudo', 'Rucola', 'Pomodoro'] },
++  { id: 103, name: 'Calzone Farcito', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Prosciutto Cotto', 'Funghi', 'Carciofi', 'Pomodoro'] },
++  { id: 104, name: 'Focaccia Liscia', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Olio', 'Sale', 'Rosmarino'] },
++  { id: 105, name: 'Focaccia Cotto e Formaggio', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Prosciutto Cotto', 'Emmenthal', 'Olio', 'Sale'] },
++  { id: 106, name: 'Focaccia alle Verdure', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Melanzane', 'Zucchine', 'Peperoni', 'Sale', 'Olio'] },
++  { id: 107, name: 'Focaccia Mediterranea', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodorini', 'Olive', 'Acciughe', 'Origano', 'Sale', 'Olio'] },
++  { id: 108, name: 'Focaccia Greca', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodorini', 'Origano', 'Sale', 'Olio'] },
++  { id: 109, name: 'Margherita', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella'] },
++  { id: 110, name: 'Americana', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'W\u00fcrstel', 'Patatine'] },
++  { id: 111, name: 'Bianca', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Origano', 'Olio', 'Sale'] },
++  { id: 112, name: 'Bufala', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Bufala'] },
++  { id: 113, name: 'Capricciosa', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Funghi', 'Carciofi', 'Olive', 'Acciughe', 'Origano'] },
++  { id: 114, name: 'Diavola', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salame Piccante', 'Peperoncino'] },
++  { id: 115, name: 'Quattro Formaggi', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Grana', 'Emmenthal', 'Fontina'] },
++  { id: 116, name: 'Quattro Stagioni', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Funghi', 'Carciofi', 'Olive'] },
++  { id: 117, name: 'Frutti di Mare', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Frutti di Mare', 'Olio', 'Sale', 'Origano'] },
++  { id: 118, name: 'Gamberetti', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Mazzancolle', 'Olio', 'Sale'] },
++  { id: 119, name: 'Gamberetti e Rucola', price: 9.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Mazzancolle', 'Olio', 'Sale', 'Rucola'] },
++  { id: 120, name: 'Gamberetti e Panna', price: 9.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Mazzancolle', 'Panna', 'Olio', 'Sale'] },
++  { id: 121, name: 'Gamberetti e Zucchine', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Mazzancolle', 'Zucchine', 'Olio', 'Sale'] },
++  { id: 122, name: 'Adige', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Spinaci', 'Taleggio, Speck'] },
++  { id: 123, name: 'Affumicata', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Provola Affumicata', 'Speck'] },
++  { id: 124, name: 'Boscaiola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Porcini', 'Grana'] },
++  { id: 125, name: 'Caprese', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Bufala', 'Pomodorini', 'Basilico', 'Olio', 'Sale'] },
++  { id: 126, name: 'Carpaccio', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Grana', 'Rucola'] },
++  { id: 127, name: 'Contadina', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Taleggio'] },
++  { id: 128, name: 'Giudea', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Carciofi', 'Acciughe', 'Grana'] },
++  { id: 129, name: 'Gustosa', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Patatine'] },
++  { id: 130, name: 'Enjoy', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Zucchine', 'Panna', 'Salmone'] },
++  { id: 131, name: 'Parmigiana', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Melanzane', 'Grana'] },
++  { id: 132, name: 'Pizza Pazza', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Provola Affumicata', 'Salame Dolce'] },
++  { id: 133, name: 'Funghi', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Funghi'] },
++  { id: 134, name: 'Grana e Rucola', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Grana', 'Rucola'] },
++  { id: 135, name: 'Marinara', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Doppio Pomodoro', 'Aglio', 'Olio', 'Origano'] },
++  { id: 136, name: 'Olive', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Olive'] },
++  { id: 137, name: 'Pomodoro', price: 5.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Olio', 'Origano'] },
++  { id: 138, name: 'Porcini', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Porcini'] },
++  { id: 139, name: 'Pomodorini', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pomodorini'] },
++  { id: 140, name: 'Prosciutto', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto'] },
++  { id: 141, name: 'Prosciutto e Funghi', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Funghi'] },
++  { id: 142, name: 'Pugliese', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Cipolla Tropea', 'Origano'] },
++  { id: 143, name: 'Romana', price: 7.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Capperi', 'Origano'] },
++  { id: 144, name: 'Salamino Piccante', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salame Piccante'] },
++  { id: 145, name: 'Salsiccia', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia'] },
++  { id: 146, name: 'Siciliana', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Capperi', 'Olive', 'Origano'] },
++  { id: 147, name: 'Verdure Grigliate', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Melanzane', 'Zucchine', 'Peperoni'] },
++  { id: 148, name: 'Würstel', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'W\u00fcrstel'] },
++  { id: 149, name: 'Zola', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gorgonzola'] },
++  { id: 150, name: 'Zola e Noci', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gorgonzola', 'Noci'] },
++  { id: 151, name: 'Profumata', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Gorgonzola', 'Aglio', 'Cipolla Tropea', 'Grana'] },
++  { id: 152, name: 'Saporita', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno All', ','] },
++  { id: 153, name: 'Svizzera', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Cipolla Tropea', 'Grana'] },
++  { id: 154, name: 'Tricolore', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Bufala', 'Pomodorini', 'Basilico'] },
++  { id: 155, name: 'Italia', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pomodorini', 'Grana', 'Rucola'] },
++  { id: 156, name: 'Tedesca', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Salame Piccante', 'W\u00fcrstel', 'Salsiccia'] },
++  { id: 157, name: 'Veneta', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salame Piccante', 'Olive', 'Peperoni'] },
++  { id: 158, name: 'Zucchinella', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Cotto', 'Zucchine', 'Provola Affumicata'] },
++  { id: 159, name: 'Pancetta Paradise', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta Aff.', 'Provola Affumicata', 'Cipolla Tropea'] },
++  { id: 160, name: 'Appetitosa', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta Aff.', 'Provola Affumicata', 'Pomodorini'] },
++  { id: 161, name: 'Briscola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta Aff.', 'Melanzane', 'Gorgonzola', 'Grana'] },
++  { id: 162, name: 'Mari e Monti', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Frutti di Mare', 'Porcini', 'Olio', 'Sale', 'Origano'] },
++  { id: 163, name: 'Tonno', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno All'] },
++  { id: 164, name: 'Tonno e Cipolle', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Tonno All', ','] },
++  { id: 165, name: 'Bresaola', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola'] },
++  { id: 166, name: 'Bresaola e Brie', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Brie'] },
++  { id: 167, name: 'Bresaola e Grana', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Grana'] },
++  { id: 168, name: 'Bresaola, Grana e Rucola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Bresaola', 'Grana', 'Rucola'] },
++  { id: 169, name: 'Crudo', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo'] },
++  { id: 170, name: 'Crudo e Grana', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Grana'] },
++  { id: 171, name: 'Crudo e Rucola', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Rucola'] },
++  { id: 172, name: 'Crudo, Grana e Rucola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Grana', 'Rucola'] },
++  { id: 173, name: 'Crudo e Panna', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Panna'] },
++  { id: 174, name: 'Crudo e Porcini', price: 9.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Prosciutto Crudo', 'Porcini'] },
++  { id: 175, name: 'Speck', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck'] },
++  { id: 176, name: 'Speck e Brie', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Brie'] },
++  { id: 177, name: 'Speck e Zola', price: 9.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Gorgonzola'] },
++  { id: 178, name: 'Speck e Panna', price: 8.50, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Panna'] },
++  { id: 179, name: 'Speck e Porcini', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Porcini'] },
++  { id: 180, name: 'Speck, Porcini e Rucola', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Speck', 'Porcini', 'Rucola'] },
++  { id: 181, name: 'Salame', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salame Dolce'] },
++  { id: 182, name: 'Montanara', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta Aff.', 'Porcini', 'Grana'] },
++  { id: 183, name: 'Napoli', price: 7.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Acciughe', 'Origano'] },
++  { id: 184, name: 'Crazy', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Salsiccia', 'Trevisana', 'Provola Affumicata'] },
++  { id: 185, name: 'Blitz', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Pomodoro', 'Mozzarella', 'Pancetta Aff.', 'Trevisana', 'Taleggio'] },
++  { id: 186, name: 'Top', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Pancetta Aff.', 'Trevisana', 'Gorgonzola'] },
++  { id: 187, name: 'Sweet Onion', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Pomodoro', 'Pancetta Aff.', 'Cipolla Caramellata', 'Grana'] },
++  { id: 188, name: 'Friarielli e Salsiccia', price: 8.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella', 'Friarielli', 'Salsiccia'] },
++  { id: 189, name: 'Friarielli Boom!', price: 10.00, category: 'pizze', icon: '🍕', ingredients: ['Mozzarella E Friarielli', 'Salsiccia', 'Provola Affumicata'] },
++  { id: 190, name: 'Coca Cola 33 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 191, name: 'Coca Cola Zero 33 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 192, name: 'Fanta 33 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 193, name: 'Sprite 33 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 194, name: 'Thè Limone 40 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 195, name: 'Thè Pesca 40 Cl', price: 2.00, category: 'bevande', icon: '🥤' },
++  { id: 196, name: 'Acqua Naturale 0,50 L', price: 1.50, category: 'bevande', icon: '🥤' },
++  { id: 197, name: 'Acqua Frizzante 0,50 L', price: 1.50, category: 'bevande', icon: '🥤' },
++  { id: 198, name: 'Moretti 66 Cl', price: 4.00, category: 'bevande', icon: '🥤' },
++  { id: 199, name: 'Ceres 33 Cl', price: 3.50, category: 'bevande', icon: '🥤' },
++  { id: 200, name: 'Menabrea 33 Cl', price: 3.50, category: 'bevande', icon: '🥤' },
++  { id: 201, name: 'Ichnusa 33 Cl', price: 3.00, category: 'bevande', icon: '🥤' },
++  { id: 202, name: 'Moretti 33 Cl', price: 3.00, category: 'bevande', icon: '🥤' },
++  { id: 203, name: 'Patatine Fritte Porz. Da 300g', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 204, name: 'Crocchette di Patate (6pz)', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 205, name: 'Crocchette di Pollo (6pz)', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 206, name: 'Olive all\'ascolana (6pz)', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 207, name: 'Mozzarelline Panate (6pz)', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 208, name: 'Triangolini di Rösti (3pz)', price: 4.00, category: 'fritture', icon: '🍟' },
++  { id: 209, name: 'Mix di Fritti (8pz)', price: 5.00, category: 'fritture', icon: '🍟' },
++  { id: 210, name: 'Tiramisù', price: 5.00, category: 'dolci', icon: '🍰' },
++  { id: 211, name: 'Tre Cioccolati', price: 5.00, category: 'dolci', icon: '🍰' },
+ ];
+ 
+-const CATEGORIES = [
+-  { id: 'tutte', label: 'Tutto' },
++const CATEGORIES_MENU = [
+   { id: 'pizze', label: 'Pizze' },
+   { id: 'bevande', label: 'Bevande' },
++  { id: 'fritture', label: 'Fritture' },
+   { id: 'dolci', label: 'Dolci' },
+-  { id: 'clienti', label: '👥 Clienti' },
++];
++
++const CATEGORIES_BACKOFFICE = [
++  { id: 'ordini', label: 'Riepilogo Ordini' },
++  { id: 'clienti', label: 'Gestione Clienti' },
+ ];
+ 
+ const INGREDIENT_MODIFIERS = [
+-  // Aggiunte +2€
+-  { label: '+ Crudo Parma (+2€)', value: '+ Crudo Parma', price: 2.0 },
+-  { label: '+ Speck (+2€)', value: '+ Speck i.g.p.', price: 2.0 },
+-  { label: '+ Bresaola (+2€)', value: '+ Bresaola', price: 2.0 },
+-  { label: '+ Noci (+2€)', value: '+ Noci', price: 2.0 },
+-  { label: '+ Porcini (+2€)', value: '+ Funghi porcini', price: 2.0 },
+-  { label: '+ Bufala DOP (+2€)', value: '+ Mozzarella Bufala DOP', price: 2.0 },
+-  { label: '+ Frutti di Mare (+2€)', value: '+ Frutti di Mare', price: 2.0 },
+-  { label: '+ Gamberetti (+2€)', value: '+ Mazzancolle', price: 2.0 },
+-  { label: '+ Salmone (+2€)', value: '+ Salmone affumicato', price: 2.0 },
+-  
+-  // Aggiunte +1.5€
+-  { label: '+ Grana DOP (+1.5€)', value: '+ Grana Padano DOP', price: 1.5 },
+-  { label: '+ Tonno (+1.5€)', value: '+ Tonno', price: 1.5 },
+-  { label: '+ Salame nost. (+1.5€)', value: '+ Salame nostrano', price: 1.5 },
+-  { label: '+ Provolone (+1.5€)', value: '+ Provolone aff.', price: 1.5 },
+-  { label: '+ Verd. Grigliate (+1.5€)', value: '+ Verdure grigliate', price: 1.5 },
+-  { label: '+ Pancetta (+1.5€)', value: '+ Pancetta affumicata', price: 1.5 },
+-  { label: '+ Pomodorini (+1.5€)', value: '+ Pomodorini', price: 1.5 },
+-  { label: '+ Friarielli (+1.5€)', value: '+ Trevisana/Friarielli', price: 1.5 },
+-  
+-  // Aggiunte +1€
+-  { label: '+ Altro Ingr. (+1€)', value: '+ Altro (Tutto il resto)', price: 1.0 },
+-
+-  // Aggiunte +0.5€
+-  { label: '+ Pomodoro (+0.5€)', value: '+ Pomodoro', price: 0.5 },
+-  { label: '+ Mozzarella (+0.5€)', value: '+ Mozzarella extra', price: 0.5 },
+-  { label: '+ Capperi (+0.5€)', value: '+ Capperi', price: 0.5 },
+-  { label: '+ Panna (+0.5€)', value: '+ Panna', price: 0.5 },
+-  { label: '+ Rucola (+0.5€)', value: '+ Rucola', price: 0.5 },
+-  { label: '+ Salse (+0.5€)', value: '+ Maionese/Ketchup', price: 0.5 },
+-
+-  // Speciali
+-  { label: 'Impasto Integrale (+1€)', value: 'Farina integrale', price: 1.0 },
+-  { label: 'Senza Lattosio (+1.5€)', value: 'Mozzarella Senza Lattosio', price: 1.5 },
+-  { label: 'BIG PIZZA (+2€)', value: 'BIG PIZZA', price: 2.0 },
+-  { label: 'In vaschetta (+0.5€)', value: 'Aggiunte in vaschetta', price: 0.5 },
+-
+-  // Cottura
+-  { label: 'Ben Cotta', value: 'Ben cotta', price: 0 },
++  { label: 'Acciughe (+1.00€)', value: 'Acciughe', price: 1.0 },
++  { label: 'Bresaola (+2.00€)', value: 'Bresaola', price: 2.0 },
++  { label: 'Brie (+1.00€)', value: 'Brie', price: 1.0 },
++  { label: 'Bufala (+2.00€)', value: 'Mozzarella di Bufala', price: 2.0 },
++  { label: 'Capperi (+0.50€)', value: 'Capperi', price: 0.5 },
++  { label: 'Carciofini (+1.00€)', value: 'Carciofini', price: 1.0 },
++  { label: 'Cipolla (+0.50€)', value: 'Cipolla', price: 0.5 },
++  { label: 'Crudo (+2.00€)', value: 'Prosciutto Crudo', price: 2.0 },
++  { label: 'Emmenthal (+1.00€)', value: 'Emmenthal', price: 1.0 },
++  { label: 'Fontina (+1.00€)', value: 'Fontina', price: 1.0 },
++  { label: 'Friarielli (+1.50€)', value: 'Friarielli', price: 1.5 },
++  { label: 'Frutti di Mare (+2.50€)', value: 'Frutti di Mare', price: 2.5 },
++  { label: 'Funghi (+1.00€)', value: 'Funghi', price: 1.0 },
++  { label: 'Gorgonzola (+1.00€)', value: 'Gorgonzola', price: 1.0 },
++  { label: 'Grana (+1.50€)', value: 'Grana', price: 1.5 },
++  { label: 'Mazzancolle (+2.00€)', value: 'Mazzancolle', price: 2.0 },
++  { label: 'Melanzane (+1.00€)', value: 'Melanzane', price: 1.0 },
++  { label: 'Mozzarella (+1.00€)', value: 'Mozzarella', price: 1.0 },
++  { label: 'Noci (+1.00€)', value: 'Noci', price: 1.0 },
++  { label: 'Olive (+1.00€)', value: 'Olive', price: 1.0 },
++  { label: 'Pancetta (+1.50€)', value: 'Pancetta', price: 1.5 },
++  { label: 'Panna (+1.00€)', value: 'Panna', price: 1.0 },
++  { label: 'Patatine (+1.50€)', value: 'Patatine', price: 1.5 },
++  { label: 'Peperoncino (+0.50€)', value: 'Peperoncino', price: 0.5 },
++  { label: 'Peperoni (+1.00€)', value: 'Peperoni', price: 1.0 },
++  { label: 'Pomodorini (+1.00€)', value: 'Pomodorini', price: 1.0 },
++  { label: 'Pomodoro (+0.50€)', value: 'Pomodoro', price: 0.5 },
++  { label: 'Porcini (+2.00€)', value: 'Porcini', price: 2.0 },
++  { label: 'Prosciutto Cotto (+1.50€)', value: 'Prosciutto Cotto', price: 1.5 },
++  { label: 'Provola Affumicata (+1.50€)', value: 'Provola Affumicata', price: 1.5 },
++  { label: 'Rucola (+0.50€)', value: 'Rucola', price: 0.5 },
++  { label: 'Salame Dolce (+1.50€)', value: 'Salame Dolce', price: 1.5 },
++  { label: 'Salame Piccante (+1.50€)', value: 'Salame Piccante', price: 1.5 },
++  { label: 'Salmone (+2.00€)', value: 'Salmone Affumicato', price: 2.0 },
++  { label: 'Salsiccia (+1.50€)', value: 'Salsiccia', price: 1.5 },
++  { label: 'Speck (+2.00€)', value: 'Speck', price: 2.0 },
++  { label: 'Spinaci (+1.00€)', value: 'Spinaci', price: 1.0 },
++  { label: 'Taleggio (+1.50€)', value: 'Taleggio', price: 1.5 },
++  { label: 'Tonno (+1.50€)', value: 'Tonno', price: 1.5 },
++  { label: 'Trevisana (+1.00€)', value: 'Trevisana', price: 1.0 },
++  { label: 'Wurstel (+1.00€)', value: 'Wurstel', price: 1.0 },
++  { label: 'Zucchine (+1.00€)', value: 'Zucchine', price: 1.0 }
++];
++
++const SPECIAL_MODIFIERS = [
++  { label: 'Baby (5.00€ / 7.00€)', value: 'Baby', price: 0 },
++  { label: 'Big (+2.00€)', value: 'Big', price: 2.0 },
++  { label: 'Integrale (+1.00€)', value: 'Impasto Integrale', price: 1.0 },
++  { label: 'No Lattosio (+1.50€)', value: 'Mozzarella Senza Lattosio', price: 1.5 },
++  { label: 'Aggiunta (+1.00€)', value: 'Aggiunta (+1.00€)', price: 1.0 },
++  { label: 'Aggiunta (+0.50€)', value: 'Aggiunta (+0.50€)', price: 0.5 },
+ ];
+ 
+ const getRemovalDiscount = (ingrName) => {
+@@ -153,8 +209,29 @@ const getRemovalDiscount = (ingrName) => {
+ 
+ const API_BASE = 'http://localhost:3001/api';
+ 
++const getNearest10MinSlot = () => {
++  const now = new Date();
++  const h = now.getHours();
++  const m = now.getMinutes();
++
++  if (h < 18) return '18:00';
++  if (h >= 23 && m > 50) return '23:50';
++
++  let nextM = 0;
++  let nextH = h;
++  if (m < 10) nextM = 10;
++  else if (m <= 20) nextM = 20;
++  else if (m <= 30) nextM = 30;
++  else if (m <= 40) nextM = 40;
++  else if (m <= 50) nextM = 50;
++  else { nextM = 0; nextH += 1; }
++
++  return `${nextH}:${nextM.toString().padStart(2, '0')}`;
++};
++
+ function App() {
+-  const [activeTab, setActiveTab] = useState('tutte');
++  const [activeTab, setActiveTab] = useState('pizze');
++  const [mainView, setMainView] = useState('MENU');
+   const [cart, setCart] = useState([]);
+   const [paymentType, setPaymentType] = useState('CASH');
+   const [notification, setNotification] = useState(null);
+@@ -165,6 +242,41 @@ function App() {
+   const [selectedCustomer, setSelectedCustomer] = useState(null);
+   const [customerModalOpen, setCustomerModalOpen] = useState(false);
+   const [customerForm, setCustomerForm] = useState({ id: null, name: '', phone: '', address: '', notes: '' });
++  const [orderType, setOrderType] = useState('ASPORTO');
++  const [isDeliveryFeeWaived, setIsDeliveryFeeWaived] = useState(false);
++  const [deliveryFeeQuantity, setDeliveryFeeQuantity] = useState(1);
++  const [orderConfigModalOpen, setOrderConfigModalOpen] = useState(false);
++  const [isOrderConfigured, setIsOrderConfigured] = useState(false);
++  const [deliveryTime, setDeliveryTime] = useState(getNearest10MinSlot());
++  const [editingOrderId, setEditingOrderId] = useState(null);
++  const [orders, setOrders] = useState([]);
++  const [expandedOrderId, setExpandedOrderId] = useState(null);
++  const [orderToDelete, setOrderToDelete] = useState(null);
++  const [customerToDelete, setCustomerToDelete] = useState(null);
++  const [orderToPrintFiscal, setOrderToPrintFiscal] = useState(null);
++
++  const [orderSortBy, setOrderSortBy] = useState('time');
++  const [orderFilterName, setOrderFilterName] = useState('');
++  const [orderSortDirection, setOrderSortDirection] = useState('desc');
++  const [customerSortBy, setCustomerSortBy] = useState('name');
++  const [showCloseDayModal, setShowCloseDayModal] = useState(false);
++  const [orderFilterPOS, setOrderFilterPOS] = useState(false);
++  const [orderFilterDelivery, setOrderFilterDelivery] = useState(false);
++  const [customerFilter, setCustomerFilter] = useState('');
++  const [customerSortDirection, setCustomerSortDirection] = useState('asc');
++  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
++  const [isCustomerSearchFocused, setIsCustomerSearchFocused] = useState(false);
++  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
++  const [customModifierModalOpen, setCustomModifierModalOpen] = useState(false);
++  const [customModifierText, setCustomModifierText] = useState('');
++  const [hoveredTime, setHoveredTime] = useState(null);
++  const cartEndRef = useRef(null);
++
++  useEffect(() => {
++    if (cartEndRef.current) {
++      cartEndRef.current.scrollIntoView({ behavior: 'smooth' });
++    }
++  }, [cart]);
+ 
+   const fetchCustomers = async () => {
+     try {
+@@ -173,21 +285,46 @@ function App() {
+     } catch(err) { console.error('Err fetch customers', err); }
+   };
+ 
++  const fetchOrders = async () => {
++    try {
++      const res = await fetch(`${API_BASE}/orders`);
++      if (res.ok) setOrders(await res.json());
++    } catch(err) { console.error('Err fetch orders', err); }
++  };
++
+   useEffect(() => {
+     fetchCustomers();
+   }, []);
+ 
++  useEffect(() => {
++    fetchOrders();
++  }, []);
++
+   const handleSaveCustomer = async (e) => {
+     e.preventDefault();
++    if (!customerForm.name || !customerForm.name.trim()) {
++      showNotification('Inserisci il nome o un riferimento per il cliente.', 'error');
++      return;
++    }
+     setLoading(true);
+     try {
+       const method = customerForm.id ? 'PUT' : 'POST';
+       const url = customerForm.id ? `${API_BASE}/customers/${customerForm.id}` : `${API_BASE}/customers`;
+       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(customerForm) });
+       if (res.ok) {
++        let savedCustomer = { ...customerForm };
++        try {
++          const data = await res.json();
++          if (data && data.id) savedCustomer.id = data.id;
++        } catch (err) {}
++        
+         showNotification('Cliente salvato!');
+         setCustomerModalOpen(false);
+         fetchCustomers();
++        
++        // Auto-selezione intelligente del cliente appena creato o modificato
++        setSelectedCustomer(savedCustomer);
++        setIsOrderConfigured(true);
+       }
+     } catch(err) {
+       showNotification('Errore salvataggio cliente', 'error');
+@@ -196,22 +333,28 @@ function App() {
+     }
+   };
+ 
+-  const deleteCustomer = async (id) => {
+-    if(!window.confirm('Eliminare questo cliente?')) return;
++  const deleteCustomer = async () => {
++    if(!customerToDelete) return;
+     try {
+-      await fetch(`${API_BASE}/customers/${id}`, { method: 'DELETE' });
+-      fetchCustomers();
+-      showNotification('Cliente eliminato');
+-      if (selectedCustomer && selectedCustomer.id === id) setSelectedCustomer(null);
+-    } catch(err) {}
++      const res = await fetch(`${API_BASE}/customers/${customerToDelete.id}`, { method: 'DELETE' });
++      const data = await res.json();
++      if (!res.ok) {
++        showNotification(data.error || 'Impossibile eliminare il cliente', 'error');
++      } else {
++        fetchCustomers();
++        showNotification('Cliente eliminato');
++        if (selectedCustomer && selectedCustomer.id === customerToDelete.id) setSelectedCustomer(null);
++      }
++    } catch(err) {
++      showNotification('Errore di connessione', 'error');
++    }
++    setCustomerToDelete(null);
+   };
+ 
+-  const displayedItems = activeTab === 'tutte' 
+-    ? MENU_ITEMS 
+-    : MENU_ITEMS.filter(item => item.category === activeTab);
++  const displayedItems = MENU_ITEMS.filter(item => activeTab === 'tutte' ? true : item.category === activeTab);
+ 
+   // Calcola totale dinamico tenendo conto dei modificatori
+-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
++  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) + (orderType === 'DOMICILIO' ? 2 * deliveryFeeQuantity : 0);
+ 
+   const showNotification = (message, type = 'success') => {
+     setNotification({ message, type });
+@@ -266,19 +409,24 @@ function App() {
+   };
+ 
+   const addToCart = (product) => {
+-    // Al posto di accumulare sulla stessa riga, generiamo un cartId univoco.
+-    // Questo permette di modificare indipendentemente ogni pizza.
+-    // Per le bevande o identici potremmo raggrupparli, ma per le pizze è più comodo slegarli
+-    
+-    // Per comodità: raggruppiamo solo se non ci sono "modifiers" attivi?
+-    // L'approccio migliore per un POS pizzeria rapido: raggruppa se è identico, se modificato si separa.
+-    setCart(prev => {
+-      const existing = prev.find(item => item.id === product.id && (!item.modifiers || item.modifiers.length === 0));
+-      if (existing) {
+-        return prev.map(item => item.cartId === existing.cartId ? { ...item, quantity: item.quantity + 1 } : item);
+-      }
+-      return [...prev, { ...product, cartId: Date.now() + Math.random(), quantity: 1, modifiers: [], originalPrice: product.price }];
+-    });
++    if (product.category !== 'pizze') {
++      setCart(prev => {
++        const existingIndex = prev.findIndex(item => item.id === product.id && item.category !== 'pizze');
++        if (existingIndex >= 0) {
++          const newCart = [...prev];
++          newCart[existingIndex] = { 
++            ...newCart[existingIndex], 
++            quantity: newCart[existingIndex].quantity + 1 
++          };
++          return newCart;
++        }
++        return [...prev, { ...product, cartId: Date.now() + Math.random(), quantity: 1, modifiers: [], originalPrice: product.price, manualPriceDelta: 0 }];
++      });
++    } else {
++      setCart(prev => {
++        return [...prev, { ...product, cartId: Date.now() + Math.random(), quantity: 1, modifiers: [], originalPrice: product.price, manualPriceDelta: 0 }];
++      });
++    }
+   };
+ 
+   const updateQuantity = (cartId, delta) => {
+@@ -297,7 +445,7 @@ function App() {
+   };
+ 
+   const openEditor = (item) => {
+-    // Apri modale per modificare
++    if (item.category !== 'pizze') return;
+     setEditingItem(item);
+   };
+ 
+@@ -307,20 +455,37 @@ function App() {
+     setCart(prev => prev.map(item => {
+       if (item.cartId === editingItem.cartId) {
+         let newMods = item.modifiers ? [...item.modifiers] : [];
+-        let newPrice = item.price;
+         
+         const isSelected = newMods.find(m => m.value === modifier.value);
+         if (isSelected) {
+           // Rimuovi modificatore
+           newMods = newMods.filter(m => m.value !== modifier.value);
+-          newPrice -= modifier.price;
+         } else {
+           // Aggiungi modificatore
+           newMods.push(modifier);
+-          newPrice += modifier.price;
+         }
+ 
+-        const updatedItem = { ...item, modifiers: newMods, price: Math.max(0, newPrice) };
++        // Ricalcola il prezzo totale da zero (evita errori di somma incrementale)
++        let basePrice = item.originalPrice;
++        
++        // Verifica se è stata selezionata la dimensione "Baby"
++        const hasBaby = newMods.find(m => m.value === 'Baby');
++        if (hasBaby) {
++          const n = item.name.toLowerCase();
++          if (n.includes('margherita') || n.includes('focaccia')) {
++            basePrice = 5.0; // Fisse a 5
++          } else {
++            basePrice = 7.0; // Tutte le altre fisse a 7
++          }
++        }
++        
++        // Aggiungi il prezzo di eventuali extra, baby e delta manuale
++        let finalPrice = basePrice + (item.manualPriceDelta || 0);
++        newMods.forEach(m => {
++          finalPrice += m.price; // Baby ha price: 0, quindi non impatterà
++        });
++
++        const updatedItem = { ...item, modifiers: newMods, price: Math.max(0, finalPrice) };
+         setEditingItem(updatedItem); // aggiorna modale
+         return updatedItem;
+       }
+@@ -328,18 +493,210 @@ function App() {
+     }));
+   };
+ 
++  const updateEditingItemPrice = (delta) => {
++    if (!editingItem) return;
++    setCart(prev => prev.map(item => {
++      if (item.cartId === editingItem.cartId) {
++        const newDelta = (item.manualPriceDelta || 0) + delta;
++        let basePrice = item.originalPrice;
++        let newMods = item.modifiers ? [...item.modifiers] : [];
++        const hasBaby = newMods.find(m => m.value === 'Baby');
++        if (hasBaby) {
++          const n = item.name.toLowerCase();
++          if (n.includes('margherita') || n.includes('focaccia')) basePrice = 5.0;
++          else basePrice = 7.0;
++        }
++        let finalPrice = basePrice + newDelta;
++        newMods.forEach(m => { finalPrice += m.price; });
++        const updatedItem = { ...item, manualPriceDelta: newDelta, price: Math.max(0, finalPrice) };
++        setEditingItem(updatedItem);
++        return updatedItem;
++      }
++      return item;
++    }));
++  };
++
++  const handleAddCustomModifier = () => {
++    if (!editingItem) return;
++    
++    setCart(prev => prev.map(item => {
++      if (item.cartId === editingItem.cartId) {
++        let newMods = item.modifiers ? [...item.modifiers] : [];
++        const predefinedValues = [...INGREDIENT_MODIFIERS.map(m => m.value), ...SPECIAL_MODIFIERS.map(m => m.value)];
++        
++        // Filtra via le vecchie note libere custom
++        newMods = newMods.filter(m => predefinedValues.includes(m.value) || m.value.startsWith('- '));
++        
++        const newText = customModifierText.trim();
++        if (newText) {
++          newMods.push({ label: newText, value: newText, price: 0 });
++        }
++        
++        let basePrice = item.originalPrice;
++        const hasBaby = newMods.find(m => m.value === 'Baby');
++        if (hasBaby) {
++          const n = item.name.toLowerCase();
++          if (n.includes('margherita') || n.includes('focaccia')) {
++            basePrice = 5.0; // Fisse a 5
++          } else {
++            basePrice = 7.0; // Tutte le altre fisse a 7
++          }
++        }
++        
++        let finalPrice = basePrice;
++        newMods.forEach(m => {
++          finalPrice += m.price;
++        });
++
++        const updatedItem = { ...item, modifiers: newMods, price: Math.max(0, finalPrice) };
++        setEditingItem(updatedItem); 
++        return updatedItem;
++      }
++      return item;
++    }));
++    
++    setCustomModifierText('');
++    setCustomModifierModalOpen(false);
++  };
++
+   // --- Funzioni API ---
++  const handleEditOrder = (order) => {
++    const rawItems = JSON.parse(order.items_json);
++    const parsedCart = rawItems.filter(i => i.id !== 'delivery_fee');
++    const deliveryFeeItem = rawItems.find(i => i.id === 'delivery_fee');
++    setCart(parsedCart);
++    setOrderType(order.order_type === 'DOMICILIO' ? 'DOMICILIO' : 'ASPORTO');
++    setDeliveryFeeQuantity(order.order_type === 'DOMICILIO' ? (deliveryFeeItem ? deliveryFeeItem.quantity : 0) : 1);
++    setDeliveryTime(order.delivery_time || getNearest10MinSlot());
++    setPaymentType(order.payment_method || 'CASH');
++    setIsOrderConfigured(true);
++    setEditingOrderId(order.id);
++    if (order.customer_id) {
++      const cust = customers.find(c => c.id === order.customer_id);
++      setSelectedCustomer(cust || null);
++    } else {
++      setSelectedCustomer(null);
++    }
++    setMainView('MENU');
++    setActiveTab('pizze');
++    setCustomerSearchQuery('');
++    showNotification(`Ordine #${order.id} caricato in cassa.`);
++  };
++
++  const confirmDeleteOrder = async () => {
++    if (!orderToDelete) return;
++    const id = orderToDelete;
++    setOrderToDelete(null);
++    try {
++      const res = await fetch(`${API_BASE}/orders/${id}`, { method: 'DELETE' });
++      if (res.ok) {
++        showNotification('Ordine eliminato');
++        fetchOrders();
++      }
++    } catch(err) { console.error(err); }
++  };
++
++  const handleDeleteOrder = (id) => {
++    setOrderToDelete(id);
++  };
++
++  const confirmPrintFiscal = async () => {
++    if (!orderToPrintFiscal) return;
++    const order = orderToPrintFiscal;
++    setOrderToPrintFiscal(null);
++    setLoading(true);
++    try {
++      const customer = customers.find(c => c.id === order.customer_id);
++      const res = await fetch(`${API_BASE}/print-receipt`, {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({
++          orderItems: JSON.parse(order.items_json),
++          total: order.total_price,
++          paymentType: order.payment_method,
++          customer,
++          orderType: order.order_type,
++          deliveryTime: order.delivery_time
++        }),
++      });
++      if (!res.ok) throw new Error('Errore server');
++      showNotification('Scontrino Fiscale stampato!');
++      try {
++        await fetch(`${API_BASE}/orders/${order.id}/fiscalize`, { 
++          method: 'PUT',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify({ level: 2 })
++        });
++        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, is_fiscalized: 2 } : o));
++      } catch (e) {
++        console.error('Errore nel salvataggio stato fiscale', e);
++      }
++    } catch (err) {
++      console.error(err);
++      alert('Impossibile stampare lo scontrino');
++    } finally { setLoading(false); }
++  };
++
++  const confirmPrintNonFiscal = async () => {
++    if (!orderToPrintFiscal) return;
++    const order = orderToPrintFiscal;
++    setOrderToPrintFiscal(null);
++    await handleRePrintOrder(order); // Epson Ticket as Proforma
++    try {
++      await fetch(`${API_BASE}/orders/${order.id}/fiscalize`, {
++        method: 'PUT',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ level: 1 })
++      });
++      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, is_fiscalized: Math.max(o.is_fiscalized || 0, 1) } : o));
++    } catch (e) {
++      console.error('Errore nel salvataggio stato NON fiscale', e);
++    }
++  };
++
++  const handlePrintFiscal = (order) => {
++    setOrderToPrintFiscal(order);
++  };
++
++  const handleRePrintOrder = async (order) => {
++    setLoading(true);
++    try {
++      const customer = customers.find(c => c.id === order.customer_id);
++      const res = await fetch(`${API_BASE}/print-ticket`, {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({
++          table: order.order_type === 'DOMICILIO' ? 'DOMICILIO' : 'ASPORTO',
++          orderItems: JSON.parse(order.items_json),
++          customer,
++          orderType: order.order_type,
++          deliveryTime: order.delivery_time
++        }),
++      });
++      if (!res.ok) throw new Error('Errore server');
++      showNotification('Copia ordine stampata!');
++    } catch (err) {
++      alert('Errore stampa copia: ' + err.message);
++    } finally {
++      setLoading(false);
++    }
++  };
++
+   const handlePrintTicket = async () => {
+     if (cart.length === 0) return;
+     setLoading(true);
+     
+-    // Formattiamo le note e item per includere i modifiers a livello server
+-    const payloadItems = cart.map(item => ({
+-      ...item,
+-      name: item.name + (item.modifiers && item.modifiers.length > 0 
+-        ? ' (' + item.modifiers.map(m => m.value).join(', ') + ')' 
+-        : '')
+-    }));
++    const payloadItems = cart.map(item => ({ ...item }));
++
++    if (orderType === 'DOMICILIO' && deliveryFeeQuantity > 0) {
++      payloadItems.push({
++        id: 'delivery_fee',
++        name: 'Spese di Consegna',
++        price: 2.00,
++        quantity: deliveryFeeQuantity,
++        category: 'altro'
++      });
++    }
+ 
+     try {
+       const res = await fetch(`${API_BASE}/print-ticket`, {
+@@ -347,8 +704,11 @@ function App() {
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           orderId: Date.now().toString().slice(-6),
+-          table: 'Asporto',
+-          orderItems: payloadItems
++          table: orderType === 'DOMICILIO' ? 'DOMICILIO' : 'ASPORTO',
++          orderItems: payloadItems,
++          customer: selectedCustomer,
++          orderType,
++          deliveryTime
+         }),
+       });
+       if (!res.ok) throw new Error('Errore server');
+@@ -360,43 +720,59 @@ function App() {
+     }
+   };
+ 
+-  const handlePrintReceipt = async () => {
++  const handleSaveOrder = async () => {
+     if (cart.length === 0) return;
+     setLoading(true);
+ 
+-    const payloadItems = cart.map(item => ({
+-      ...item,
+-      name: item.name + (item.modifiers && item.modifiers.length > 0 
+-        ? ' (' + item.modifiers.map(m => m.value).join(', ') + ')' 
+-        : '')
+-    }));
++    const payloadItems = cart.map(item => ({ ...item }));
++
++    if (orderType === 'DOMICILIO' && deliveryFeeQuantity > 0) {
++      payloadItems.push({
++        id: 'delivery_fee',
++        name: 'Spese di Consegna',
++        price: 2.00,
++        quantity: deliveryFeeQuantity,
++        category: 'altro'
++      });
++    }
+ 
+     try {
+-      const res = await fetch(`${API_BASE}/print-receipt`, {
++      const res = await fetch(`${API_BASE}/save-order`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+-          orderId: Date.now().toString().slice(-6),
++          editingOrderId,
+           total: cartTotal,
+           paymentType,
+           orderItems: payloadItems,
+-          customer: selectedCustomer
++          customer: selectedCustomer,
++          orderType,
++          deliveryTime
+         }),
+       });
+       if (!res.ok) throw new Error('Errore server');
+-      showNotification('Scontrino Fiscale emesso!');
++      showNotification(editingOrderId ? 'Ordine aggiornato!' : 'Ordine inserito a sistema!');
++      await fetchOrders();
+       setCart([]);
+       setEditingItem(null);
++      setEditingOrderId(null);
+       setSelectedCustomer(null);
++      setCustomerSearchQuery('');
++      setOrderType('ASPORTO');
++      setDeliveryFeeQuantity(1);
++      setDeliveryTime(getNearest10MinSlot());
++      setPaymentType('CASH');
++      setIsOrderConfigured(false);
+     } catch (err) {
+-      showNotification('Errore K3 Custom', 'error');
++      showNotification('Errore salvataggio', 'error');
++      console.error(err);
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+-  const handleCloseDay = async () => {
+-    if(!window.confirm('Procedere con chiusura Z ?')) return;
++  const proceedWithCloseDay = async () => {
++    setShowCloseDayModal(false);
+     setLoading(true);
+     try {
+       const res = await fetch(`${API_BASE}/close-day`, { method: 'POST' });
+@@ -409,230 +785,450 @@ function App() {
+     }
+   };
+ 
+-  return (
+-    <div className="pos-container">
+-      {notification && (
+-        <div className={`notification ${notification.type}`}>
+-          {notification.message}
+-        </div>
+-      )}
+-
+-      {/* MODALE MODIFICA INGREDIENTI */}
+-      {editingItem && (
+-        <div className="modal-overlay" onClick={() => setEditingItem(null)}>
+-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+-            <div className="modal-header">
+-              <h2>Modifica: {editingItem.name}</h2>
+-              <button className="btn-close-modal" onClick={() => setEditingItem(null)}>Chiudi</button>
++  const renderOrderCard = (o) => {
++    const itemsList = JSON.parse(o.items_json);
++    const c = customers.find(cust => cust.id === o.customer_id);
++    const isExpanded = expandedOrderId === o.id;
++    const totalItemsQty = itemsList.reduce((sum, item) => {
++      const isPizza = item.category ? item.category === 'pizze' : true;
++      return sum + (isPizza ? (item.quantity || 1) : 0);
++    }, 0);
++
++    const totalsByCategory = itemsList.reduce((acc, item) => {
++      const c = item.category || 'pizze';
++      acc[c] = (acc[c] || 0) + (item.quantity || 1);
++      return acc;
++    }, {});
++    
++    return (
++      <div key={o.id} className="customer-card" style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', padding: 0, borderRadius: '8px', overflow: 'hidden'}}>
++        
++        {/* Riga Compatta */}
++        <div 
++          onClick={() => setExpandedOrderId(isExpanded ? null : o.id)}
++          style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '10px', padding: '10px 15px', cursor: 'pointer', boxSizing: 'border-box'}}
++        >
++          
++          {/* Contenitore per Info Ordine ed Elementi prezzo */}
++          <div style={{display: 'flex', alignItems: 'center', gap: '15px', flex: 1, minWidth: '250px', flexWrap: 'wrap'}}>
++            
++            <div style={{fontWeight: '900', fontSize: '1.1rem', color: 'var(--text-dark)', minWidth: '40px'}}>
++              #{o.id}
++            </div>
++            
++            {orderSortBy === 'id' && (
++              <div style={{fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-dark)', minWidth: '55px'}}>
++                {o.delivery_time}
++              </div>
++            )}
++            
++            {/* Nome e Via con flex-grow e left-align */}
++            <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', textAlign: 'left', color: 'var(--text-dark)', flex: 1, minWidth: '150px'}}>
++               <div style={{display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: '1.05rem'}}>
++                 {c ? c.name : (o.order_type === 'DOMICILIO' ? 'Consegna' : 'Asporto')} 
++               </div>
++               {c && c.address && (
++                 <div style={{fontSize: '0.9rem', color: 'var(--text-light)', marginTop: '2px'}}>
++                   {c.address}
++                 </div>
++               )}
+             </div>
+-            <div className="modal-body-scroll">
+-              {editingItem.ingredients && editingItem.ingredients.length > 0 && (
+-                <>
+-                  <h3 className="modal-section-title">Ingredienti base (clicca per rimuovere)</h3>
+-                  <div className="modifiers-grid remove-grid">
+-                    {editingItem.ingredients.map((ingr, i) => {
+-                      const discount = getRemovalDiscount(ingr);
+-                      const modValue = `- ${ingr}`;
+-                      const isActive = editingItem.modifiers?.find(m => m.value === modValue);
+-                      const discountText = discount > 0 ? ` (-€${discount.toFixed(2)})` : '';
+-                      return (
+-                        <button 
+-                          key={`rem-${i}`} 
+-                          className={`modifier-btn danger-btn ${isActive ? 'active-remove' : ''}`}
+-                          onClick={() => toggleModifier({ label: `Senza ${ingr}`, value: modValue, price: -discount })}
+-                        >
+-                          {isActive ? `✓ Rimosso: ${ingr}${discountText}` : `✗ Togli ${ingr}${discountText}`}
+-                        </button>
+-                      )
+-                    })}
++
++            {/* Blocco Destro: Pezzi, POS, Prezzo rigorosamente incolonnati */}
++            <div style={{display: 'flex', alignItems: 'center', gap: '15px', minWidth: '180px', justifyContent: 'flex-end'}}>
++              <div style={{color: 'var(--text-light)', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: '85px'}}>
++                <span style={{fontWeight: 'bold', color: 'var(--text-dark)', textAlign: 'right', display: 'flex', alignItems: 'center', gap: '14px'}}>
++                  {o.order_type === 'DOMICILIO' && <span title="Consegna a domicilio" style={{display: 'flex', alignItems: 'center', color: 'var(--text-light)'}}><IconMoto /></span>}
++                  <div style={{
++                    display: 'flex',
++                    alignItems: 'center',
++                    justifyContent: 'center',
++                    width: '32px',
++                    height: '32px',
++                    borderRadius: '50%',
++                    border: '2px solid var(--text-dark)',
++                    color: 'var(--text-dark)',
++                    fontSize: '1rem',
++                    fontWeight: 'bold'
++                  }} title={`${totalItemsQty} articoli in totale`}>
++                     {totalItemsQty}
+                   </div>
+-                  <hr className="modal-divider" />
+-                </>
+-              )}
++                </span>
++              </div>
+ 
+-              <h3 className="modal-section-title">Aggiungi Extra</h3>
+-              <div className="modifiers-grid">
+-                {INGREDIENT_MODIFIERS.map((mod, i) => {
+-                  const isActive = editingItem.modifiers?.find(m => m.value === mod.value);
+-                  return (
+-                    <button 
+-                      key={`add-${i}`} 
+-                      className={`modifier-btn ${isActive ? 'active' : ''}`}
+-                      onClick={() => toggleModifier(mod)}
+-                    >
+-                      {mod.label}
+-                    </button>
+-                  )
+-                })}
++              {o.payment_method === 'CARD' ? (
++                 <div style={{color: 'var(--primary-color)', fontSize: '0.9rem', fontWeight: '900', minWidth: '35px', textAlign: 'center'}}>
++                   POS
++                 </div>
++              ) : (
++                 <div style={{minWidth: '35px'}}></div> /* Spacer per mantenere allineamento perfetto */
++              )}
++              
++              <div style={{fontWeight: '900', fontSize: '1.15rem', color: 'var(--text-dark)', minWidth: '85px', textAlign: 'right'}}>
++                € {(o.total_price || 0).toFixed(2)}
+               </div>
+             </div>
+           </div>
+-        </div>
+-      )}
+-
+-      {/* MODALE CLIENTI */}
+-      {customerModalOpen && (
+-        <div className="modal-overlay" onClick={() => setCustomerModalOpen(false)}>
+-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+-            <div className="modal-header">
+-              <h2>{customerForm.id ? 'Modifica Cliente' : 'Nuovo Cliente'}</h2>
+-              <button className="btn-close-modal" onClick={() => setCustomerModalOpen(false)}>Chiudi</button>
+-            </div>
+-            <form onSubmit={handleSaveCustomer} className="customer-form" style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
+-              <input required type="text" placeholder="Nome o Riferimento" value={customerForm.name} onChange={e => setCustomerForm({...customerForm, name: e.target.value})} className="form-input" />
+-              <input type="text" placeholder="Telefono (es. 333...)" value={customerForm.phone} onChange={e => setCustomerForm({...customerForm, phone: e.target.value})} className="form-input" />
+-              <input type="text" placeholder="Indirizzo (es. Via Roma 1)" value={customerForm.address} onChange={e => setCustomerForm({...customerForm, address: e.target.value})} className="form-input" />
+-              <input type="text" placeholder="Note (es. Intollerante Panna)" value={customerForm.notes} onChange={e => setCustomerForm({...customerForm, notes: e.target.value})} className="form-input" />
+-              <button type="submit" className="btn-primary" style={{marginTop: '15px'}} disabled={loading}>Salva Cliente</button>
+-            </form>
+-          </div>
+-        </div>
+-      )}
+-
+-      {/* SEZIONE SINISTRA - MENU */}
+-      <section className="menu-section">
+-        <header className="header">
+-          <h1>🍕 Pizzeria Manager</h1>
+-          <button className="btn-close-day" onClick={handleCloseDay} disabled={loading}>
+-            Chiusura Fiscale (Z)
+-          </button>
+-        </header>
+-
+-        <div className="category-tabs">
+-          {CATEGORIES.map(cat => (
++
++          {/* Bottoni Azione a Icona */}
++          <div style={{display: 'flex', gap: '8px', marginLeft: '35px', justifyContent: 'flex-end', alignItems: 'center', flexShrink: 0}}>
++            <button style={{padding: '6px', backgroundColor: '#f1f2f6', border: '1px solid #ced6e0', borderRadius: '8px', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#576574'}} title="Modifica" onClick={(e) => { e.stopPropagation(); handleEditOrder(o); }}>
++              <IconEdit />
++            </button>
++            <button style={{padding: '6px', backgroundColor: '#f1f2f6', border: '1px solid #ced6e0', borderRadius: '8px', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)'}} title="Elimina" onClick={(e) => { e.stopPropagation(); handleDeleteOrder(o.id); }}>
++              <IconTrash />
++            </button>
++            <button style={{padding: '6px', backgroundColor: '#f1f2f6', border: '1px solid #ced6e0', borderRadius: '8px', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#576574'}} title="Stampa Copia Ordine" onClick={(e) => { e.stopPropagation(); handleRePrintOrder(o); }}>
++              <IconReceipt />
++            </button>
+             <button 
+-              key={cat.id} 
+-              className={`tab-btn ${activeTab === cat.id ? 'active' : ''}`}
+-              onClick={() => setActiveTab(cat.id)}
++              style={{
++                padding: '6px', 
++                backgroundColor: o.is_fiscalized === 2 ? 'rgba(39, 174, 96, 0.1)' : '#f1f2f6', 
++                border: `1px solid ${o.is_fiscalized === 2 ? '#27ae60' : '#ced6e0'}`, 
++                borderRadius: '8px', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
++                color: o.is_fiscalized ? '#27ae60' : '#576574',
++                transition: 'all 0.3s'
++              }} 
++              title="Scontrino Fiscale" 
++              onClick={(e) => { e.stopPropagation(); handlePrintFiscal(o); }}
+             >
+-              {cat.label}
++              <IconDollar />
+             </button>
+-          ))}
++            
++            <button onClick={(e) => { e.stopPropagation(); setExpandedOrderId(isExpanded ? null : o.id); }} style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '5px', marginLeft: '10px', color: 'var(--text-light)'}}>
++               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
++                 {isExpanded ? <polyline points="18 15 12 9 6 15"></polyline> : <polyline points="6 9 12 15 18 9"></polyline>}
++               </svg>
++            </button>
++          </div>
++
+         </div>
+ 
+-        {activeTab === 'clienti' ? (
+-          <div className="customers-view">
+-            <div className="customers-header" style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px'}}>
+-              <h2>Gestione Clienti</h2>
+-              <button className="btn-primary" style={{ width: 'auto', padding: '10px 20px' }} onClick={() => { setCustomerForm({ id: null, name: '', phone: '', address: '', notes: '' }); setCustomerModalOpen(true); }}>
+-                + Nuovo Cliente
+-              </button>
+-            </div>
+-            <div className="customers-grid">
+-              {customers.map(c => (
+-                <div key={c.id} className="customer-card">
+-                  <div className="customer-info" onClick={() => { setSelectedCustomer(c); showNotification(`Cliente ${c.name} assegnato all'ordine.`); }} style={{cursor: 'pointer'}} title="Clicca per assegnare come ordine corrente">
+-                    <h3>{c.name}</h3>
+-                    {c.phone && <p>📞 {c.phone}</p>}
+-                    {c.address && <p>🏠 {c.address}</p>}
+-                    {c.notes && <p className="customer-notes">{c.notes}</p>}
++        {/* Dettagli Espansi */}
++        {isExpanded && (
++          <div style={{
++            padding: '20px', 
++            borderTop: '1px solid var(--border-color)', 
++            backgroundColor: '#f8f9fa'
++          }}>
++            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', marginBottom: '12px', gap: '15px'}}>
++              
++              {/* SX: Riepilogo Categorie */}
++              <div style={{flex: 1, backgroundColor: 'white', padding: '10px 18px', borderRadius: '6px', border: '1px solid #eaeaea', display: 'flex', alignItems: 'center'}}>
++                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: 'var(--text-dark)', fontSize: '0.95rem', width: '100%'}}>
++                    <div style={{display: 'flex', alignItems: 'center'}}>
++                      <strong style={{minWidth: '24px', textAlign: 'left', color: totalsByCategory['pizze'] ? 'inherit' : 'var(--text-light)'}}>{totalsByCategory['pizze'] || '-'}</strong>
++                      <span>Pizze</span>
++                    </div>
++                    <div style={{display: 'flex', alignItems: 'center'}}>
++                      <strong style={{minWidth: '24px', textAlign: 'left', color: totalsByCategory['bevande'] ? 'inherit' : 'var(--text-light)'}}>{totalsByCategory['bevande'] || '-'}</strong>
++                      <span>Bevande</span>
++                    </div>
++                    <div style={{display: 'flex', alignItems: 'center'}}>
++                      <strong style={{minWidth: '24px', textAlign: 'left', color: totalsByCategory['fritture'] ? 'inherit' : 'var(--text-light)'}}>{totalsByCategory['fritture'] || '-'}</strong>
++                      <span>Fritture</span>
++                    </div>
++                    <div style={{display: 'flex', alignItems: 'center'}}>
++                      <strong style={{minWidth: '24px', textAlign: 'left', color: totalsByCategory['dolci'] ? 'inherit' : 'var(--text-light)'}}>{totalsByCategory['dolci'] || '-'}</strong>
++                      <span>Dolci</span>
++                    </div>
+                   </div>
+-                  <div className="customer-actions">
+-                    <button className="btn-text" onClick={() => { setCustomerForm(c); setCustomerModalOpen(true); }}>✏️ Modifica</button>
+-                    <button className="btn-text danger" onClick={() => deleteCustomer(c.id)}>🗑️</button>
++              </div>
++
++              {/* CX: Cliente e Telefono */}
++              <div style={{flex: 1, backgroundColor: 'white', padding: '10px 18px', borderRadius: '6px', border: '1px solid #eaeaea', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
++                {(!c?.name && !c?.phone) ? (
++                  <div style={{color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.9rem'}}>Nessun nominativo salvato</div>
++                ) : (
++                  <>
++                    {c?.name ? (
++                      <div style={{color: 'var(--text-dark)', fontWeight: 'bold', fontSize: '1rem', marginBottom: c?.phone ? '2px' : '0'}}>{c.name}</div>
++                    ) : (
++                      <div style={{color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.9rem', marginBottom: '2px'}}>Nessun Nominativo salvato</div>
++                    )}
++                    {c?.phone ? (
++                      <div style={{color:'var(--text-dark)', fontSize: '1.05rem', letterSpacing: '0.5px'}}>
++                        {c.phone}
++                      </div>
++                    ) : (
++                      <div style={{color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem', marginTop: '2px'}}>Nessun numero salvato</div>
++                    )}
++                  </>
++                )}
++              </div>
++
++              {/* DX: Indirizzo e note */}
++              <div style={{flex: 1, backgroundColor: 'white', padding: '10px 18px', borderRadius: '6px', border: '1px solid #eaeaea', textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
++                {c?.address ? (
++                  <div style={{color:'var(--text-dark)'}}>{c.address}</div>
++                ) : (
++                  <div style={{color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.9rem'}}>Nessun indirizzo salvato</div>
++                )}
++                {c?.notes && <div style={{color:'var(--text-dark)', fontStyle: 'italic', fontSize: '0.9rem', marginTop: '4px'}}>{c.notes}</div>}
++              </div>
++
++            </div>
++            
++            <ul style={{listStyle: 'none', margin: 0, color: 'var(--text-dark)', backgroundColor: 'white', border: '1px solid #eaeaea', borderRadius: '6px', padding: '10px 18px'}}>
++              {itemsList.map((item, idx) => (
++                <li key={idx} style={{marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: idx < itemsList.length -1 ? '1px solid #eaeaea' : 'none', paddingBottom: idx < itemsList.length -1 ? '6px' : '0'}}>
++                  <div style={{display: 'flex', alignItems: 'center', textAlign: 'left', paddingRight: '15px'}}>
++                    <strong style={{minWidth: '28px', flexShrink: 0}}>{item.quantity}x</strong>
++                    <div style={{lineHeight: '1.4'}}>{item.name}</div>
+                   </div>
+-                </div>
++                  <span style={{fontWeight: 'bold', flexShrink: 0}}>€ {(item.price * item.quantity).toFixed(2)}</span>
++                </li>
+               ))}
+-            </div>
+-            {customers.length === 0 && <p className="cart-empty">Nessun cliente registrato.</p>}
++            </ul>
+           </div>
+-        ) : (
+-          <div className="menu-grid">
++        )}
++      </div>
++    );
++  };
++
++  return (
++    {/* GESTIONE SWIPE PER LA NAVIGAZIONE TRA MENU E BACKOFFICE */}
++      <div 
++        className="pos-container"
++        onWheel={(e) => {
++          if (e.deltaX > 40 && mainView === 'MENU') {
++            setMainView('BACKOFFICE');
++            setActiveTab('ordini');
++          } else if (e.deltaX < -40 && mainView === 'BACKOFFICE') {
++            setMainView('MENU');
++            setActiveTab('pizze');
++          }
++        }}
++        onTouchStart={(e) => window.touchStartX = e.changedTouches[0].screenX}
++        onTouchEnd={(e) => {
++          const endX = e.changedTouches[0].screenX;
++          const startX = window.touchStartX || 0;
++          if (startX - endX > 80 && mainView === 'MENU') {
++            setMainView('BACKOFFICE');
++            setActiveTab('ordini');
++          } else if (endX - startX > 80 && mainView === 'BACKOFFICE') {
++            setMainView('MENU');
++            setActiveTab('pizze');
++          }
++        }}
++      >
++        <section className="menu-section" style={{ flex: mainView === 'BACKOFFICE' ? 'none' : 1, width: mainView === 'BACKOFFICE' ? '100%' : 'auto', overflowX: 'hidden' }}>
++          
++          <div className="category-tabs" style={{alignItems: 'center', marginTop: '20px', justifyContent: mainView === 'MENU' ? 'center' : 'flex-start'}}>
++            {(mainView === 'MENU' ? CATEGORIES_MENU : CATEGORIES_BACKOFFICE).map(cat => (
++              <button 
++                key={cat.id} 
++                className={}
++                onClick={() => { setActiveTab(cat.id); }}
++              >
++                {cat.label}
++              </button>
++            ))}
++            {mainView === 'BACKOFFICE' && activeTab === 'ordini' && (
++              <button 
++                className="tab-btn tab-btn-success" 
++                style={{marginLeft: 'auto'}}
++                onClick={() => setShowCloseDayModal(true)} 
++                disabled={loading}
++                title="Azzera gli incassi e pulisci gli ordini per la serata corrente"
++              >
++                Chiusura Fiscale
++              </button>
++            )}
++            {mainView === 'BACKOFFICE' && activeTab === 'clienti' && (
++              <button 
++                className="tab-btn" 
++                style={{marginLeft: 'auto'}}
++                onClick={() => { setCustomerForm({ id: null, name: '', phone: '', address: '', notes: '' }); setCustomerModalOpen(true); }}
++              >
++                + Nuovo Cliente
++              </button>
++            )}
++          </div>
++
++          {activeTab === 'ordini' ? (
++            
++          ) : activeTab === 'clienti' ? (
++            
++          ) : (
++            <div key="menu-container" className="menu-grid">
+             {displayedItems.map(item => (
+               <div key={item.id} className="menu-item" onClick={() => addToCart(item)}>
+                 <div className="item-name">{item.name}</div>
+               </div>
+             ))}
+           </div>
+-        )}
+-      </section>
++          )}
++        </section>
+ 
+-      {/* SEZIONE DESTRA - CARRELLO/CASSA */}
+-      <section className="cart-section">
+-        <div className="cart-header">
+-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+-            <h2>Nuovo Ordine</h2>
+-            <button 
+-              className={`btn-mic ${isListening ? 'listening' : ''}`} 
+-              onClick={startListening}
+-              title="Dì ad esempio: 'Una margherita e una diavola'"
+-            >
+-              {isListening ? '🛑' : '🎤'}
+-            </button>
+-          </div>
+-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+-            {selectedCustomer && (
+-              <div className="customer-pill">
+-                👤 {selectedCustomer.name}
+-                <span onClick={() => setSelectedCustomer(null)} className="pill-close">×</span>
++        {mainView === 'MENU' && (
++          <section className="cart-section">
++        {/* CARRELLO HEADER: RIEPILOGO CONSEGNA CLICCABILE */}
++        <div 
++          onClick={() => setOrderConfigModalOpen(true)}
++          style={{backgroundColor: '#f1f2f6', borderRadius: '8px', padding: !isOrderConfigured ? '12px' : '8px', margin: !isOrderConfigured ? '39px 24px 15px 24px' : '39px 24px 10px 24px', color: 'var(--text-dark)', border: '1px solid #dfe4ea', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: !isOrderConfigured ? '60px' : 'auto'}}
++          title="Clicca per modificare modalità, orario o cliente"
++        >
++          {!isOrderConfigured ? (
++             <div style={{fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--primary-color)'}}>
++                + Crea nuovo ordine
++             </div>
++          ) : (
++             <div style={{width: '100%'}}>
++               <div style={{display: 'flex', alignItems: 'center', borderBottom: '1px solid #dfe4ea', paddingBottom: '4px', marginBottom: '4px'}}>
++                <div style={{flex: 1, fontWeight: 'bold', fontSize: '1.05rem', textAlign: 'left'}}>
++                   {orderType === 'DOMICILIO' ? 'Consegna' : 'Asporto'}
++                </div>
++                <div style={{flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.05rem'}}>
++                   {(orderType === 'DOMICILIO' && paymentType === 'CARD') && (
++                      <span style={{color: 'var(--primary-color)'}}>POS</span>
++                   )}
++                </div>
++                <div style={{flex: 1, textAlign: 'right'}}>
++                   <div style={{fontSize: '1.05rem', fontWeight: 'bold'}}>
++                      {deliveryTime || getNearest10MinSlot()}
++                   </div>
++                </div>
+               </div>
+-            )}
+-            {cart.length > 0 && (
+-               <button className="btn-clear" onClick={() => setCart([])}>Svuota</button>
+-            )}
+-          </div>
++             
++             <div style={{textAlign: 'left', width: '100%', padding: '0 2px'}}>
++                {selectedCustomer && (
++                  <div style={{marginTop: '2px'}}>
++                    <div style={{fontWeight: 'bold', fontSize: '1.05rem'}}>
++                       {selectedCustomer.name}
++                    </div>
++                    {selectedCustomer.phone && (
++                      <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '0px'}}>
++                        {selectedCustomer.phone}
++                      </div>
++                    )}
++                    {selectedCustomer.address && (
++                      <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '0px'}}>
++                        {selectedCustomer.address}
++                      </div>
++                    )}
++                    {selectedCustomer.notes && (
++                      <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '0px', fontStyle: 'italic'}}>
++                        {selectedCustomer.notes}
++                      </div>
++                    )}
++                  </div>
++                )}
++             </div>
++           </div>
++          )}
+         </div>
+ 
+         <div className="cart-items">
+-          {cart.length === 0 ? (
++          {cart.length === 0 && !(orderType === 'DOMICILIO' && deliveryFeeQuantity > 0) ? (
+             <div className="cart-empty">Nessun prodotto...</div>
+           ) : (
+-            cart.map(item => (
+-              <div key={item.cartId} className="cart-item">
+-                <div className="cart-item-info">
+-                  <div className="cart-item-name">{item.name}</div>
+-                  {/* Etichette dei modificatori inseriti */}
+-                  {item.modifiers && item.modifiers.length > 0 && (
+-                    <div className="cart-item-modifiers">
+-                      {item.modifiers.map(m => m.value).join(', ')}
++            <>
++              {/* Spese di Consegna renderizzate IN ALTO */}
++              {orderType === 'DOMICILIO' && deliveryFeeQuantity > 0 && (
++                <div className="cart-item" style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', cursor: 'default'}}>
++                  {/* RIGA 1: Nome, Qty, Prezzo sulla stessa riga */}
++                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
++                    {/* Nome */}
++                    <div className="cart-item-name" style={{flex: 1, textAlign: 'left', fontWeight: 'bold'}}>Spese di Consegna</div>
++                    
++                    {/* Quantità dinamica */}
++                    <div className="cart-item-controls" style={{display: 'flex', alignItems: 'center', margin: '0 10px', flexShrink: 0}}>
++                      <button className="qty-btn" onClick={(e) => { e.stopPropagation(); setDeliveryFeeQuantity(q => Math.max(0, q - 1)); }}><IconMinus /></button>
++                      <span className="qty-text" style={{margin: '0', fontWeight: 'bold', width: '28px', textAlign: 'center', display: 'inline-block'}}>{deliveryFeeQuantity}</span>
++                      <button className="qty-btn" onClick={(e) => { e.stopPropagation(); setDeliveryFeeQuantity(q => q + 1); }}><IconPlus /></button>
+                     </div>
+-                  )}
+-                  <div className="cart-item-price">€ {(item.price * item.quantity).toFixed(2)}</div>
+-                  <div className="cart-item-actions">
+-                    <button className="btn-text" onClick={() => openEditor(item)}>✏️ Modifica</button>
+-                    <button className="btn-text danger" onClick={() => removeItem(item.cartId)}>🗑️ Rimuovi</button>
++
++                    {/* Prezzo */}
++                    <div className="cart-item-price" style={{width: '75px', textAlign: 'right', fontWeight: 'bold', margin: '0', flexShrink: 0}}>
++                      € {(2.00 * deliveryFeeQuantity).toFixed(2)}
++                    </div>
++                  </div>
++                  
++                  {/* RIGA 2: Azioni */}
++                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px', width: '100%'}}>
++                    <div style={{flex: 1, textAlign: 'left'}}></div>
++                    
++                    <div className="cart-item-actions" style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
++                    </div>
++                  </div>
++                </div>
++              )}
++
++              {/* Prodotti del Carrello */}
++              {cart.map(item => (
++              <div key={item.cartId} className="cart-item" onClick={() => openEditor(item)} style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', cursor: item.category === 'pizze' ? 'pointer' : 'default'}}>
++                {/* RIGA 1: Nome, Qty, Prezzo sulla stessa riga */}
++                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
++                  {/* Nome (allineato a sinistra) */}
++                  <div className="cart-item-name" style={{flex: 1, textAlign: 'left', fontWeight: 'bold'}}>{item.name}</div>
++                  
++                  {/* Quantità (centrale/destra) */}
++                  <div className="cart-item-controls" style={{display: 'flex', alignItems: 'center', margin: '0 10px', flexShrink: 0}}>
++                    <button className="qty-btn" onClick={(e) => { e.stopPropagation(); item.quantity > 1 ? updateQuantity(item.cartId, -1) : removeItem(item.cartId); }}><IconMinus /></button>
++                    <span className="qty-text" style={{margin: '0', fontWeight: 'bold', width: '28px', textAlign: 'center', display: 'inline-block'}}>{item.quantity}</span>
++                    <button className="qty-btn" onClick={(e) => { e.stopPropagation(); updateQuantity(item.cartId, 1); }}><IconPlus /></button>
++                  </div>
++
++                  {/* Prezzo (allineato a destra) */}
++                  <div className="cart-item-price" style={{width: '75px', textAlign: 'right', fontWeight: 'bold', margin: '0', flexShrink: 0}}>
++                    € {(item.price * item.quantity).toFixed(2)}
+                   </div>
+                 </div>
+                 
+-                <div className="cart-item-controls">
+-                  <button className="qty-btn" onClick={() => item.quantity > 1 ? updateQuantity(item.cartId, -1) : removeItem(item.cartId)}>-</button>
+-                  <span className="qty-text">{item.quantity}</span>
+-                  <button className="qty-btn" onClick={() => updateQuantity(item.cartId, 1)}>+</button>
++                {/* RIGA 2: Modifiche, Azioni */}
++                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px', width: '100%'}}>
++                  {/* Modifiche (allineate a sinistra sotto il nome) */}
++                  <div style={{flex: 1, textAlign: 'left'}}>
++                    {item.modifiers && item.modifiers.length > 0 && (
++                      <div className="cart-item-modifiers" style={{color: 'var(--text-light)', fontStyle: 'italic', fontSize: '0.85rem'}}>
++                        {item.modifiers.map(m => m.value).join(', ')}
++                      </div>
++                    )}
++                  </div>
++                  
++                  {/* Azioni (rimosse in favore del pulsante '-') */}
++                  <div className="cart-item-actions" style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
++                  </div>
+                 </div>
+               </div>
+-            ))
++              ))}
++            </>
+           )}
++
++          <div ref={cartEndRef} />
+         </div>
+ 
+         <div className="cart-footer">
+-          <div className="payment-method">
+-            <button 
+-              className={`payment-btn ${paymentType === 'CASH' ? 'active' : ''}`}
+-              onClick={() => setPaymentType('CASH')}>Contanti
+-            </button>
+-            <button 
+-              className={`payment-btn ${paymentType === 'CARD' ? 'active' : ''}`}
+-              onClick={() => setPaymentType('CARD')}>Carta / POS
+-            </button>
+-          </div>
+-
+           <div className="totals-row grand-total">
+             <span>Totale:</span>
+             <span>€ {cartTotal.toFixed(2)}</span>
+           </div>
+ 
+-          <div className="action-buttons">
+-            <button className="btn-secondary" onClick={handlePrintTicket} disabled={cart.length === 0 || loading}>
+-              🖨️ Stampa Cucina (Epson)
++          <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
++            <button 
++              className="btn-success" 
++              onClick={() => { handlePrintTicket(); handleSaveOrder(); }} 
++              disabled={cart.length === 0 || loading}
++              style={{ flex: 1.5, padding: '16px', fontSize: '1.1rem', fontWeight: 'bold' }}
++            >
++              Stampa Ordine
+             </button>
+-            <button className="btn-primary" onClick={handlePrintReceipt} disabled={cart.length === 0 || loading}>
+-              🧾 Scontrino Fiscale (Custom K3)
++            <button 
++              className="btn-secondary" 
++              onClick={handleSaveOrder} 
++              disabled={cart.length === 0 || loading}
++              style={{ flex: 1, padding: '12px', fontSize: '0.95rem', fontWeight: 'bold' }}
++            >
++              {editingOrderId ? 'Salva Modifiche' : 'Salva'}
+             </button>
+           </div>
+         </div>
+-      </section>
++        </section>
++        )}
++
++      </div>
+     </div>
+   );
+-}
+-
+-export default App;
++}
+\ No newline at end of file

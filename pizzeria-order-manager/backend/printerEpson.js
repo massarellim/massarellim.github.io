@@ -17,7 +17,17 @@ export async function printOrderEpson({ orderItems, orderId, table, notes, custo
     if (customer.address) console.log(`Indirizzo: ${customer.address}`);
   }
   orderItems.forEach(item => {
-    console.log(`- ${item.quantity}x ${item.name} `);
+    if (item.isFamily) {
+      let mods1 = item.halves && item.halves[0] && item.halves[0].modifiers && item.halves[0].modifiers.length > 0 ? ` (${item.halves[0].modifiers.map(m => m.value).join(', ')})` : '';
+      let mods2 = item.halves && item.halves[1] && item.halves[1].modifiers && item.halves[1].modifiers.length > 0 ? ` (${item.halves[1].modifiers.map(m => m.value).join(', ')})` : '';
+      let half1 = item.halves && item.halves[0] ? `1/2 ${item.halves[0].name}${mods1}` : '1/2 Vuota';
+      let half2 = item.halves && item.halves[1] ? `1/2 ${item.halves[1].name}${mods2}` : '1/2 Vuota';
+      let deltaStr = item.manualPriceDelta ? ` (Delta: ${item.manualPriceDelta > 0 ? '+' : ''}${item.manualPriceDelta.toFixed(2)}€)` : '';
+      console.log(`- ${item.quantity}x ${item.name} [${half1} | ${half2}]${deltaStr}`);
+    } else {
+      let mods = item.modifiers && item.modifiers.length > 0 ? ` (${item.modifiers.map(m => m.value).join(', ')})` : '';
+      console.log(`- ${item.quantity}x ${item.name}${mods}`);
+    }
   });
   if (notes) console.log(`Note: ${notes}`);
   console.log('-----------------------------');
@@ -42,7 +52,19 @@ export async function printOrderEpson({ orderItems, orderId, table, notes, custo
         .align('lt');
       
       orderItems.forEach(item => {
-        printer.text(`${item.quantity}x ${item.name}`);
+        if (item.isFamily) {
+          let mods1 = item.halves && item.halves[0] && item.halves[0].modifiers && item.halves[0].modifiers.length > 0 ? ` (${item.halves[0].modifiers.map(m => m.value).join(', ')})` : '';
+          let mods2 = item.halves && item.halves[1] && item.halves[1].modifiers && item.halves[1].modifiers.length > 0 ? ` (${item.halves[1].modifiers.map(m => m.value).join(', ')})` : '';
+          let half1 = item.halves && item.halves[0] ? `1/2 ${item.halves[0].name}${mods1}` : '1/2 Vuota';
+          let half2 = item.halves && item.halves[1] ? `1/2 ${item.halves[1].name}${mods2}` : '1/2 Vuota';
+          printer.text(`${item.quantity}x ${item.name}`);
+          printer.text(`   -> [${half1}]`);
+          printer.text(`   -> [${half2}]`);
+          if (item.manualPriceDelta) printer.text(`   Delta: ${item.manualPriceDelta > 0 ? '+' : ''}${item.manualPriceDelta.toFixed(2)}€`);
+        } else {
+          let mods = item.modifiers && item.modifiers.length > 0 ? ` (${item.modifiers.map(m => m.value).join(', ')})` : '';
+          printer.text(`${item.quantity}x ${item.name}${mods}`);
+        }
       });
       
       if (notes) {

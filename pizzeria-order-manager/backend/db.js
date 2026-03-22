@@ -34,10 +34,18 @@ export async function initDb() {
       total_price REAL NOT NULL,
       payment_method TEXT,
       items_json TEXT NOT NULL,
+      order_type TEXT,
+      delivery_time TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     );
   `);
+
+  try {
+    await dbInstance.exec(`ALTER TABLE orders ADD COLUMN is_fiscalized BOOLEAN DEFAULT 0;`);
+  } catch (e) {
+    // Column might already exist
+  }
 
   console.log('SQLite Database initialized successfully.');
   return dbInstance;

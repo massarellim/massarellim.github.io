@@ -24,14 +24,27 @@ export async function printFiscalReceiptCustom({ orderItems, total, paymentType,
     <printRecMessageText>Indirizzo: ${customer.address}</printRecMessageText>`;
   }
 
-  let itemsXml = orderItems.map(item => `
+  let itemsXml = orderItems.map(item => {
+    let desc = item.name;
+    if (item.isFamily) {
+       // Per lo scontrino fiscale inviamo 1 riga compatta col prezzo totale della famiglia
+       let half1 = item.halves && item.halves[0] ? item.halves[0].name.substring(0, 10) : 'Vuota';
+       let half2 = item.halves && item.halves[1] ? item.halves[1].name.substring(0, 10) : 'Vuota';
+       desc = `FAM. ${half1}/${half2}`;
+    } else {
+       // Se ci sono molte modifiche, su K3 a volte si invia "Reparto 1" con prezzo maggiorato
+       // Il totale è già in item.price
+    }
+    
+    return `
     <printRecItem>
-      <description>${item.name}</description>
+      <description>${desc}</description>
       <quantity>${item.quantity}</quantity>
       <unitPrice>${item.price.toFixed(2)}</unitPrice>
       <department>1</department>
     </printRecItem>
-  `).join('');
+    `;
+  }).join('');
 
   let xmlDoc = `<?xml version="1.0" encoding="utf-8"?>
 <printer>
