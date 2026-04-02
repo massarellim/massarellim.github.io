@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "VAST Debugger Helper",
+  "version": "1.0",
+  "description": "Bypass CORS and Spoof User-Agent for CTV VAST debugging.",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

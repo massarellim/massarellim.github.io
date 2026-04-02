@@ -289,7 +289,7 @@ function App() {
             </div>
 
             {/* Blocco Destro: Pezzi, POS, Prezzo rigorosamente incolonnati */}
-            <div style={{display: 'flex', alignItems: 'center', gap: '15px', minWidth: '180px', justifyContent: 'flex-end'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '15px', minWidth: '200px', justifyContent: 'flex-end'}}>
               <div style={{color: 'var(--text-light)', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: '85px'}}>
                 <span style={{fontWeight: 'bold', color: 'var(--text-dark)', textAlign: 'right', display: 'flex', alignItems: 'center', gap: '14px'}}>
                   {o.order_type === 'DOMICILIO' && <span title="Consegna a domicilio" style={{display: 'flex', alignItems: 'center', color: 'var(--text-light)'}}><IconMoto /></span>}
@@ -318,7 +318,7 @@ function App() {
                  <div style={{minWidth: '35px'}}></div> /* Spacer per mantenere allineamento perfetto */
               )}
               
-              <div style={{fontWeight: '900', fontSize: '1.15rem', color: 'var(--text-dark)', minWidth: '85px', textAlign: 'right'}}>
+              <div style={{fontWeight: '900', fontSize: '1.15rem', color: 'var(--text-dark)', minWidth: '105px', textAlign: 'right'}}>
                 € {(o.total_price || 0).toFixed(2)}
               </div>
             </div>

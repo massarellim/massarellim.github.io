@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAST Debugger Helper</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i data-lucide="shield"></i>
+            <span>VAST Debugger</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- CORS Card -->
+        <div class="card">
+            <div class="card-header">
+                <i data-lucide="unlock"></i>
+                <span>CORS Bypass</span>
+                <label class="switch">
+                    <input type="checkbox" id="cors_enabled">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <p class="description">Force Access-Control-Allow-Origin: * on responses.</p>
+        </div>
+
+        <!-- User Agent Card -->
+        <div class="card">
+            <div class="card-header">
+                <i data-lucide="smartphone"></i>
+                <span>User-Agent Spoofing</span>
+                <label class="switch">
+                    <input type="checkbox" id="ua_enabled">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            
+            <div class="form-group" id="ua_container">
+                <label for="ua_profile">TV Profile</label>
+                <select id="ua_profile">
+                    <option value="Mozilla/5.0 (SMART-TV; LINUX; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) 85.0.4183.93/6.0 TV Safari/537.36">Samsung Tizen</option>
+                    <option value="Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/5.0 NativeTV/5.0 TV Safari/538.1">Samsung Tizen 5.0</option>
+                    <option value="Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36 WebAppManager">LG WebOS</option>
+                    <option value="Mozilla/5.0 (Linux; Android 9; SHIELD Android TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36">Android TV / Shield</option>
+                    <option value="Roku/DVP-9.10 (519.10E04111A)">Roku</option>
+                    <option value="AmazonFireTV/1.0 (Linux; Android 5.1.1; AFTN) AppleWebKit/537.36 (KHTML, like Gecko) Silk/59.1.59 Safari/537.36">Fire TV (Silk)</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <script src="popup.js"></script>
+</body>
+</html>
