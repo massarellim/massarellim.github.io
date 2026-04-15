@@ -4,10 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Left or Right - The Game</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --left-color: #6366f1; /* Indigo */
+            --right-color: #ec4899; /* Pink */
+            --text-light: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .split-pane {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .left-pane {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .right-pane {
+            background: linear-gradient(135deg, #db2777 0%, #ec4899 100%);
+        }
+
+        .pane-content {
+            text-align: center;
+            padding: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .pane-content h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hover Effects */
+        .split-pane:hover {
+            flex: 1.2;
+            z-index: 2;
+        }
+
+        .left-pane:hover {
+            box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .right-pane:hover {
+            box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .split-pane:hover .pane-content {
+            transform: scale(1.1);
+        }
+
+        /* Question Overlay */
+        .question-overlay {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem 3rem;
+            border-radius: 50px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 80%;
+            pointer-events: none; /* Let clicks pass through to panes */
+        }
+
+        .question-overlay h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .score-reveal {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .question-overlay {
+            animation: popIn 0.5s ease-out forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+            
+            .split-pane {
+                width: 100%;
+                height: 50vh;
+            }
+            
+            .question-overlay {
+                top: 50%;
+                width: 90%;
+            }
+            
+            .pane-content h2 {
+                font-size: 2rem;
+            }
+            
+            .split-pane:hover {
+                flex: 1; /* Disable flex expand on mobile to avoid jumpiness */
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="game-container">
@@ -27,6 +186,152 @@
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        const questions = [
+            {
+                question: "Which gets Googled more?",
+                left: "YouTube",
+                right: "Amazon",
+                leftScore: 185000000,
+                rightScore: 124000000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Facebook",
+                right: "Google",
+                leftScore: 101000000,
+                rightScore: 83100000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Gmail",
+                right: "ChatGPT",
+                leftScore: 55600000,
+                rightScore: 45500000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Wordle",
+                right: "News",
+                leftScore: 55600000,
+                rightScore: 37200000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Weather",
+                right: "Translate",
+                leftScore: 37200000,
+                rightScore: 30400000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Home Depot",
+                right: "NBA",
+                leftScore: 30400000,
+                rightScore: 24900000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Ebay",
+                right: "Instagram",
+                leftScore: 24900000,
+                rightScore: 20400000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "ESPN",
+                right: "Lowes",
+                leftScore: 20400000,
+                rightScore: 16600000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Zillow",
+                right: "Google Maps",
+                leftScore: 16600000,
+                rightScore: 13600000
+            },
+            {
+                question: "Which gets Googled more?",
+                left: "Canva",
+                right: "Netflix",
+                leftScore: 20400000,
+                rightScore: 13600000
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let isAnimating = false;
+
+        const questionTextEl = document.getElementById('question-text');
+        const leftTextEl = document.getElementById('left-text');
+        const rightTextEl = document.getElementById('right-text');
+        const leftScoreEl = document.getElementById('left-score');
+        const rightScoreEl = document.getElementById('right-score');
+        const leftPane = document.getElementById('left-choice');
+        const rightPane = document.getElementById('right-choice');
+
+        function loadQuestion(index) {
+            const currentQuestion = questions[index];
+            
+            questionTextEl.innerText = currentQuestion.question;
+            leftTextEl.innerText = currentQuestion.left;
+            rightTextEl.innerText = currentQuestion.right;
+            
+            // Reset scores
+            leftScoreEl.innerText = "0";
+            rightScoreEl.innerText = "0";
+            leftScoreEl.classList.remove('visible');
+            rightScoreEl.classList.remove('visible');
+            
+            isAnimating = false;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0; // Loop back to the beginning
+            }
+            
+            // Add a small scale down/up animation to indicate change
+            document.querySelector('.game-container').style.opacity = 0.5;
+            
+            setTimeout(() => {
+                loadQuestion(currentQuestionIndex);
+                document.querySelector('.game-container').style.opacity = 1;
+            }, 200);
+        }
+
+        function handleChoice(selectedPane) {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // Reveal scores with formatting
+            leftScoreEl.innerText = currentQuestion.leftScore.toLocaleString();
+            rightScoreEl.innerText = currentQuestion.rightScore.toLocaleString();
+            
+            leftScoreEl.classList.add('visible');
+            rightScoreEl.classList.add('visible');
+            
+            // Wait 2 seconds to show scores, then go to next question
+            setTimeout(() => {
+                nextQuestion();
+            }, 2000);
+        }
+
+        leftPane.addEventListener('click', () => {
+            handleChoice('left');
+        });
+
+        rightPane.addEventListener('click', () => {
+            handleChoice('right');
+        });
+
+        // Initialize
+        loadQuestion(currentQuestionIndex);
+    </script>
 </body>
 </html>
