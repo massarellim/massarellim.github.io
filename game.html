@@ -353,14 +353,9 @@
             leftTextEl.innerText = currentQuestion.left;
             rightTextEl.innerText = currentQuestion.right;
             
-            // Set background images with dark overlay
-            leftPane.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${currentQuestion.leftImage}')`;
-            leftPane.style.backgroundSize = 'cover';
-            leftPane.style.backgroundPosition = 'center';
-            
-            rightPane.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${currentQuestion.rightImage}')`;
-            rightPane.style.backgroundSize = 'cover';
-            rightPane.style.backgroundPosition = 'center';
+            // Set background with dark overlay and image, overriding CSS gradients
+            leftPane.style.background = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${currentQuestion.leftImage}') center/cover no-repeat`;
+            rightPane.style.background = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${currentQuestion.rightImage}') center/cover no-repeat`;
             
             // Reset scores
             leftScoreEl.innerText = "0";
