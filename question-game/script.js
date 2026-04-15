@@ -1,273 +1,101 @@
 const questions = [
     {
-        question: "Which is taller?",
-        left: "Eiffel Tower",
-        right: "Statue of Liberty"
+        question: "Which gets Googled more?",
+        left: "YouTube",
+        right: "Amazon",
+        leftScore: 185000000,
+        rightScore: 124000000
     },
     {
-        question: "Which is faster?",
-        left: "Cheetah",
-        right: "Peregrine Falcon"
+        question: "Which gets Googled more?",
+        left: "Facebook",
+        right: "Google",
+        leftScore: 101000000,
+        rightScore: 83100000
     },
     {
-        question: "Which is larger?",
-        left: "Pacific Ocean",
-        right: "Atlantic Ocean"
+        question: "Which gets Googled more?",
+        left: "Gmail",
+        right: "ChatGPT",
+        leftScore: 55600000,
+        rightScore: 45500000
     },
     {
-        question: "Which came first?",
-        left: "Star Wars",
-        right: "Indiana Jones"
+        question: "Which gets Googled more?",
+        left: "Wordle",
+        right: "News",
+        leftScore: 55600000,
+        rightScore: 37200000
     },
     {
-        question: "Which is heavier?",
-        left: "A Ton of Feathers",
-        right: "A Ton of Bricks"
+        question: "Which gets Googled more?",
+        left: "Weather",
+        right: "Translate",
+        leftScore: 37200000,
+        rightScore: 30400000
     },
     {
-        question: "Which is more popular on Google?",
-        left: "Pizza",
-        right: "Burgers"
+        question: "Which gets Googled more?",
+        left: "Home Depot",
+        right: "NBA",
+        leftScore: 30400000,
+        rightScore: 24900000
     },
     {
-        question: "Which has more moons?",
-        left: "Jupiter",
-        right: "Saturn"
+        question: "Which gets Googled more?",
+        left: "Ebay",
+        right: "Instagram",
+        leftScore: 24900000,
+        rightScore: 20400000
     },
     {
-        question: "Which is older?",
-        left: "The Pyramids",
-        right: "Stonehenge"
+        question: "Which gets Googled more?",
+        left: "ESPN",
+        right: "Lowes",
+        leftScore: 20400000,
+        rightScore: 16600000
     },
     {
-        question: "Which is further from the Sun?",
-        left: "Neptune",
-        right: "Pluto"
+        question: "Which gets Googled more?",
+        left: "Zillow",
+        right: "Google Maps",
+        leftScore: 16600000,
+        rightScore: 13600000
     },
     {
-        question: "Which is more common?",
-        left: "Oxygen",
-        right: "Nitrogen"
-    },
-    {
-        question: "Which is hotter?",
-        left: "Venus",
-        right: "Mercury"
-    },
-    {
-        question: "Which is longer?",
-        left: "Nile",
-        right: "Amazon"
-    },
-    {
-        question: "Which has a larger population?",
-        left: "Tokyo",
-        right: "New York"
-    },
-    {
-        question: "Which is bigger?",
-        left: "Mount Everest",
-        right: "K2"
-    },
-    {
-        question: "Which is more dense?",
-        left: "Gold",
-        right: "Lead"
-    },
-    {
-        question: "Which is harder?",
-        left: "Diamond",
-        right: "Corundum"
-    },
-    {
-        question: "Which is older?",
-        left: "Mona Lisa",
-        right: "The Last Supper"
-    },
-    {
-        question: "Which came first?",
-        left: "Nintendo",
-        right: "Sony"
-    },
-    {
-        question: "Which is larger?",
-        left: "Russia",
-        right: "Canada"
-    },
-    {
-        question: "Which has more records sold?",
-        left: "The Beatles",
-        right: "Elvis Presley"
-    },
-    {
-        question: "Which is more common in the universe?",
-        left: "Hydrogen",
-        right: "Helium"
-    },
-    {
-        question: "Which is faster?",
-        left: "Light",
-        right: "Sound"
-    },
-    {
-        question: "Which is heavier?",
-        left: "Blue Whale",
-        right: "African Elephant"
-    },
-    {
-        question: "Which has a longer lifespan?",
-        left: "Tortoise",
-        right: "Bowhead Whale"
-    },
-    {
-        question: "Which is more popular?",
-        left: "iPhone",
-        right: "Android"
-    },
-    {
-        question: "Which is higher?",
-        left: "Burj Khalifa",
-        right: "Shanghai Tower"
-    },
-    {
-        question: "Which is deeper?",
-        left: "Mariana Trench",
-        right: "Grand Canyon"
-    },
-    {
-        question: "Which is larger?",
-        left: "Sahara Desert",
-        right: "Antarctica"
-    },
-    {
-        question: "Which came first?",
-        left: "Internet",
-        right: "World Wide Web"
-    },
-    {
-        question: "Which has more calories?",
-        left: "Avocado",
-        right: "Apple"
-    },
-    {
-        question: "Which is more common in the human body?",
-        left: "Water",
-        right: "Carbon"
-    },
-    {
-        question: "Which is larger?",
-        left: "Texas",
-        right: "Alaska"
-    },
-    {
-        question: "Which is older?",
-        left: "Harvard",
-        right: "Yale"
-    },
-    {
-        question: "Which came first?",
-        left: "Mickey Mouse",
-        right: "Bugs Bunny"
-    },
-    {
-        question: "Which is faster?",
-        left: "Bullet Train",
-        right: "Formula 1 Car"
-    },
-    {
-        question: "Which has more letters in its alphabet?",
-        left: "English",
-        right: "Spanish"
-    },
-    {
-        question: "Which is further south?",
-        left: "Australia",
-        right: "South Africa"
-    },
-    {
-        question: "Which has more countries?",
-        left: "Africa",
-        right: "Asia"
-    },
-    {
-        question: "Which is more expensive?",
-        left: "Saffron",
-        right: "Gold"
-    },
-    {
-        question: "Which came first?",
-        left: "The Bicycle",
-        right: "The Train"
-    },
-    {
-        question: "Which is larger?",
-        left: "The Moon",
-        right: "Pluto"
-    },
-    {
-        question: "Which has more episodes?",
-        left: "The Simpsons",
-        right: "South Park"
-    },
-    {
-        question: "Which is older?",
-        left: "Rome",
-        right: "Athens"
-    },
-    {
-        question: "Which came first?",
-        left: "The Telephone",
-        right: "The Lightbulb"
-    },
-    {
-        question: "Which is larger?",
-        left: "The Sun",
-        right: "Betelgeuse"
-    },
-    {
-        question: "Which is faster?",
-        left: "Cheetah",
-        right: "Greyhound"
-    },
-    {
-        question: "Which has more legs?",
-        left: "Octopus",
-        right: "Squid"
-    },
-    {
-        question: "Which is more common in the earth's crust?",
-        left: "Silicon",
-        right: "Aluminum"
-    },
-    {
-        question: "Which is older?",
-        left: "Grand Canyon",
-        right: "Mount Everest"
-    },
-    {
-        question: "Which came first?",
-        left: "Coca Cola",
-        right: "Pepsi"
+        question: "Which gets Googled more?",
+        left: "Canva",
+        right: "Netflix",
+        leftScore: 20400000,
+        rightScore: 13600000
     }
 ];
 
 let currentQuestionIndex = 0;
+let isAnimating = false;
 
 const questionTextEl = document.getElementById('question-text');
 const leftTextEl = document.getElementById('left-text');
 const rightTextEl = document.getElementById('right-text');
+const leftScoreEl = document.getElementById('left-score');
+const rightScoreEl = document.getElementById('right-score');
 const leftPane = document.getElementById('left-choice');
 const rightPane = document.getElementById('right-choice');
 
 function loadQuestion(index) {
     const currentQuestion = questions[index];
     
-    // Add a fade-out effect or similar if desired, but for simplicity and speed:
     questionTextEl.innerText = currentQuestion.question;
     leftTextEl.innerText = currentQuestion.left;
     rightTextEl.innerText = currentQuestion.right;
     
-    // Reset any active states if needed
+    // Reset scores
+    leftScoreEl.innerText = "0";
+    rightScoreEl.innerText = "0";
+    leftScoreEl.classList.remove('visible');
+    rightScoreEl.classList.remove('visible');
+    
+    isAnimating = false;
 }
 
 function nextQuestion() {
@@ -285,14 +113,31 @@ function nextQuestion() {
     }, 200);
 }
 
+function handleChoice(selectedPane) {
+    if (isAnimating) return;
+    isAnimating = true;
+    
+    const currentQuestion = questions[currentQuestionIndex];
+    
+    // Reveal scores with formatting
+    leftScoreEl.innerText = currentQuestion.leftScore.toLocaleString();
+    rightScoreEl.innerText = currentQuestion.rightScore.toLocaleString();
+    
+    leftScoreEl.classList.add('visible');
+    rightScoreEl.classList.add('visible');
+    
+    // Wait 2 seconds to show scores, then go to next question
+    setTimeout(() => {
+        nextQuestion();
+    }, 2000);
+}
+
 leftPane.addEventListener('click', () => {
-    console.log('Selected Left:', questions[currentQuestionIndex].left);
-    nextQuestion();
+    handleChoice('left');
 });
 
 rightPane.addEventListener('click', () => {
-    console.log('Selected Right:', questions[currentQuestionIndex].right);
-    nextQuestion();
+    handleChoice('right');
 });
 
 // Initialize
