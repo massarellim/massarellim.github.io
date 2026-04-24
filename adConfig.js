@@ -90,6 +90,7 @@ pbjs.cmd.push(function () {
     
     // Crites: The user instructed to only respond for the first slot with Criteo
     // and use the same random logic for pricing, but keep the long delay!
+    // Update: Criteo must always return at least 0.01 cents, never 0.00.
     intercepts.push({
         when: function(bidRequest) {
             return bidRequest.bidder === "criteo" && bidRequest.adUnitCode === "/6353/test_desktop_1";
@@ -97,10 +98,11 @@ pbjs.cmd.push(function () {
         options: { delay: delays["criteo"] },
         then: function(bidRequest) {
             let cpm = grid["/6353/test_desktop_1"]["criteo"];
-            if (cpm > 0) {
-                return { cpm: cpm, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
-            }
-            return null; // No bid if 0
+            
+            // Force a minimum bid of 0.01 if the grid gave 0
+            let cpmToReturn = cpm > 0 ? cpm : 0.01;
+            
+            return { cpm: cpmToReturn, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
         }
     });
 
