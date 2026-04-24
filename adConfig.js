@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.5");
+console.log("adConfig.js Version: v0.6");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -20,78 +20,30 @@ pbjs.cmd.push(function () {
 
     pbjs.addAdUnits(adUnits);
 
-    // Mocking bid distributions independently per slot!
-    let grid = {}; // Store bids: { adUnitCode: { bidder: cpm } }
-    let highestBidder = null;
-    let highestCpm = 0;
+    // Diagnostic approach: Hardcoding rules for Slot 1 to test if other bidders can match at all.
+    // If this fails, the intercept feature is strictly limited for non-AppNexus adapters in this build.
+    
+    let intercepts = [
+      // Slot 1 Rules
+      { when: { bidder: 'appnexus', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.10, width: 300, height: 250, creativeId: 'cr1', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 310 } },
+      { when: { bidder: 'ix', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.20, width: 300, height: 250, creativeId: 'cr2', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 410 } },
+      { when: { bidder: 'criteo', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.30, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 6000 } },
+      { when: { bidder: 'pubmatic', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.15, width: 300, height: 250, creativeId: 'cr4', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 510 } },
+      { when: { bidder: 'rubicon', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr5', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 680 } },
+      { when: { bidder: 'openx', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.25, width: 300, height: 250, creativeId: 'cr6', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 750 } },
+      { when: { bidder: 'adform', adUnitCode: '/6353/test_desktop_1' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr7', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 710 } }
+    ];
 
-    // 1. Generate Bids for each slot independently
-    adUnitCodes.forEach(code => {
-        grid[code] = {};
-        allBidders.forEach(bidder => {
-            let cpm = 0;
-            if (bidder === "rubicon" || bidder === "adform") {
-                cpm = 0; // Always no bid
-            } else {
-                let rand = Math.random();
-                if (rand < 0.70) {
-                    cpm = 0; // 70% chance: No bid
-                } else if (rand < 0.85) {
-                    cpm = Math.random() < 0.5 ? 0.01 : 0.02; // 15% chance: Low bid
-                } else {
-                    cpm = (Math.floor(Math.random() * 48) + 3) / 100; // 15% chance: Random 0.03 - 0.50
-                }
-            }
-            grid[code][bidder] = cpm;
-            
-            // Track highest bidder across all slots (excluding Criteo which times out)
-            if (bidder !== "criteo" && cpm > highestCpm) {
-                highestCpm = cpm;
-                highestBidder = bidder;
-            }
-        });
-    });
-
-    // 2. Generate static delays per bidder (so it's the same for all slots)
-    let delays = {};
-    allBidders.forEach(bidder => {
-        if (bidder === "criteo") {
-            delays[bidder] = Math.floor(Math.random() * 2301) + 5500; // 5500 to 7800 ms (always times out)
-        } else {
-            delays[bidder] = Math.floor(Math.random() * 501) + 300; // 300 to 800 ms
-            if (bidder === highestBidder) {
-                delays[bidder] = Math.floor(Math.random() * 251) + 300; // Fastest 50% (300 to 550 ms)
-            }
-        }
-    });
-
-    // 3. Build Intercepts statically without using functions in 'then' 
-    // to prevent the "non-serializable properties" warning and stop fallbacks!
-    let intercepts = [];
-    adUnitCodes.forEach(code => {
-        allBidders.forEach(bidder => {
-            let cpm = grid[code][bidder];
-            let delay = delays[bidder];
-            
-            // To prevent fallback to high values like 3.57 / 3.58 when cpm is 0,
-            // we return a very small positive non-zero number (0.0001) as a near-zero mock.
-            let cpmToReturn = cpm > 0 ? cpm : 0.0001; 
-            
-            intercepts.push({
-                when: { bidder: bidder, adUnitCode: code }, // Matches slot and bidder
-                then: {
-                    cpm: cpmToReturn,
-                    width: 300,
-                    height: 250,
-                    creativeId: 'mock-cr-123',
-                    netRevenue: true,
-                    currency: 'USD',
-                    ttl: 300
-                },
-                options: { delay: delay }
-            });
-        });
-    });
+    // Let's apply the same hardcoded pattern to Slot 2 with slightly different values
+    intercepts.push(
+      { when: { bidder: 'appnexus', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.22, width: 300, height: 250, creativeId: 'cr1', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 320 } },
+      { when: { bidder: 'ix', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.12, width: 300, height: 250, creativeId: 'cr2', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 420 } },
+      { when: { bidder: 'criteo', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 6100 } },
+      { when: { bidder: 'pubmatic', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.33, width: 300, height: 250, creativeId: 'cr4', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 520 } },
+      { when: { bidder: 'rubicon', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr5', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 690 } },
+      { when: { bidder: 'openx', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr6', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 760 } },
+      { when: { bidder: 'adform', adUnitCode: '/6353/test_desktop_2' }, then: { cpm: 0.0001, width: 300, height: 250, creativeId: 'cr7', netRevenue: true, currency: 'USD', ttl: 300 }, options: { delay: 720 } }
+    );
 
     pbjs.setConfig({
       debugging: {
