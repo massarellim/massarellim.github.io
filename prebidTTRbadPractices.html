@@ -40,6 +40,10 @@
     <!-- Cites: Mirror loads hydra.js at Index 167, after the blocking polyfills script. -->
     <script src="hydra_mock.js"></script>
 
+    <!-- BAD PRACTICE 23: Loading Prebid config and bidding simulation externally to hide it -->
+    <!-- This makes it harder to debug and understand the ad tech stack. -->
+    <script src="adConfig.js"></script>
+
     <script>
       window.googletag = window.googletag || { cmd: [] };
       var pbjs = pbjs || {};
@@ -104,92 +108,9 @@
         });
 
         pbjs.cmd.push(function () {
-          let adUnits = [];
-          
-          // Add 10 Desktop Ad Units
-          for(let i=1; i<=10; i++) {
-              adUnits.push({
-                code: "/6353/test_desktop_" + i,
-                mediaTypes: { banner: { sizes: [300, 250] } },
-                bids: [
-                  { bidder: "appnexus", params: { placementId: 1233 } },
-                  { bidder: "ix", params: { siteId: "9999990" } },
-                  { bidder: "criteo", params: { zoneId: 1455580 } },
-                  { bidder: "pubmatic", params: { publisherId: "156210" } },
-                  { bidder: "rubicon", params: { accountId: "1001" } },
-                  { bidder: "openx", params: { unit: "539999999" } },
-                  { bidder: "adform", params: { mid: 2000 } }
-                ]
-              });
-          }
-          
-          // BAD PRACTICE 8: Requesting Prebid bids for slots not visible on current device (Phantom Slots).
-          // Added to increase bid request payload and wait time for useless responses.
-          for(let i=1; i<=10; i++) {
-              adUnits.push({
-                code: "/6353/test_mobile_" + i,
-                mediaTypes: { banner: { sizes: [300, 250] } },
-                bids: [
-                  { bidder: "appnexus", params: { placementId: 1234 } },
-                  { bidder: "ix", params: { siteId: "9999990" } },
-                  { bidder: "criteo", params: { zoneId: 1455580 } },
-                  { bidder: "pubmatic", params: { publisherId: "156210" } },
-                  { bidder: "rubicon", params: { accountId: "1001" } },
-                  { bidder: "openx", params: { unit: "539999999" } },
-                  { bidder: "adform", params: { mid: 2000 } }
-                ]
-              });
-          }
-
-          pbjs.addAdUnits(adUnits);
-
-          // BAD PRACTICE 9: Setting a very high timeout (5000ms) with a delayed bidder (7000ms).
-          // Added to force the auction to wait the absolute maximum time before failing.
-          // 
-          // BAD PRACTICE 20: Loading multiple User ID modules simultaneously.
-          // Added to simulate the CPU and network overhead of resolving multiple identities on load.
-          // Cites: The subagent found multiple ID modules (sharedId, identityLink, and id5Id) on the Mirror.
-          
-          // BAD PRACTICE 22: Mocking bid distributions with high 'No Bid' frequency (70%).
-          // Added to simulate real-world low fill rates and processing overhead.
-          let intercepts = [
-            {
-              when: { bidder: "criteo" },
-              then: { cpm: 0.5 },
-              options: { delay: 7000 }, // Slow bidder
-            }
-          ];
-          
-          // Rubicon and Adform will always return no bid (omitted from intercepts, will fail naturally)
-          let biddersToRandomize = ["appnexus", "ix", "pubmatic", "openx"];
-          biddersToRandomize.forEach(bidder => {
-              let rand = Math.random();
-              if (rand < 0.70) {
-                  // 70% chance: No bid (let it fail naturally on dummy parameters)
-              } else if (rand < 0.85) {
-                  // 15% chance: Low bid (0.01 or 0.02)
-                  let cpm = Math.random() < 0.5 ? 0.01 : 0.02;
-                  intercepts.push({ when: { bidder: bidder }, then: { cpm: cpm } });
-              } else {
-                  // 15% chance: Random between 0.03 and 0.50 in 0.01 increments
-                  let cpm = (Math.floor(Math.random() * 48) + 3) / 100;
-                  intercepts.push({ when: { bidder: bidder }, then: { cpm: cpm } });
-              }
-          });
-
-          pbjs.setConfig({
-            debugging: {
-              enabled: true,
-              intercept: intercepts
-            },
-            userSync: {
-              userIds: [
-                { name: 'sharedId', params: { syncDelay: 100 } },
-                { name: 'identityLink', params: { syncDelay: 100 } },
-                { name: 'id5Id', params: { syncDelay: 100 } }
-              ]
-            }
-          });
+          // BAD PRACTICE 23: Prebid AdUnits and bid distribution configuration 
+          // have been moved to the external adConfig.js script to hide the setup
+          // from simple source code debugging.
 
           // BAD PRACTICE 10: Pinging cookie sync immediately on auctionInit.
           // Added to flood the browser with tracking requests right at the start of auction.
