@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.11");
+console.log("adConfig.js Version: v0.8");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -9,12 +9,29 @@ pbjs.cmd.push(function () {
     for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
+    // Helper to get valid dummy params for each bidder to pass Prebid validation
+    function getValidParams(bidder) {
+        switch(bidder) {
+            case 'appnexus': return { placementId: 1233 };
+            case 'ix': return { siteId: "9999990" };
+            case 'criteo': return { zoneId: 1455580 };
+            case 'pubmatic': return { publisherId: "156210" };
+            case 'rubicon': return { accountId: 1001, siteId: 1002, zoneId: 1003 }; // Integers!
+            case 'openx': return { unit: "539999999", delDomain: "example-d.openx.net" };
+            case 'adform': return { mid: 2000 };
+            default: return { dummy: 1 };
+        }
+    }
+
     let adUnits = [];
     adUnitCodes.forEach(code => {
         adUnits.push({
           code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
+          bids: allBidders.map(bidder => ({ 
+              bidder: bidder, 
+              params: getValidParams(bidder) 
+          }))
         });
     });
 
@@ -65,7 +82,10 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Reverting to Version 0.8 structure which was "perfect" for you.
+    // 3. Build Intercepts using a function in 'when' to prevent matching on 0 CPM!
+    // Cites: The user instructed to not setup ANY intercepts when cpm = 0.
+    // We use the function-based 'when' match rule shown in the user's documentation.
+    
     let intercepts = [];
     
     // Criteo always has a rule to enforce its large timeout
@@ -78,10 +98,14 @@ pbjs.cmd.push(function () {
             if (cpm > 0) {
                 return { cpm: cpm, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
             }
-            return null; // Returns null when cpm is 0 (restored from v0.8)
+            return null; // No bid if 0
         }
     });
 
+    // For Rubicon and Adform (always 0 bids), they only get delay intercepts if requested, 
+    // but the user said "dont setup ANY intercepts when cpm = 0" in general. 
+    // So we will also skip them here to be strict!
+    
     // For the other randomized bidders:
     let biddersToMock = ["appnexus", "ix", "pubmatic", "openx"];
     biddersToMock.forEach(bidder => {
