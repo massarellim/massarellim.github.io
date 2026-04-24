@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.4");
+console.log("adConfig.js Version: v0.5");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -9,29 +9,12 @@ pbjs.cmd.push(function () {
     for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
-    // Helper to get valid dummy params for each bidder to pass Prebid validation
-    function getValidParams(bidder) {
-        switch(bidder) {
-            case 'appnexus': return { placementId: 1233 };
-            case 'ix': return { siteId: "9999990" };
-            case 'criteo': return { zoneId: 1455580 };
-            case 'pubmatic': return { publisherId: "156210" };
-            case 'rubicon': return { accountId: 1001, siteId: 1002, zoneId: 1003 }; // Integers!
-            case 'openx': return { unit: "539999999", delDomain: "example-d.openx.net" };
-            case 'adform': return { mid: 2000 };
-            default: return { dummy: 1 };
-        }
-    }
-
     let adUnits = [];
     adUnitCodes.forEach(code => {
         adUnits.push({
           code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: allBidders.map(bidder => ({ 
-              bidder: bidder, 
-              params: getValidParams(bidder) 
-          }))
+          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
         });
     });
 
@@ -82,35 +65,31 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts using functions for 'then' to deliver slot-specific bids!
+    // 3. Build Intercepts statically without using functions in 'then' 
+    // to prevent the "non-serializable properties" warning and stop fallbacks!
     let intercepts = [];
-    allBidders.forEach(bidder => {
-        intercepts.push({
-            when: { bidder: bidder }, // Match by bidder simply to be reliable
-            options: { delay: delays[bidder] }, // Consistent delay for this bidder
+    adUnitCodes.forEach(code => {
+        allBidders.forEach(bidder => {
+            let cpm = grid[code][bidder];
+            let delay = delays[bidder];
             
-            then: function(bidRequest) {
-                let code = bidRequest.adUnitCode;
-                let cpm = grid[code][bidRequest.bidder];
-                
-                if (cpm > 0) {
-                    console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
-                    return {
-                        cpm: cpm,
-                        width: 300,
-                        height: 250,
-                        creativeId: 'mock-cr-123',
-                        netRevenue: true,
-                        currency: 'USD',
-                        ttl: 300
-                    };
-                } else {
-                    // Cites: Returning null instead of omitting cpm to signify 'No Bid' 
-                    // and prevent fallback to default high values like 3.58 USD!
-                    console.log(`[Mock Intercept] Returning NULL (No Bid) for ${bidRequest.bidder} on ${code}`);
-                    return null; 
-                }
-            }
+            // To prevent fallback to high values like 3.57 / 3.58 when cpm is 0,
+            // we return a very small positive non-zero number (0.0001) as a near-zero mock.
+            let cpmToReturn = cpm > 0 ? cpm : 0.0001; 
+            
+            intercepts.push({
+                when: { bidder: bidder, adUnitCode: code }, // Matches slot and bidder
+                then: {
+                    cpm: cpmToReturn,
+                    width: 300,
+                    height: 250,
+                    creativeId: 'mock-cr-123',
+                    netRevenue: true,
+                    currency: 'USD',
+                    ttl: 300
+                },
+                options: { delay: delay }
+            });
         });
     });
 
