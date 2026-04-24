@@ -2,118 +2,78 @@
 console.log("adConfig.js loaded and executing...");
 
 pbjs.cmd.push(function () {
+    let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
+    
+    // Define the 15 ad unit codes requested
+    let adUnitCodes = [];
+    for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
+    adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
+
     let adUnits = [];
-    
-    // Add 11 Desktop Ad Units for slots that ARE on the page
-    for(let i=1; i<=11; i++) {
+    adUnitCodes.forEach(code => {
         adUnits.push({
-          code: "/6353/test_desktop_" + i,
+          code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: [
-            { bidder: "appnexus", params: { placementId: 1233 } },
-            { bidder: "ix", params: { siteId: "9999990" } },
-            { bidder: "criteo", params: { zoneId: 1455580 } },
-            { bidder: "pubmatic", params: { publisherId: "156210" } },
-            { bidder: "rubicon", params: { accountId: "1001" } },
-            { bidder: "openx", params: { unit: "539999999" } },
-            { bidder: "adform", params: { mid: 2000 } }
-          ]
+          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
         });
-    }
-    
-    // Add 4 Phantom Ad Units requested by Prebid but NOT in the DOM
-    // 2 Phantom Mobile slots
-    for(let i=1; i<=2; i++) {
-        adUnits.push({
-          code: "/6353/test_mobile_" + i,
-          mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: [
-            { bidder: "appnexus", params: { placementId: 1234 } },
-            { bidder: "ix", params: { siteId: "9999990" } },
-            { bidder: "criteo", params: { zoneId: 1455580 } },
-            { bidder: "pubmatic", params: { publisherId: "156210" } },
-            { bidder: "rubicon", params: { accountId: "1001" } },
-            { bidder: "openx", params: { unit: "539999999" } },
-            { bidder: "adform", params: { mid: 2000 } }
-          ]
-        });
-    }
-    // 2 Slots that are "simply not there"
-    for(let i=1; i<=2; i++) {
-        adUnits.push({
-          code: "/6353/test_phantom_" + i,
-          mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: [
-            { bidder: "appnexus", params: { placementId: 1234 } },
-            { bidder: "ix", params: { siteId: "9999990" } },
-            { bidder: "criteo", params: { zoneId: 1455580 } },
-            { bidder: "pubmatic", params: { publisherId: "156210" } },
-            { bidder: "rubicon", params: { accountId: "1001" } },
-            { bidder: "openx", params: { unit: "539999999" } },
-            { bidder: "adform", params: { mid: 2000 } }
-          ]
-        });
-    }
+    });
 
     pbjs.addAdUnits(adUnits);
 
-    // Mocking bid distributions with high 'No Bid' frequency (70%).
-    // Constraint: All bidders take 300-800ms (except Criteo), highest paying bidder (excl. Criteo) is in fastest 50% (300-550ms).
-    // Criteo always times out (5.5 to 7.8 seconds).
-    
-    let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
-    let bids = [];
-    
-    // Calculate Bids
-    allBidders.forEach(bidder => {
-        if (bidder === "rubicon" || bidder === "adform") {
-            return; // Always no bid
-        }
-        
-        let rand = Math.random();
-        let cpm = 0;
-        if (rand < 0.70) {
-            // No bid
-        } else if (rand < 0.85) {
-            cpm = Math.random() < 0.5 ? 0.01 : 0.02;
-        } else {
-            cpm = (Math.floor(Math.random() * 48) + 3) / 100;
-        }
-        if (cpm > 0) {
-            bids.push({ bidder: bidder, cpm: cpm });
-        }
-    });
-    
-    // Find highest bidder EXCLUDING Criteo
+    // Mocking bid distributions independently per slot!
+    let grid = {}; // Store bids: { adUnitCode: { bidder: cpm } }
     let highestBidder = null;
-    let nonCriteoBids = bids.filter(b => b.bidder !== "criteo");
-    if (nonCriteoBids.length > 0) {
-        highestBidder = nonCriteoBids.reduce((max, bid) => bid.cpm > max.cpm ? bid : max, nonCriteoBids[0]);
-    }
-    
-    let intercepts = [];
-    
-    // Assign Delays and build Intercepts for ALL bidders
+    let highestCpm = 0;
+
+    // 1. Generate Bids for each slot independently
+    adUnitCodes.forEach(code => {
+        grid[code] = {};
+        allBidders.forEach(bidder => {
+            let cpm = 0;
+            if (bidder === "rubicon" || bidder === "adform") {
+                cpm = 0; // Always no bid
+            } else {
+                let rand = Math.random();
+                if (rand < 0.70) {
+                    cpm = 0; // 70% chance: No bid
+                } else if (rand < 0.85) {
+                    cpm = Math.random() < 0.5 ? 0.01 : 0.02; // 15% chance: Low bid
+                } else {
+                    cpm = (Math.floor(Math.random() * 48) + 3) / 100; // 15% chance: Random 0.03 - 0.50
+                }
+            }
+            grid[code][bidder] = cpm;
+            
+            // Track highest bidder across all slots (excluding Criteo which times out)
+            if (bidder !== "criteo" && cpm > highestCpm) {
+                highestCpm = cpm;
+                highestBidder = bidder;
+            }
+        });
+    });
+
+    // 2. Generate static delays per bidder (so it's the same for all slots)
+    let delays = {};
     allBidders.forEach(bidder => {
-        let bid = bids.find(b => b.bidder === bidder);
-        let delay;
-        
         if (bidder === "criteo") {
-            delay = Math.floor(Math.random() * 2301) + 5500; // 5500 to 7800 ms
+            delays[bidder] = Math.floor(Math.random() * 2301) + 5500; // 5500 to 7800 ms (always times out)
         } else {
-            delay = Math.floor(Math.random() * 501) + 300; // 300 to 800 ms
-            if (highestBidder && bidder === highestBidder.bidder) {
-                delay = Math.floor(Math.random() * 251) + 300; // 300 to 550 ms
+            delays[bidder] = Math.floor(Math.random() * 501) + 300; // 300 to 800 ms
+            if (bidder === highestBidder) {
+                delays[bidder] = Math.floor(Math.random() * 251) + 300; // Fastest 50% (300 to 550 ms)
             }
         }
-        
-        let cpmToReturn = bid ? bid.cpm : 0; // 0 means no bid in this mock
-        
-        // This ensures that even 'No Bid' bidders take time, fulfilling the request!
-        intercepts.push({
-            when: { bidder: bidder },
-            then: { cpm: cpmToReturn },
-            options: { delay: delay }
+    });
+
+    // 3. Build Intercepts per slot and bidder
+    let intercepts = [];
+    adUnitCodes.forEach(code => {
+        allBidders.forEach(bidder => {
+            intercepts.push({
+                when: { bidder: bidder, adUnitCode: code },
+                then: { cpm: grid[code][bidder] },
+                options: { delay: delays[bidder] }
+            });
         });
     });
 
@@ -122,13 +82,13 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
+      priceGranularity: 'high', // Confirmed high granularity
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
           { name: 'identityLink', params: { syncDelay: 100 } },
           { name: 'id5Id', params: { syncDelay: 100 } }
         ]
-      },
-      priceGranularity: 'high' // Added as requested
+      }
     });
 });
