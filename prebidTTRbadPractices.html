@@ -3,6 +3,21 @@
     <meta charset="utf-8" />
     <title>Prebid Bad Practices Mockup - SLOW PAGE</title>
 
+    <!-- Mock CMP Stub to force GPT to wait for consent -->
+    <!-- Added to simulate the wait condition for GAM before it can request ads -->
+    <script>
+      window.__tcfapi = function(command, version, callback) {
+        if (command === 'addEventListener') {
+          console.log("CMP Stub: GPT registered listener.");
+          // Simulate delay caused by sync scripts blocking the full CMP load (1-2 sec)
+          setTimeout(function() {
+            console.log("CMP Stub: Consent resolved after simulated blocking delay!");
+            callback({ gdprApplies: true, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
+          }, 2000); // 2000ms delay
+        }
+      };
+    </script>
+
     <!-- BAD PRACTICE 18: Loading CMP early but marked async. -->
     <!-- Added to show that even if consent is cached, the API execution can be delayed. -->
     <!-- Cites: Mirror page has InMobi CMP at Index 18, loaded early and async. -->
@@ -99,9 +114,8 @@
         googletag.pubads().disableInitialLoad();
         googletag.enableServices();
         
-        // BAD PRACTICE 13: Calling refresh as soon as slots are defined (Double Refresh)
-        // This triggers an immediate ad request before Prebid bids are back.
-        googletag.pubads().refresh();
+        // REMOVED: Calling refresh immediately on load was removed to show the true delay.
+        // Ads will now only load after the full orchestrated wait (Prebid + Amazon).
 
         // Event listeners to update status
         googletag.pubads().addEventListener("slotRequested", function (event) {
