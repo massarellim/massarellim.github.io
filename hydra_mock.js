@@ -8,10 +8,12 @@ console.log("hydra_mock.js loaded and executing...");
 window.apstag = window.apstag || {
     fetchBids: function(config, callback) {
         console.log("Amazon fetchBids called, waiting...");
+        // Cites: User instructed to make it random at either 3, 4, 5, 6, 7, or 8 seconds
+        let delay = (Math.floor(Math.random() * 6) + 3) * 1000;
         setTimeout(function() {
-            console.log("Amazon bids back!");
+            console.log("Amazon bids back after " + delay + "ms!");
             callback([]);
-        }, 2500); // Simulate 2.5s delay
+        }, delay);
     },
     setDisplayBids: function() {}
 };
