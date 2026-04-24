@@ -9,10 +9,10 @@
     <script>
       console.log('Version: v0.1');
       
-      // Function to log bad practice execution events with BP_Test label to console
+      // Function to log events with BP_Test tag to the console
       function logEvent(message) {
         let time = Math.floor(performance.now());
-        console.log(`[BP_Test] [${time}ms] ${message}`);
+        console.log(`[${time}ms] BP_Test: ${message}`);
       }
 
       window.__tcfapi = function(command, version, callback) {
@@ -31,46 +31,38 @@
     <!-- Added to show that even if consent is cached, the API execution can be delayed. -->
     <!-- Cites: Mirror page has InMobi CMP at Index 18, loaded early and async. -->
     <script async src="https://cmp.inmobi.com/tcfv2/61/cmp2.js"></script>
-    <script>logEvent("BP 18: CMP script loaded early (Async).");</script>
 
     <!-- BAD PRACTICE 1: Loading heavy libraries SYNCHRONOUSLY in the head (No async). -->
     <!-- Added to block HTML parsing and delay initial render significantly. -->
     <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
-    <script>logEvent("BP 1: GPT library loaded synchronously.");</script>
     
     <!-- BAD PRACTICE 2: Loading the full "everything" build of Prebid (Not-for-Prod) synchronously. -->
     <!-- Added to simulate loading unnecessary modules and increasing payload size. -->
     <!-- Cites: Subagent confirmed 'not-for-prod' build is a heavy test build. -->
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
-    <script>logEvent("BP 2: Full test Prebid library loaded synchronously.");</script>
     
     <!-- BAD PRACTICE 19: A Synchronous Blocking Script in the middle of the head. -->
     <!-- Added to stall head parsing after CMP is discovered, pushing back heavy scripts. -->
     <!-- Cites: Mirror has a sync polyfills script at Index 54 that blocks hydra.js. -->
     <script src="https://www.mirror.co.uk/_next/static/chunks/polyfills-42372ed130431b0a.js"></script>
-    <script>logEvent("BP 19: Synchronous blocking polyfill script loaded.");</script>
 
     <!-- BAD PRACTICE 3: Loading an unused old version of Prebid script. -->
     <!-- Added to waste bandwidth and CPU parsing time for no purpose. -->
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@5.0.0/dist/not-for-prod/prebid.js"></script>
-    <script>logEvent("BP 3: Unused old Prebid version loaded.");</script>
 
     <!-- BAD PRACTICE 4: Loading PubMatic's owpbjs wrapper without utilizing it. -->
     <!-- Added to simulate wrapper bloat common in complex ad stacks. -->
     <script src="https://ads.pubmatic.com/AdServer/js/owpbjs.js"></script>
-    <script>logEvent("BP 4: Unused owpbjs wrapper loaded.");</script>
 
     <!-- BAD PRACTICE 15: Loading Amazon apstag (TAM) script. -->
     <!-- Added to simulate multi-auction overhead (Prebid + Amazon). -->
     <!-- Cites: Mirror uses Amazon apstag loaded from amazon-adsystem.com. -->
     <script src="https://c.amazon-adsystem.com/aax2/apstag.js"></script>
-    <script>logEvent("BP 15: Amazon apstag loaded.");</script>
 
     <!-- BAD PRACTICE 17: Loading custom mock orchestrator script (Hydra) after blocking script. -->
     <!-- Added to complete the waterfall delay effect observed on the Mirror. -->
     <!-- Cites: Mirror loads hydra.js at Index 167, after the blocking polyfills script. -->
     <script src="hydra_mock.js"></script>
-    <script>logEvent("BP 17: Orchestrator script loaded.");</script>
 
     <!-- BAD PRACTICE 23: Loading Prebid config and bidding simulation externally to hide it -->
     <!-- This makes it harder to debug and understand the ad tech stack. -->
@@ -85,7 +77,6 @@
         // Added to increase configuration processing overhead without adding bids.
         googletag.cmd.push(function () {
         pbjs.cmd.push(function () {
-            logEvent("BP 5 Triggered: Unused S2S config added.");
           pbjs.setConfig({
             s2sConfig: {
               accountId: '1234',
@@ -102,15 +93,15 @@
       googletag.cmd.push(function () {
         // BAD PRACTICE 6: Requesting 20 slots (Desktop + Mobile) in SRA setup.
         // Added to show overhead of requesting ads for hidden device-specific slots.
-        logEvent("BP 6 Triggered: Defining 23 slots in GAM (requesting 20).");
         
         // Define 23 slots in GAM as requested.
         
-        // 11 Slots that will be physically on the page
-        for(let i=1; i<=11; i++) {
+        // 13 Slots that will be physically on the page (including 2 without Prebid)
+        for(let i=1; i<=13; i++) {
             googletag.defineSlot("/6353/test_desktop_" + i, [300, 250], "div-d" + i)
               .addService(googletag.pubads())
               .setTargeting("test", "red_mustang");
+            logEvent(`GAM define slot: /6353/test_desktop_${i}`);
         }
         
         // 4 Phantom Slots requested by Prebid but NOT in the DOM
@@ -130,7 +121,6 @@
         }
 
         // BAD PRACTICE 7: Using SRA (Single Request Architecture) with a huge number of slots
-        logEvent("BP 7 Triggered: Enabling Single Request Architecture with 23 slots.");
         googletag.pubads().enableSingleRequest();
         
         googletag.pubads().disableInitialLoad();
@@ -155,7 +145,6 @@
           // BAD PRACTICE 10: Pinging cookie sync immediately on auctionInit.
           // Added to flood the browser with tracking requests right at the start of auction.
           pbjs.onEvent('auctionInit', function() {
-              logEvent("Auction Init started.");
               logEvent("BP 10 Triggered: Auction Init cookie sync fired too early!");
               pbjs.triggerCookieSync();
               
@@ -170,6 +159,7 @@
               }
 
               function triggerPpidBurst() {
+                  logEvent("BP 14 Triggered: Firing burst of PPID calls.");
                   // Burst 1: 2 calls immediately (offset 0ms)
                   setTimeout(() => { for(let i=0; i<2; i++) { ppidCount++; logPpid(ppidCount); } }, 0);
                   
@@ -196,7 +186,6 @@
 
           // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
           // This was pulled back inline to avoid loading failures of external scripts!
-          logEvent("Orchestrator function loaded.");
           
           window.prebidDone = false;
           window.amazonDone = false;
@@ -206,7 +195,7 @@
                   pbjs.setTargetingForGPTAsync();
                   apstag.setDisplayBids();
                   googletag.pubads().refresh();
-                  console.log("Both auctions done. GAM refresh called!");
+                  logEvent("GAM call to refresh (both auctions done)");
                   
                   // BAD PRACTICE 11: Pinging cookie sync again immediately after auction ends
                   console.log("Bids Back: Pinging cookie sync again!");
@@ -215,7 +204,7 @@
           };
           pbjs.requestBids({
             bidsBackHandler: function () {
-              logEvent("Prebid auction response received.");
+              console.log("Prebid bids back!");
               prebidDone = true;
               checkBidsAndRefresh();
             },
@@ -298,7 +287,7 @@
     </style>
   </head>
   <body>
-    <!-- Log panel removed as per user request to use console instead -->
+      <!-- Debug panel removed, logging moved to console -->
 
     <div class="main-content">
       <!-- BAD PRACTICE 12: Mock content to make the page extremely long and scrollable. -->
@@ -374,6 +363,15 @@
           <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 11 [300x250]</div>
           <div id="div-d11" class="ad-slot" style="width: 300px; height: 250px"></div>
           <script>googletag.cmd.push(function () { googletag.display("div-d11"); });</script>
+
+          <!-- New Slots 12 and 13 without Prebid -->
+          <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 12 [300x250] (No Prebid)</div>
+          <div id="div-d12" class="ad-slot" style="width: 300px; height: 250px"></div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d12"); });</script>
+
+          <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 13 [300x250] (No Prebid)</div>
+          <div id="div-d13" class="ad-slot" style="width: 300px; height: 250px"></div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d13"); });</script>
       </div>
       
       <!-- Mobile slots are NOT in the DOM here to simulate "slots not on the page" -->
