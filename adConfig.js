@@ -4,8 +4,8 @@ console.log("adConfig.js loaded and executing...");
 pbjs.cmd.push(function () {
     let adUnits = [];
     
-    // Add 10 Desktop Ad Units with 7 Bidders
-    for(let i=1; i<=10; i++) {
+    // Add 11 Desktop Ad Units for slots that ARE on the page
+    for(let i=1; i<=11; i++) {
         adUnits.push({
           code: "/6353/test_desktop_" + i,
           mediaTypes: { banner: { sizes: [300, 250] } },
@@ -21,10 +21,27 @@ pbjs.cmd.push(function () {
         });
     }
     
-    // Mobile Slots (Phantom Slots)
-    for(let i=1; i<=10; i++) {
+    // Add 4 Phantom Ad Units requested by Prebid but NOT in the DOM
+    // 2 Phantom Mobile slots
+    for(let i=1; i<=2; i++) {
         adUnits.push({
           code: "/6353/test_mobile_" + i,
+          mediaTypes: { banner: { sizes: [300, 250] } },
+          bids: [
+            { bidder: "appnexus", params: { placementId: 1234 } },
+            { bidder: "ix", params: { siteId: "9999990" } },
+            { bidder: "criteo", params: { zoneId: 1455580 } },
+            { bidder: "pubmatic", params: { publisherId: "156210" } },
+            { bidder: "rubicon", params: { accountId: "1001" } },
+            { bidder: "openx", params: { unit: "539999999" } },
+            { bidder: "adform", params: { mid: 2000 } }
+          ]
+        });
+    }
+    // 2 Slots that are "simply not there"
+    for(let i=1; i<=2; i++) {
+        adUnits.push({
+          code: "/6353/test_phantom_" + i,
           mediaTypes: { banner: { sizes: [300, 250] } },
           bids: [
             { bidder: "appnexus", params: { placementId: 1234 } },
@@ -90,8 +107,9 @@ pbjs.cmd.push(function () {
             }
         }
         
-        let cpmToReturn = bid ? bid.cpm : 0;
+        let cpmToReturn = bid ? bid.cpm : 0; // 0 means no bid in this mock
         
+        // This ensures that even 'No Bid' bidders take time, fulfilling the request!
         intercepts.push({
             when: { bidder: bidder },
             then: { cpm: cpmToReturn },
@@ -110,6 +128,7 @@ pbjs.cmd.push(function () {
           { name: 'identityLink', params: { syncDelay: 100 } },
           { name: 'id5Id', params: { syncDelay: 100 } }
         ]
-      }
+      },
+      priceGranularity: 'high' // Added as requested
     });
 });

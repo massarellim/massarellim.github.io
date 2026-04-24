@@ -70,22 +70,26 @@
         // BAD PRACTICE 6: Requesting 20 slots (Desktop + Mobile) in SRA setup.
         // Added to show overhead of requesting ads for hidden device-specific slots.
         
-        // Desktop Slots
-        for(let i=1; i<=10; i++) {
+        // Define 23 slots in GAM as requested.
+        
+        // 11 Slots that will be physically on the page
+        for(let i=1; i<=11; i++) {
             googletag.defineSlot("/6353/test_desktop_" + i, [300, 250], "div-d" + i)
               .addService(googletag.pubads());
         }
         
-        // Mobile Slots (Requested but maybe not rendered on desktop)
-        for(let i=1; i<=10; i++) {
-            googletag.defineSlot("/6353/test_mobile_" + i, [300, 250], "div-m" + i)
-              .addService(googletag.pubads());
-        }
+        // 4 Phantom Slots requested by Prebid but NOT in the DOM
+        // 2 Phantom Mobile slots
+        googletag.defineSlot("/6353/test_mobile_1", [300, 250], "div-m1").addService(googletag.pubads());
+        googletag.defineSlot("/6353/test_mobile_2", [300, 250], "div-m2").addService(googletag.pubads());
+        // 2 Slots that are "simply not there"
+        googletag.defineSlot("/6353/test_phantom_1", [300, 250], "div-phantom1").addService(googletag.pubads());
+        googletag.defineSlot("/6353/test_phantom_2", [300, 250], "div-phantom2").addService(googletag.pubads());
 
-        // BAD PRACTICE 21: Slots without Prebid included in SRA request.
-        // Added to show that slots not in Prebid still suffer from the auction delay in SRA.
-        for(let i=1; i<=3; i++) {
-            googletag.defineSlot("/6353/test_noprebid_" + i, [300, 250], "div-np" + i)
+        // Remaining 8 slots defined in GAM but NOT requested by Prebid nor on the page
+        // to reach the total of 23 slots.
+        for(let i=3; i<=10; i++) {
+            googletag.defineSlot("/6353/test_mobile_" + i, [300, 250], "div-m" + i)
               .addService(googletag.pubads());
         }
 
@@ -289,15 +293,24 @@
       <div style="height: 200vh;">Content Spacer to simulate long scroll...</div>
 
       <div class="mock-article">
-          <h2>Article 3: The Cost of Bloat</h2>
-          <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
+          <h2>Article 3: The Rest of the Ads</h2>
+          <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
           
-          <!-- Slots without Prebid (Bad Practice 21) -->
-          <div id="div-np1" class="ad-slot" style="width: 300px; height: 250px">No-Prebid Slot 1 [300x250]</div>
-          <script>googletag.cmd.push(function () { googletag.display("div-np1"); });</script>
-          
-          <div id="div-np2" class="ad-slot" style="width: 300px; height: 250px">No-Prebid Slot 2 [300x250]</div>
-          <script>googletag.cmd.push(function () { googletag.display("div-np2"); });</script>
+          <!-- Slot 5 to 11 -->
+          <div id="div-d5" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 5 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d5"); });</script>
+          <div id="div-d6" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 6 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d6"); });</script>
+          <div id="div-d7" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 7 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d7"); });</script>
+          <div id="div-d8" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 8 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d8"); });</script>
+          <div id="div-d9" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 9 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d9"); });</script>
+          <div id="div-d10" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 10 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d10"); });</script>
+          <div id="div-d11" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 11 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d11"); });</script>
       </div>
       
       <!-- Mobile slots are NOT in the DOM here to simulate "slots not on the page" -->
