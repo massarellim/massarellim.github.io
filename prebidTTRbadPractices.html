@@ -3,27 +3,51 @@
     <meta charset="utf-8" />
     <title>Prebid Bad Practices Mockup - SLOW PAGE</title>
 
-    <!-- BAD PRACTICE 1: Loading heavy libraries SYNCHRONOUSLY in the head (No async) -->
-    <!-- This blocks HTML parsing and delays the initial render -->
+    <!-- BAD PRACTICE 18: Loading CMP early but marked async. -->
+    <!-- Added to show that even if consent is cached, the API execution can be delayed. -->
+    <!-- Cites: Mirror page has InMobi CMP at Index 18, loaded early and async. -->
+    <script async src="https://cmp.inmobi.com/tcfv2/61/cmp2.js"></script>
+
+    <!-- BAD PRACTICE 1: Loading heavy libraries SYNCHRONOUSLY in the head (No async). -->
+    <!-- Added to block HTML parsing and delay initial render significantly. -->
     <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     
-    <!-- BAD PRACTICE 2: Loading the full "everything" build of Prebid (Not-for-Prod) synchronously -->
+    <!-- BAD PRACTICE 2: Loading the full "everything" build of Prebid (Not-for-Prod) synchronously. -->
+    <!-- Added to simulate loading unnecessary modules and increasing payload size. -->
+    <!-- Cites: Subagent confirmed 'not-for-prod' build is a heavy test build. -->
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     
-    <!-- BAD PRACTICE 3: Loading a second, older version of Prebid that isn't used, just to waste bandwidth -->
+    <!-- BAD PRACTICE 19: A Synchronous Blocking Script in the middle of the head. -->
+    <!-- Added to stall head parsing after CMP is discovered, pushing back heavy scripts. -->
+    <!-- Cites: Mirror has a sync polyfills script at Index 54 that blocks hydra.js. -->
+    <script src="https://www.mirror.co.uk/_next/static/chunks/polyfills-42372ed130431b0a.js"></script>
+
+    <!-- BAD PRACTICE 3: Loading an unused old version of Prebid script. -->
+    <!-- Added to waste bandwidth and CPU parsing time for no purpose. -->
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@5.0.0/dist/not-for-prod/prebid.js"></script>
 
-    <!-- BAD PRACTICE 4: Loading PubMatic's owpbjs wrapper and not using it -->
+    <!-- BAD PRACTICE 4: Loading PubMatic's owpbjs wrapper without utilizing it. -->
+    <!-- Added to simulate wrapper bloat common in complex ad stacks. -->
     <script src="https://ads.pubmatic.com/AdServer/js/owpbjs.js"></script>
+
+    <!-- BAD PRACTICE 15: Loading Amazon apstag (TAM) script. -->
+    <!-- Added to simulate multi-auction overhead (Prebid + Amazon). -->
+    <!-- Cites: Mirror uses Amazon apstag loaded from amazon-adsystem.com. -->
+    <script src="https://c.amazon-adsystem.com/aax2/apstag.js"></script>
+
+    <!-- BAD PRACTICE 17: Loading custom mock orchestrator script (Hydra) after blocking script. -->
+    <!-- Added to complete the waterfall delay effect observed on the Mirror. -->
+    <!-- Cites: Mirror loads hydra.js at Index 167, after the blocking polyfills script. -->
+    <script src="hydra_mock.js"></script>
 
     <script>
       window.googletag = window.googletag || { cmd: [] };
       var pbjs = pbjs || {};
       pbjs.cmd = pbjs.cmd || [];
 
-      // BAD PRACTICE 5: Setting up S2S header bidding but not really using it properly
-      // adds configuration overhead
-      googletag.cmd.push(function () {
+        // BAD PRACTICE 5: Setting up S2S (Server-to-Server) header bidding but not utilizing it.
+        // Added to increase configuration processing overhead without adding bids.
+        googletag.cmd.push(function () {
         pbjs.cmd.push(function () {
           pbjs.setConfig({
             s2sConfig: {
@@ -39,8 +63,8 @@
       });
 
       googletag.cmd.push(function () {
-        // BAD PRACTICE 6: Requesting 20 slots (10 desktop, 10 mobile) in SRA setup
-        // even if we are on a specific device and don't need all of them.
+        // BAD PRACTICE 6: Requesting 20 slots (Desktop + Mobile) in SRA setup.
+        // Added to show overhead of requesting ads for hidden device-specific slots.
         
         // Desktop Slots
         for(let i=1; i<=10; i++) {
@@ -88,7 +112,8 @@
               });
           }
           
-          // BAD PRACTICE 8: Defining and requesting bids for Mobile slots too
+          // BAD PRACTICE 8: Requesting Prebid bids for slots not visible on current device (Phantom Slots).
+          // Added to increase bid request payload and wait time for useless responses.
           for(let i=1; i<=10; i++) {
               adUnits.push({
                 code: "/6353/test_mobile_" + i,
@@ -103,8 +128,8 @@
 
           pbjs.addAdUnits(adUnits);
 
-          // BAD PRACTICE 9: Setting high timeout (5000ms) and a bidder that takes longer (7000ms)
-          // to guarantee the page waits the maximum time.
+          // BAD PRACTICE 9: Setting a very high timeout (5000ms) with a delayed bidder (7000ms).
+          // Added to force the auction to wait the absolute maximum time before failing.
           pbjs.setConfig({
             debugging: {
               enabled: true,
@@ -118,23 +143,65 @@
             }
           });
 
-          // BAD PRACTICE 10: Pinging cookiesync too soon (immediately on auctionInit or before bids back)
+          // BAD PRACTICE 10: Pinging cookie sync immediately on auctionInit.
+          // Added to flood the browser with tracking requests right at the start of auction.
           pbjs.onEvent('auctionInit', function() {
               console.log("Auction Init: Pinging cookie sync too early!");
               // Simulating immediate cookie sync trigger
               pbjs.triggerCookieSync();
+              
+              // BAD PRACTICE 14: Repeated continuous calls to setPublisherProvidedId (PPID) in bursts.
+              // Added to show the CPU lockup from redundant API calls pushed into the queue.
+              // Cites: Mirror logs showed bursts of PPID calls (e.g., 5 in 1ms).
+              let ppidCount = 0;
+              
+              function logPpid(count) {
+                  googletag.pubads().setPublisherProvidedId('4e9fe5ba-e530-49f1-b3ae-4969b58c38ba');
+                  console.log("Set PPID=4e9fe5ba-e530-49f1-b3ae-4969b58c38ba. Invoked queued function. Total: " + count);
+              }
+
+              function triggerPpidBurst() {
+                  // Burst 1: 2 calls immediately (offset 0ms)
+                  setTimeout(() => { for(let i=0; i<2; i++) { ppidCount++; logPpid(ppidCount); } }, 0);
+                  
+                  // Burst 2: 5 calls after 1ms (offset 1ms)
+                  setTimeout(() => { for(let i=0; i<5; i++) { ppidCount++; logPpid(ppidCount); } }, 1);
+                  
+                  // Burst 3: 3 calls after 6ms (offset 6ms)
+                  setTimeout(() => { for(let i=0; i<3; i++) { ppidCount++; logPpid(ppidCount); } }, 6);
+                  
+                  // Burst 4: 3 calls after 7ms (offset 7ms)
+                  setTimeout(() => { for(let i=0; i<3; i++) { ppidCount++; logPpid(ppidCount); } }, 7);
+                  
+                  // Burst 5: 1 call after 100ms (offset 100ms)
+                  setTimeout(() => { ppidCount++; logPpid(ppidCount); }, 100);
+              }
+              
+              // Trigger the specific burst pattern on load
+              triggerPpidBurst();
+              
+              // To satisfy "not stop at 10" while respecting the realistic bursts,
+              // we repeat the full pattern every few seconds.
+              setInterval(triggerPpidBurst, 2000);
           });
 
+          // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
+          // Added to simulate complex waiting logic that delays the final ad request.
+          // Cites: Mirror uses hydra.js to wait for Prebid and apstag before refreshing GPT.
           pbjs.requestBids({
             bidsBackHandler: function () {
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
-              
-              // BAD PRACTICE 11: Pinging cookie sync again immediately after auction ends
-              console.log("Bids Back: Pinging cookie sync again!");
-              pbjs.triggerCookieSync();
+              console.log("Prebid bids back!");
+              prebidDone = true;
+              checkBidsAndRefresh();
             },
             timeout: 5000, // Auction timeout
+          });
+          
+          apstag.fetchBids({
+              timeout: 2800
+          }, function(bids) {
+              amazonDone = true;
+              checkBidsAndRefresh();
           });
         });
       });
@@ -223,7 +290,8 @@
     </div>
 
     <div class="main-content">
-      <!-- BAD PRACTICE 12: Mock content to make the page long and scrollable -->
+      <!-- BAD PRACTICE 12: Mock content to make the page extremely long and scrollable. -->
+      <!-- Added to provide distance between slots and demonstrate lack of lazy loading. -->
       <div class="mock-article">
           <h2>Article 1: The Impact of Poor Ad Tech Implementation</h2>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
