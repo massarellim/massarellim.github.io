@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.9");
+console.log("adConfig.js Version: v1.0");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -26,8 +26,7 @@ pbjs.cmd.push(function () {
     let highestCpm = 0;
 
     // 1. Generate Bids for each slot independently
-    // Updated to new requested probabilities:
-    // 70% no bid, 25% 0.03 to 0.19, 5% 0.20 to 0.50
+    // Cites: 70% no bid, 25% 0.03-0.19, 5% 0.20-0.50
     adUnitCodes.forEach(code => {
         grid[code] = {};
         allBidders.forEach(bidder => {
@@ -39,13 +38,17 @@ pbjs.cmd.push(function () {
                 if (rand < 0.70) {
                     cpm = 0; // 70% chance: No bid
                 } else if (rand < 0.95) {
-                    // 25% chance: Random 0.03 - 0.19
-                    cpm = (Math.floor(Math.random() * 17) + 3) / 100;
+                    cpm = (Math.floor(Math.random() * 17) + 3) / 100; // 25% chance: 0.03 - 0.19
                 } else {
-                    // 5% chance: Random 0.20 - 0.50
-                    cpm = (Math.floor(Math.random() * 31) + 20) / 100;
+                    cpm = (Math.floor(Math.random() * 31) + 20) / 100; // 5% chance: 0.20 - 0.50
                 }
             }
+            
+            // RESTORE CRITEO FIX: "criteo bid, it should always return at least 0.01 cents, never 0.00" on first slot
+            if (bidder === "criteo" && code === "/6353/test_desktop_1" && cpm === 0) {
+                cpm = 0.01;
+            }
+            
             grid[code][bidder] = cpm;
             
             // Track highest bidder across all slots (excluding Criteo which times out)

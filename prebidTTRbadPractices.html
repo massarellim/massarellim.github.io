@@ -7,7 +7,19 @@
     <!-- Added to simulate the wait condition for GAM observed in complex setups. -->
     <!-- Cites: Mirror page has a polyfills script at Index 54 that stalls full CMP initialization. -->
     <script>
-      console.log('Version: v0.1');
+      console.log('Version: v0.2'); // Incremented version
+      
+      function logBadPractice(id) {
+          let statusElem = document.getElementById(id + "-status");
+          let timeElem = document.getElementById(id + "-time");
+          if (statusElem) { statusElem.innerText = "Yes"; statusElem.className = "activated"; }
+          if (timeElem) timeElem.innerText = new Date().toLocaleTimeString();
+      }
+      window.logBadPractice = logBadPractice; // Make global for external scripts
+      
+      // Log BP2 immediately as this script execution is part of the parser blocking
+      setTimeout(() => logBadPractice('bp2'), 10);
+      
       window.__tcfapi = function(command, version, callback) {
         if (command === 'addEventListener') {
           console.log("CMP Stub: GPT registered listener.");
@@ -17,6 +29,8 @@
             // Setting gdprApplies to false tells GAM that consent rules do not apply, 
             // letting it request ads immediately after the wait!
             callback({ gdprApplies: false, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
+            
+            logBadPractice('bp1'); // Log Mock CMP Stub Wait
           }, 2000); // 2000ms delay
         }
       };
@@ -72,6 +86,7 @@
         // Added to increase configuration processing overhead without adding bids.
         googletag.cmd.push(function () {
         pbjs.cmd.push(function () {
+          logBadPractice('bp5'); // Log Dummy S2S Config
           pbjs.setConfig({
             s2sConfig: {
               accountId: '1234',
@@ -90,6 +105,7 @@
         // Added to show overhead of requesting ads for hidden device-specific slots.
         
         // Define 23 slots in GAM as requested.
+        logBadPractice('bp6'); // Log SRA Slot Overload
         
         // 11 Slots that will be physically on the page
         for(let i=1; i<=11; i++) {
@@ -282,18 +298,25 @@
   </head>
   <body>
     <div class="status-panel">
-      <h3>Ad Slot Status Panel</h3>
+      <h3>Bad Practices Dashboard</h3>
       <table>
         <tr>
-          <th>Ad Slot</th>
-          <th>Requested?</th>
-          <th>Rendered?</th>
+          <th>Bad Practice</th>
+          <th>Executed?</th>
+          <th>Timestamp</th>
         </tr>
-        <!-- We will dynamically fill this or just hardcode a few for brevity -->
-        <!-- Let's hardcode a few to show the pattern -->
-        <tr><td>Desktop Slot 1</td><td id="div-d1-requested">No</td><td id="div-d1-rendered">No</td></tr>
-        <tr><td>Desktop Slot 2</td><td id="div-d2-requested">No</td><td id="div-d2-rendered">No</td></tr>
-        <tr><td>Mobile Slot 1 (Hidden)</td><td id="div-m1-requested">No</td><td id="div-m1-rendered">No</td></tr>
+        <tr><td>1. Mock CMP Stub Wait</td><td id="bp1-status">No</td><td id="bp1-time">-</td></tr>
+        <tr><td>2. Parser Blocking Scripts</td><td id="bp2-status">No</td><td id="bp2-time">-</td></tr>
+        <tr><td>3. Waterfall Delay (Polyfills)</td><td id="bp3-status">No</td><td id="bp3-time">-</td></tr>
+        <tr><td>4. Unused Wrappers (PubMatic/Amazon)</td><td id="bp4-status">No</td><td id="bp4-time">-</td></tr>
+        <tr><td>5. Dummy S2S Config</td><td id="bp5-status">No</td><td id="bp5-time">-</td></tr>
+        <tr><td>6. SRA Slot Overload (23 Slots)</td><td id="bp6-status">No</td><td id="bp6-time">-</td></tr>
+        <tr><td>7. Phantom Slots Requested</td><td id="bp7-status">No</td><td id="bp7-time">-</td></tr>
+        <tr><td>8. Forced Bidder Timeout (Criteo)</td><td id="bp8-status">No</td><td id="bp8-time">-</td></tr>
+        <tr><td>9. Cookie Sync Flooding</td><td id="bp9-status">No</td><td id="bp9-time">-</td></tr>
+        <tr><td>10. PPID Bursts</td><td id="bp10-status">No</td><td id="bp10-time">-</td></tr>
+        <tr><td>11. Multiple User IDs</td><td id="bp11-status">No</td><td id="bp11-time">-</td></tr>
+        <tr><td>12. Orchestration Wait (Hydra)</td><td id="bp12-status">No</td><td id="bp12-time">-</td></tr>
       </table>
       <p>Scroll the container below to view content and ads.</p>
     </div>
