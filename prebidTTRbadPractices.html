@@ -14,7 +14,9 @@
           // Simulate delay caused by sync scripts blocking the full CMP load (1-2 sec)
           setTimeout(function() {
             console.log("CMP Stub: Consent resolved after simulated blocking delay!");
-            callback({ gdprApplies: true, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
+            // Setting gdprApplies to false tells GAM that consent rules do not apply, 
+            // letting it request ads immediately after the wait!
+            callback({ gdprApplies: false, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
           }, 2000); // 2000ms delay
         }
       };
@@ -175,8 +177,23 @@
           });
 
           // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
-          // Added to simulate complex waiting logic that delays the final ad request.
-          // Cites: Mirror uses hydra.js to wait for Prebid and apstag before refreshing GPT.
+          // This was pulled back inline to avoid loading failures of external scripts!
+          
+          window.prebidDone = false;
+          window.amazonDone = false;
+          
+          window.checkBidsAndRefresh = function() {
+              if (window.prebidDone && window.amazonDone) {
+                  pbjs.setTargetingForGPTAsync();
+                  apstag.setDisplayBids();
+                  googletag.pubads().refresh();
+                  console.log("Both auctions done. GAM refresh called!");
+                  
+                  // BAD PRACTICE 11: Pinging cookie sync again immediately after auction ends
+                  console.log("Bids Back: Pinging cookie sync again!");
+                  pbjs.triggerCookieSync();
+              }
+          };
           pbjs.requestBids({
             bidsBackHandler: function () {
               console.log("Prebid bids back!");
