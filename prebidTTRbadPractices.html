@@ -8,14 +8,25 @@
     <!-- Cites: Mirror page has a polyfills script at Index 54 that stalls full CMP initialization. -->
     <script>
       console.log('Version: v0.1');
+      
+      // Function to log bad practice execution events to the on-page panel
+      function logEvent(message) {
+        let panel = document.getElementById('log-panel');
+        if (panel) {
+            let time = Math.floor(performance.now());
+            let div = document.createElement('div');
+            div.innerText = `[${time}ms] ${message}`;
+            panel.appendChild(div);
+            panel.scrollTop = panel.scrollHeight; // Auto scroll to bottom
+        }
+      }
+
       window.__tcfapi = function(command, version, callback) {
         if (command === 'addEventListener') {
-          console.log("CMP Stub: GPT registered listener.");
+          logEvent("BP 24 Triggered: CMP Stub intercepted GPT listener.");
           // Simulate delay caused by sync scripts blocking the full CMP load (1-2 sec)
           setTimeout(function() {
-            console.log("CMP Stub: Consent resolved after simulated blocking delay!");
-            // Setting gdprApplies to false tells GAM that consent rules do not apply, 
-            // letting it request ads immediately after the wait!
+            logEvent("BP 24 Resolved: Consent resolved after simulated blocking delay.");
             callback({ gdprApplies: false, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
           }, 2000); // 2000ms delay
         }
@@ -139,8 +150,7 @@
           // BAD PRACTICE 10: Pinging cookie sync immediately on auctionInit.
           // Added to flood the browser with tracking requests right at the start of auction.
           pbjs.onEvent('auctionInit', function() {
-              console.log("Auction Init: Pinging cookie sync too early!");
-              // Simulating immediate cookie sync trigger
+              logEvent("BP 10 Triggered: Auction Init cookie sync fired too early!");
               pbjs.triggerCookieSync();
               
               // BAD PRACTICE 14: Repeated continuous calls to setPublisherProvidedId (PPID) in bursts.
@@ -154,6 +164,7 @@
               }
 
               function triggerPpidBurst() {
+                  logEvent("BP 14 Triggered: Firing burst of PPID calls.");
                   // Burst 1: 2 calls immediately (offset 0ms)
                   setTimeout(() => { for(let i=0; i<2; i++) { ppidCount++; logPpid(ppidCount); } }, 0);
                   
@@ -282,20 +293,8 @@
   </head>
   <body>
     <div class="status-panel">
-      <h3>Ad Slot Status Panel</h3>
-      <table>
-        <tr>
-          <th>Ad Slot</th>
-          <th>Requested?</th>
-          <th>Rendered?</th>
-        </tr>
-        <!-- We will dynamically fill this or just hardcode a few for brevity -->
-        <!-- Let's hardcode a few to show the pattern -->
-        <tr><td>Desktop Slot 1</td><td id="div-d1-requested">No</td><td id="div-d1-rendered">No</td></tr>
-        <tr><td>Desktop Slot 2</td><td id="div-d2-requested">No</td><td id="div-d2-rendered">No</td></tr>
-        <tr><td>Mobile Slot 1 (Hidden)</td><td id="div-m1-requested">No</td><td id="div-m1-rendered">No</td></tr>
-      </table>
-      <p>Scroll the container below to view content and ads.</p>
+      <h3>Simulation Logs & Bad Practices Active Timeline</h3>
+      <div id="log-panel" style="font-family: monospace; line-height: 1.5; max-height: 180px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background-color: #fff;"></div>
     </div>
 
     <div class="main-content">
