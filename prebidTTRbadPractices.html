@@ -187,13 +187,7 @@
               window.triggerPpidBurst();
           });
 
-          // BAD PRACTICE 25: Continuous high-frequency cookie sync!
-          // Moved outside of auctionInit to ensure it starts running as soon as Prebid is ready.
-          setInterval(function() {
-              window.triggerPpidBurst();
-              pbjs.triggerCookieSync();
-              logEvent("BP_Test: Continuous cookie sync fired!");
-          }, 2000);
+          // Interval moved to the bottom of the file to ensure independent execution.
 
           // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
           // This was pulled back inline to avoid loading failures of external scripts!
@@ -397,5 +391,19 @@
       <!-- But they are requested in the Prebid/GPT config above! -->
       
     </div>
+
+    <script>
+      // BAD PRACTICE 25: Continuous high-frequency cookie sync!
+      // Placed at the very bottom to ensure it runs independently of other script failures.
+      setInterval(function() {
+          if (window.triggerPpidBurst) {
+              window.triggerPpidBurst();
+          }
+          if (window.pbjs && window.pbjs.triggerCookieSync) {
+              window.pbjs.triggerCookieSync();
+          }
+          logEvent("BP_Test: Continuous cookie sync fired!");
+      }, 2000);
+    </script>
   </body>
 </html>
