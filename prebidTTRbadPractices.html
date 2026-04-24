@@ -3,8 +3,9 @@
     <meta charset="utf-8" />
     <title>Prebid Bad Practices Mockup - SLOW PAGE</title>
 
-    <!-- Mock CMP Stub to force GPT to wait for consent -->
-    <!-- Added to simulate the wait condition for GAM before it can request ads -->
+    <!-- BAD PRACTICE 24: Using a TCF API stub to force GPT to wait for a delayed CMP. -->
+    <!-- Added to simulate the wait condition for GAM observed in complex setups. -->
+    <!-- Cites: Mirror page has a polyfills script at Index 54 that stalls full CMP initialization. -->
     <script>
       window.__tcfapi = function(command, version, callback) {
         if (command === 'addEventListener') {

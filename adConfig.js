@@ -9,12 +9,29 @@ pbjs.cmd.push(function () {
     for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
+    // Helper to get unique param per slot to fix the intercept matching
+    function getDummyParam(bidder, slotIndex) {
+        switch(bidder) {
+            case 'appnexus': return { placementId: 1000 + slotIndex };
+            case 'ix': return { siteId: (9000000 + slotIndex).toString() };
+            case 'criteo': return { zoneId: 1400000 + slotIndex };
+            case 'pubmatic': return { publisherId: (150000 + slotIndex).toString() };
+            case 'rubicon': return { accountId: (1000 + slotIndex).toString() };
+            case 'openx': return { unit: (530000000 + slotIndex).toString() };
+            case 'adform': return { mid: 2000 + slotIndex };
+            default: return { dummy: slotIndex };
+        }
+    }
+
     let adUnits = [];
-    adUnitCodes.forEach(code => {
+    adUnitCodes.forEach((code, index) => {
         adUnits.push({
           code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
+          bids: allBidders.map(bidder => ({ 
+              bidder: bidder, 
+              params: getDummyParam(bidder, index) 
+          }))
         });
     });
 
@@ -65,14 +82,20 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts per slot and bidder
+    // 3. Build Intercepts using unique params to ensure slot-level matching works!
     let intercepts = [];
-    adUnitCodes.forEach(code => {
+    adUnitCodes.forEach((code, index) => {
         allBidders.forEach(bidder => {
+            let cpm = grid[code][bidder];
+            let delay = delays[bidder];
+            
             intercepts.push({
-                when: { bidder: bidder, adUnitCode: code },
-                then: { cpm: grid[code][bidder] },
-                options: { delay: delays[bidder] }
+                when: { 
+                    bidder: bidder, 
+                    params: getDummyParam(bidder, index) // Matches the specific ad unit params!
+                },
+                then: { cpm: cpm },
+                options: { delay: delay }
             });
         });
     });
@@ -82,7 +105,7 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
-      priceGranularity: 'high', // Confirmed high granularity
+      priceGranularity: 'high',
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
