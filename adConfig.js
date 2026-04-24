@@ -65,41 +65,51 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts using functions for 'then' to deliver slot-specific bids!
+    // 3. Build Intercepts using function for 'when' to ensure perfect slot-matching
+    // Cites: Coded based on user provided examples where 'when' takes a function (bidRequest).
     let intercepts = [];
-    allBidders.forEach(bidder => {
-        intercepts.push({
-            when: { bidder: bidder },
-            options: { delay: delays[bidder] }, // Consistent delay for this bidder
+    adUnitCodes.forEach(code => {
+        allBidders.forEach(bidder => {
+            let cpm = grid[code][bidder];
+            let delay = delays[bidder];
             
-            then: function(bidRequest) {
-                let code = bidRequest.adUnitCode;
-                let cpm = grid[code][bidRequest.bidder];
-                
-                // Base response object with common ad properties
-                let response = {
-                    width: 300,
-                    height: 250,
-                    creativeId: 'mock-cr-123',
-                    netRevenue: true,
-                    currency: 'USD',
-                    ttl: 300
-                };
-                
-                // DIAGNOSTIC LOG: Let's check if OpenX is matching and what value it has
-                if (bidRequest.bidder === 'openx') {
-                    console.log(`[Diagnostic] OpenX invoked on ${code}. Grid CPM: $${cpm}`);
-                }
-                
-                if (cpm > 0) {
-                    response.cpm = cpm;
-                    console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
-                    return response;
-                } else {
-                    // Omit the cpm parameter when it's 0
-                    console.log(`[Mock Intercept] No-CPM bid for ${bidRequest.bidder} on ${code}`);
-                    return response; // Returns the object WITHOUT the 'cpm' property!
-                }
+            // Condition for Always-0 bidders (Rubicon & Adform)
+            if (bidder === "rubicon" || bidder === "adform") {
+                // Cites: "for which I want an intercept with only delay and nothing else"
+                intercepts.push({
+                    when: function(bidRequest) {
+                        return bidRequest.bidder === bidder && bidRequest.adUnitCode === code;
+                    },
+                    options: { delay: delay }, // Delay still active
+                    then: function() {
+                        return {}; // Returns nothing else
+                    }
+                });
+                return;
+            }
+            
+            // Condition for others: Skip intercept if CPM is 0
+            // Cites: "if it's 0 set no intercept"
+            if (cpm > 0) {
+                intercepts.push({
+                    when: function(bidRequest) {
+                        return bidRequest.bidder === bidder && bidRequest.adUnitCode === code;
+                    },
+                    options: { delay: delay },
+                    then: function() {
+                        return {
+                            cpm: cpm,
+                            width: 300,
+                            height: 250,
+                            creativeId: 'mock-cr-123',
+                            netRevenue: true,
+                            currency: 'USD',
+                            ttl: 300
+                        };
+                    }
+                });
+            } else {
+                console.log(`[Mock Logic] Skipping intercept for ${bidder} on ${code} (CPM is 0)`);
             }
         });
     });
