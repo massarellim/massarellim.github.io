@@ -7,6 +7,7 @@
     <!-- Added to simulate the wait condition for GAM observed in complex setups. -->
     <!-- Cites: Mirror page has a polyfills script at Index 54 that stalls full CMP initialization. -->
     <script>
+      console.log('Version: v0.1');
       window.__tcfapi = function(command, version, callback) {
         if (command === 'addEventListener') {
           console.log("CMP Stub: GPT registered listener.");
