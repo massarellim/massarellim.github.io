@@ -94,22 +94,24 @@
         // 11 Slots that will be physically on the page
         for(let i=1; i<=11; i++) {
             googletag.defineSlot("/6353/test_desktop_" + i, [300, 250], "div-d" + i)
-              .addService(googletag.pubads());
+              .addService(googletag.pubads())
+              .setTargeting('test', 'red_mustang');
         }
         
         // 4 Phantom Slots requested by Prebid but NOT in the DOM
         // 2 Phantom Mobile slots
-        googletag.defineSlot("/6353/test_mobile_1", [300, 250], "div-m1").addService(googletag.pubads());
-        googletag.defineSlot("/6353/test_mobile_2", [300, 250], "div-m2").addService(googletag.pubads());
+        googletag.defineSlot("/6353/test_mobile_1", [300, 250], "div-m1").addService(googletag.pubads()).setTargeting('test', 'red_mustang');
+        googletag.defineSlot("/6353/test_mobile_2", [300, 250], "div-m2").addService(googletag.pubads()).setTargeting('test', 'red_mustang');
         // 2 Slots that are "simply not there"
-        googletag.defineSlot("/6353/test_phantom_1", [300, 250], "div-phantom1").addService(googletag.pubads());
-        googletag.defineSlot("/6353/test_phantom_2", [300, 250], "div-phantom2").addService(googletag.pubads());
+        googletag.defineSlot("/6353/test_phantom_1", [300, 250], "div-phantom1").addService(googletag.pubads()).setTargeting('test', 'red_mustang');
+        googletag.defineSlot("/6353/test_phantom_2", [300, 250], "div-phantom2").addService(googletag.pubads()).setTargeting('test', 'red_mustang');
 
         // Remaining 8 slots defined in GAM but NOT requested by Prebid nor on the page
         // to reach the total of 23 slots.
         for(let i=3; i<=10; i++) {
             googletag.defineSlot("/6353/test_mobile_" + i, [300, 250], "div-m" + i)
-              .addService(googletag.pubads());
+              .addService(googletag.pubads())
+              .setTargeting('test', 'red_mustang');
         }
 
         // BAD PRACTICE 7: Using SRA (Single Request Architecture) with a huge number of slots
@@ -321,6 +323,16 @@
           <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 2 [300x250]</div>
           <div id="div-d2" class="ad-slot" style="width: 300px; height: 250px"></div>
           <script>googletag.cmd.push(function () { googletag.display("div-d2"); });</script>
+          
+          <!-- Slot 3 -->
+          <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 3 [300x250]</div>
+          <div id="div-d3" class="ad-slot" style="width: 300px; height: 250px"></div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d3"); });</script>
+          
+          <!-- Slot 4 -->
+          <div style="text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 5px;">Desktop Slot 4 [300x250]</div>
+          <div id="div-d4" class="ad-slot" style="width: 300px; height: 250px"></div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d4"); });</script>
           
           <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
       </div>
