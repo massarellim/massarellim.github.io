@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v1.1");
+console.log("adConfig.js Version: v0.8");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -54,20 +54,16 @@ pbjs.cmd.push(function () {
                 if (rand < 0.70) {
                     cpm = 0; // 70% chance: No bid
                 } else if (rand < 0.95) {
-                    cpm = (Math.floor(Math.random() * 17) + 3) / 100; // 25% chance: 0.03 - 0.19
+                    // 25% chance: Random 0.03 - 0.19
+                    cpm = (Math.floor(Math.random() * 17) + 3) / 100;
                 } else {
-                    cpm = (Math.floor(Math.random() * 31) + 20) / 100; // 5% chance: 0.20 - 0.50
+                    // 5% chance: Random 0.20 - 0.50
+                    cpm = (Math.floor(Math.random() * 31) + 20) / 100;
                 }
             }
-            
-            // Criteo minimum bid on slot 1
-            if (bidder === "criteo" && code === "/6353/test_desktop_1" && cpm === 0) {
-                cpm = 0.01;
-            }
-            
             grid[code][bidder] = cpm;
             
-            // Track highest bidder across all slots (excluding Criteo)
+            // Track highest bidder across all slots (excluding Criteo which times out)
             if (bidder !== "criteo" && cpm > highestCpm) {
                 highestCpm = cpm;
                 highestBidder = bidder;
@@ -75,44 +71,70 @@ pbjs.cmd.push(function () {
         });
     });
 
-    // 2. Generate static delays per bidder
+    // 2. Generate static delays per bidder (so it's the same for all slots)
     let delays = {};
     allBidders.forEach(bidder => {
         if (bidder === "criteo") {
-            delays[bidder] = Math.floor(Math.random() * 2301) + 5500; // 5500 to 7800 ms
+            delays[bidder] = Math.floor(Math.random() * 2301) + 5500; // 5500 to 7800 ms (always times out)
         } else {
             delays[bidder] = Math.floor(Math.random() * 501) + 300; // 300 to 800 ms
             if (bidder === highestBidder) {
-                delays[bidder] = Math.floor(Math.random() * 251) + 300; // Fastest 50%
+                delays[bidder] = Math.floor(Math.random() * 251) + 300; // Fastest 50% (300 to 550 ms)
             }
         }
     });
 
-    // 3. Build Intercepts matching by bidder only to be reliable
+    // 3. Build Intercepts using a function in 'when' to prevent matching on 0 CPM!
+    // Cites: The user instructed to not setup ANY intercepts when cpm = 0.
+    // We use the function-based 'when' match rule shown in the user's documentation.
+    
     let intercepts = [];
-    allBidders.forEach(bidder => {
-        intercepts.push({
-            when: { bidder: bidder }, // Simple bidder match
-            options: { delay: delays[bidder] }, // Consistent delay
+    
+    // Crites: The user instructed to only respond for the first slot with Criteo
+    // and use the same random logic for pricing, but keep the long delay!
+    // Update: Criteo must always return at least 0.01 cents, never 0.00.
+    intercepts.push({
+        when: function(bidRequest) {
+            return bidRequest.bidder === "criteo" && bidRequest.adUnitCode === "/6353/test_desktop_1";
+        },
+        options: { delay: delays["criteo"] },
+        then: function(bidRequest) {
+            let cpm = grid["/6353/test_desktop_1"]["criteo"];
             
+            // Force a minimum bid of 0.01 if the grid gave 0
+            let cpmToReturn = cpm > 0 ? cpm : 0.01;
+            
+            return { cpm: cpmToReturn, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
+        }
+    });
+
+    // For Rubicon and Adform (always 0 bids), they only get delay intercepts if requested, 
+    // but the user said "dont setup ANY intercepts when cpm = 0" in general. 
+    // So we will also skip them here to be strict!
+    
+    // For the other randomized bidders:
+    let biddersToMock = ["appnexus", "ix", "pubmatic", "openx"];
+    biddersToMock.forEach(bidder => {
+        intercepts.push({
+            // Function matches only if grid CPM > 0 for that specific slot!
+            when: function(bidRequest) {
+                let code = bidRequest.adUnitCode;
+                let cpm = grid[code][bidRequest.bidder];
+                return bidRequest.bidder === bidder && cpm > 0;
+            },
+            options: { delay: delays[bidder] },
             then: function(bidRequest) {
                 let code = bidRequest.adUnitCode;
                 let cpm = grid[code][bidRequest.bidder];
-                
-                if (cpm > 0) {
-                    return {
-                        cpm: cpm,
-                        width: 300,
-                        height: 250,
-                        creativeId: 'mock-cr-123',
-                        netRevenue: true,
-                        currency: 'USD',
-                        ttl: 300
-                    };
-                } else {
-                    // Return null to prevent fallback to high values
-                    return null;
-                }
+                return {
+                    cpm: cpm,
+                    width: 300,
+                    height: 250,
+                    creativeId: 'mock-cr-123',
+                    netRevenue: true,
+                    currency: 'USD',
+                    ttl: 300
+                };
             }
         });
     });
