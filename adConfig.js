@@ -9,30 +9,12 @@ pbjs.cmd.push(function () {
     for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
-    // Helper to get base dummy params for each bidder
-    function getBaseParams(bidder) {
-        switch(bidder) {
-            case 'appnexus': return { placementId: 1234 };
-            case 'ix': return { siteId: "9999990" };
-            case 'criteo': return { zoneId: 1455580 };
-            case 'pubmatic': return { publisherId: "156210" };
-            case 'rubicon': return { accountId: "1001" };
-            case 'openx': return { unit: "539999999" };
-            case 'adform': return { mid: 2000 };
-            default: return { dummy: 1 };
-        }
-    }
-
     let adUnits = [];
-    adUnitCodes.forEach((code, index) => {
+    adUnitCodes.forEach(code => {
         adUnits.push({
           code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: allBidders.map(bidder => {
-              let p = getBaseParams(bidder);
-              p.slotId = index.toString(); // Add unique slot differentiator in params!
-              return { bidder: bidder, params: p };
-          })
+          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
         });
     });
 
@@ -83,26 +65,38 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts matching on both bidder and the custom slotId param
+    // 3. Build Intercepts using functions for 'then' to deliver slot-specific bids!
+    // Cites: Using the documentation provided by the user for function-based replacement rules.
     let intercepts = [];
-    adUnitCodes.forEach((code, index) => {
-        allBidders.forEach(bidder => {
-            let cpm = grid[code][bidder];
-            let delay = delays[bidder];
+    allBidders.forEach(bidder => {
+        intercepts.push({
+            when: { bidder: bidder }, // Match by bidder simply to be reliable
+            options: { delay: delays[bidder] }, // Consistent delay for this bidder
             
-            let whenCondition = { 
-                bidder: bidder, 
-                params: { slotId: index.toString() } // Matches deep property!
-            };
-            
-            // Cites: The user instructed to not bid when CPM is 0 (so no intercept rule added for no-bids)
-            // Wait, to ensure it takes the 300-800ms time, we SHOULD intercept it and return 0 CPM!
-            // Let's return 0 CPM to force the delay as requested.
-            intercepts.push({
-                when: whenCondition,
-                then: { cpm: cpm },
-                options: { delay: delay }
-            });
+            // Function generates the specific bid response for the slot
+            then: function(bidRequest) {
+                let code = bidRequest.adUnitCode;
+                let cpm = grid[code][bidRequest.bidder];
+                
+                // Cites: User instructed to not bid when CPM is 0
+                if (cpm > 0) {
+                    console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
+                    return {
+                        cpm: cpm,
+                        width: 300,
+                        height: 250,
+                        creativeId: '123',
+                        netRevenue: true,
+                        currency: 'USD',
+                        ttl: 300
+                    };
+                } else {
+                    console.log(`[Mock Intercept] No bid for ${bidRequest.bidder} on ${code}`);
+                    // Returning an empty object or failing to return a valid bid is treated as 'No Bid'
+                    // but the delay in 'options' is still respected!
+                    return {};
+                }
+            }
         });
     });
 
@@ -111,7 +105,7 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
-      priceGranularity: 'high', 
+      priceGranularity: 'high',
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
