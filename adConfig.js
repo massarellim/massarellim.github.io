@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.9");
+console.log("adConfig.js Version: v0.10");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -69,6 +69,8 @@ pbjs.cmd.push(function () {
     let intercepts = [];
     
     // Criteo always has a rule to enforce its large timeout
+    // Cites: "just use the same price randomizer for criteo, no need to always have it at 0"
+    // Removed the fallback to 0.0001, now using the grid value directly!
     intercepts.push({
         when: { bidder: "criteo" },
         options: { delay: delays["criteo"] },
@@ -76,13 +78,8 @@ pbjs.cmd.push(function () {
             let code = bidRequest.adUnitCode;
             let cpm = grid[code]["criteo"];
             
-            // Cites: "criteo still has the 3.57/3.58 value, why?"
-            // If the function returns null or no-bid, Prebid falls back to high defaults like 3.57 USD.
-            // We always return a price (even 0.0001 for zero bids) to prevent that fallback!
-            let cpmToReturn = cpm > 0 ? cpm : 0.0001; 
-            
             return { 
-                cpm: cpmToReturn, 
+                cpm: cpm, // Directly returns the random grid value (0 or higher)
                 width: 300, 
                 height: 250, 
                 creativeId: 'cr3', 
