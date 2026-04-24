@@ -66,35 +66,35 @@ pbjs.cmd.push(function () {
     });
 
     // 3. Build Intercepts using functions for 'then' to deliver slot-specific bids!
-    // Cites: Using the documentation provided by the user for function-based replacement rules.
     let intercepts = [];
     allBidders.forEach(bidder => {
         intercepts.push({
-            when: { bidder: bidder }, // Match by bidder simply to be reliable
+            when: { bidder: bidder },
             options: { delay: delays[bidder] }, // Consistent delay for this bidder
             
-            // Function generates the specific bid response for the slot
             then: function(bidRequest) {
                 let code = bidRequest.adUnitCode;
                 let cpm = grid[code][bidRequest.bidder];
                 
-                // Cites: User instructed to not bid when CPM is 0
+                // Base response object with common ad properties
+                let response = {
+                    width: 300,
+                    height: 250,
+                    creativeId: 'mock-cr-123',
+                    netRevenue: true,
+                    currency: 'USD',
+                    ttl: 300
+                };
+                
                 if (cpm > 0) {
+                    response.cpm = cpm;
                     console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
-                    return {
-                        cpm: cpm,
-                        width: 300,
-                        height: 250,
-                        creativeId: '123',
-                        netRevenue: true,
-                        currency: 'USD',
-                        ttl: 300
-                    };
+                    return response;
                 } else {
-                    console.log(`[Mock Intercept] No bid for ${bidRequest.bidder} on ${code}`);
-                    // Returning an empty object or failing to return a valid bid is treated as 'No Bid'
-                    // but the delay in 'options' is still respected!
-                    return {};
+                    // Cites: User suggested to omit the cpm parameter when it's 0
+                    // so that only the delay part is effectively passed, simulating no bid but maintaining latency!
+                    console.log(`[Mock Intercept] No-CPM bid (No Bid) for ${bidRequest.bidder} on ${code}`);
+                    return response; // Returns the object WITHOUT the 'cpm' property!
                 }
             }
         });
