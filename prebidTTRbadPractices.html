@@ -78,6 +78,13 @@
               .addService(googletag.pubads());
         }
 
+        // BAD PRACTICE 21: Slots without Prebid included in SRA request.
+        // Added to show that slots not in Prebid still suffer from the auction delay in SRA.
+        for(let i=1; i<=3; i++) {
+            googletag.defineSlot("/6353/test_noprebid_" + i, [300, 250], "div-np" + i)
+              .addService(googletag.pubads());
+        }
+
         // BAD PRACTICE 7: Using SRA (Single Request Architecture) with a huge number of slots
         googletag.pubads().enableSingleRequest();
         
@@ -107,7 +114,11 @@
                 bids: [
                   { bidder: "appnexus", params: { placementId: 1233 } },
                   { bidder: "ix", params: { siteId: "9999990" } },
-                  { bidder: "criteo", params: { zoneId: 1455580 } }
+                  { bidder: "criteo", params: { zoneId: 1455580 } },
+                  { bidder: "pubmatic", params: { publisherId: "156210" } },
+                  { bidder: "rubicon", params: { accountId: "1001" } },
+                  { bidder: "openx", params: { unit: "539999999" } },
+                  { bidder: "adform", params: { mid: 2000 } }
                 ]
               });
           }
@@ -121,7 +132,11 @@
                 bids: [
                   { bidder: "appnexus", params: { placementId: 1234 } },
                   { bidder: "ix", params: { siteId: "9999990" } },
-                  { bidder: "criteo", params: { zoneId: 1455580 } }
+                  { bidder: "criteo", params: { zoneId: 1455580 } },
+                  { bidder: "pubmatic", params: { publisherId: "156210" } },
+                  { bidder: "rubicon", params: { accountId: "1001" } },
+                  { bidder: "openx", params: { unit: "539999999" } },
+                  { bidder: "adform", params: { mid: 2000 } }
                 ]
               });
           }
@@ -134,16 +149,38 @@
           // BAD PRACTICE 20: Loading multiple User ID modules simultaneously.
           // Added to simulate the CPU and network overhead of resolving multiple identities on load.
           // Cites: The subagent found multiple ID modules (sharedId, identityLink, and id5Id) on the Mirror.
+          
+          // BAD PRACTICE 22: Mocking bid distributions with high 'No Bid' frequency (70%).
+          // Added to simulate real-world low fill rates and processing overhead.
+          let intercepts = [
+            {
+              when: { bidder: "criteo" },
+              then: { cpm: 0.5 },
+              options: { delay: 7000 }, // Slow bidder
+            }
+          ];
+          
+          // Rubicon and Adform will always return no bid (omitted from intercepts, will fail naturally)
+          let biddersToRandomize = ["appnexus", "ix", "pubmatic", "openx"];
+          biddersToRandomize.forEach(bidder => {
+              let rand = Math.random();
+              if (rand < 0.70) {
+                  // 70% chance: No bid (let it fail naturally on dummy parameters)
+              } else if (rand < 0.85) {
+                  // 15% chance: Low bid (0.01 or 0.02)
+                  let cpm = Math.random() < 0.5 ? 0.01 : 0.02;
+                  intercepts.push({ when: { bidder: bidder }, then: { cpm: cpm } });
+              } else {
+                  // 15% chance: Random between 0.03 and 0.50 in 0.01 increments
+                  let cpm = (Math.floor(Math.random() * 48) + 3) / 100;
+                  intercepts.push({ when: { bidder: bidder }, then: { cpm: cpm } });
+              }
+          });
+
           pbjs.setConfig({
             debugging: {
               enabled: true,
-              intercept: [
-                {
-                  when: { bidder: "criteo" },
-                  then: { cpm: 0.5 },
-                  options: { delay: 7000 }, // Slow bidder
-                }
-              ]
+              intercept: intercepts
             },
             userSync: {
               userIds: [
@@ -334,7 +371,12 @@
           <h2>Article 3: The Cost of Bloat</h2>
           <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
           
-          <!-- Let's add more slots in the content if needed, but 2 is enough to show the pattern -->
+          <!-- Slots without Prebid (Bad Practice 21) -->
+          <div id="div-np1" class="ad-slot" style="width: 300px; height: 250px">No-Prebid Slot 1 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-np1"); });</script>
+          
+          <div id="div-np2" class="ad-slot" style="width: 300px; height: 250px">No-Prebid Slot 2 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-np2"); });</script>
       </div>
       
       <!-- Mobile slots are NOT in the DOM here to simulate "slots not on the page" -->
