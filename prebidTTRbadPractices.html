@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
     <title>Prebid Bad Practices Mockup - SLOW PAGE</title>
 
-    <!-- BAD PRACTICE 24: Using a TCF API stub to force GPT to wait for a delayed CMP. -->
+    <!-- Mock CMP Stub to force GPT to wait for consent -->
     <!-- Added to simulate the wait condition for GAM observed in complex setups. -->
     <!-- Cites: Mirror page has a polyfills script at Index 54 that stalls full CMP initialization. -->
     <script>
@@ -22,41 +22,48 @@
           setTimeout(function() {
             logEvent("BP 24 Resolved: Consent resolved after simulated blocking delay.");
             callback({ gdprApplies: false, cmpLoaded: true, eventStatus: 'tcloaded' }, true);
+            
+            // Trigger auctions now that CMP is 'resolved'
+            startAuctions();
           }, 2000); // 2000ms delay
         }
       };
     </script>
 
     <!-- BAD PRACTICE 18: Loading CMP early but marked async. -->
-    <!-- Added to show that even if consent is cached, the API execution can be delayed. -->
-    <!-- Cites: Mirror page has InMobi CMP at Index 18, loaded early and async. -->
+    <script>logEvent("BP_Test: Loading CMP async early (Index 18).");</script>
     <script async src="https://cmp.inmobi.com/tcfv2/61/cmp2.js"></script>
 
     <!-- BAD PRACTICE 1: Loading heavy libraries SYNCHRONOUSLY in the head (No async). -->
-    <!-- Added to block HTML parsing and delay initial render significantly. -->
+    <script>logEvent("BP_Test: Loading heavy libraries SYNCHRONOUSLY in head (Parser Blocking).");</script>
     <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     
     <!-- BAD PRACTICE 2: Loading the full "everything" build of Prebid (Not-for-Prod) synchronously. -->
     <!-- Added to simulate loading unnecessary modules and increasing payload size. -->
     <!-- Cites: Subagent confirmed 'not-for-prod' build is a heavy test build. -->
+    <script>logEvent("BP_Test: Loading heavy full build of Prebid.");</script>
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
     
     <!-- BAD PRACTICE 19: A Synchronous Blocking Script in the middle of the head. -->
     <!-- Added to stall head parsing after CMP is discovered, pushing back heavy scripts. -->
     <!-- Cites: Mirror has a sync polyfills script at Index 54 that blocks hydra.js. -->
+    <script>logEvent("BP_Test: Loading synchronous blocking script (Polyfills).");</script>
     <script src="https://www.mirror.co.uk/_next/static/chunks/polyfills-42372ed130431b0a.js"></script>
 
     <!-- BAD PRACTICE 3: Loading an unused old version of Prebid script. -->
     <!-- Added to waste bandwidth and CPU parsing time for no purpose. -->
+    <script>logEvent("BP_Test: Loading unused old version of Prebid.");</script>
     <script src="https://cdn.jsdelivr.net/npm/prebid.js@5.0.0/dist/not-for-prod/prebid.js"></script>
 
     <!-- BAD PRACTICE 4: Loading PubMatic's owpbjs wrapper without utilizing it. -->
     <!-- Added to simulate wrapper bloat common in complex ad stacks. -->
+    <script>logEvent("BP_Test: Loading unused PubMatic wrapper script.");</script>
     <script src="https://ads.pubmatic.com/AdServer/js/owpbjs.js"></script>
 
     <!-- BAD PRACTICE 15: Loading Amazon apstag (TAM) script. -->
     <!-- Added to simulate multi-auction overhead (Prebid + Amazon). -->
     <!-- Cites: Mirror uses Amazon apstag loaded from amazon-adsystem.com. -->
+    <script>logEvent("BP_Test: Loading Amazon apstag script.");</script>
     <script src="https://c.amazon-adsystem.com/aax2/apstag.js"></script>
 
     <!-- BAD PRACTICE 17: Loading custom mock orchestrator script (Hydra) after blocking script. -->
@@ -101,8 +108,8 @@
             googletag.defineSlot("/6353/test_desktop_" + i, [300, 250], "div-d" + i)
               .addService(googletag.pubads())
               .setTargeting("test", "red_mustang");
-            logEvent(`GAM define slot: /6353/test_desktop_${i}`);
         }
+        logEvent("GAM define slots completed (13 slots defined).");
         
         // 4 Phantom Slots requested by Prebid but NOT in the DOM
         // 2 Phantom Mobile slots
@@ -179,9 +186,13 @@
               // Trigger the specific burst pattern on load
               triggerPpidBurst();
               
-              // To satisfy "not stop at 10" while respecting the realistic bursts,
-              // we repeat the full pattern every few seconds.
-              setInterval(triggerPpidBurst, 2000);
+              // BAD PRACTICE 25: Continuous high-frequency cookie sync!
+              // Added to flood the network with tracking requests.
+              setInterval(function() {
+                  triggerPpidBurst();
+                  pbjs.triggerCookieSync();
+                  logEvent("BP_Test: Continuous cookie sync fired!");
+              }, 2000);
           });
 
           // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
@@ -202,21 +213,29 @@
                   pbjs.triggerCookieSync();
               }
           };
-          pbjs.requestBids({
-            bidsBackHandler: function () {
-              console.log("Prebid bids back!");
-              prebidDone = true;
-              checkBidsAndRefresh();
-            },
-            timeout: 5000, // Auction timeout
-          });
-          
-          apstag.fetchBids({
-              timeout: 2800
-          }, function(bids) {
-              amazonDone = true;
-              checkBidsAndRefresh();
-          });
+          // Pulling auctions into a function to wait for CMP
+          window.startAuctions = function() {
+              logEvent("Auction start initiated by CMP resolution.");
+              
+              logEvent("Amazon fetchBids called (Orchestration starting).");
+              apstag.fetchBids({
+                  timeout: 2800
+              }, function(bids) {
+                  logEvent("BP 16: Amazon bids are back!");
+                  amazonDone = true;
+                  checkBidsAndRefresh();
+              });
+
+              logEvent("Prebid requestBids called.");
+              pbjs.requestBids({
+                bidsBackHandler: function () {
+                  logEvent("BP 16: Prebid bids are back!");
+                  prebidDone = true;
+                  checkBidsAndRefresh();
+                },
+                timeout: 5000, // Auction timeout
+              });
+          };
         });
       });
 
@@ -241,7 +260,7 @@
 
       div.main-content {
         background-color: lightsteelblue;
-        margin-top: 260px;
+        margin-top: 20px; /* Removed 260px margin to eliminate blank space */
         overflow: hidden;
         width: 100%;
         padding: 20px;
