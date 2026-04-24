@@ -86,14 +86,18 @@ pbjs.cmd.push(function () {
                     ttl: 300
                 };
                 
+                // DIAGNOSTIC LOG: Let's check if OpenX is matching and what value it has
+                if (bidRequest.bidder === 'openx') {
+                    console.log(`[Diagnostic] OpenX invoked on ${code}. Grid CPM: $${cpm}`);
+                }
+                
                 if (cpm > 0) {
                     response.cpm = cpm;
                     console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
                     return response;
                 } else {
-                    // Cites: User suggested to omit the cpm parameter when it's 0
-                    // so that only the delay part is effectively passed, simulating no bid but maintaining latency!
-                    console.log(`[Mock Intercept] No-CPM bid (No Bid) for ${bidRequest.bidder} on ${code}`);
+                    // Omit the cpm parameter when it's 0
+                    console.log(`[Mock Intercept] No-CPM bid for ${bidRequest.bidder} on ${code}`);
                     return response; // Returns the object WITHOUT the 'cpm' property!
                 }
             }
@@ -105,7 +109,7 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
-      priceGranularity: 'high',
+      priceGranularity: 'high', 
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
