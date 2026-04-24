@@ -165,7 +165,7 @@
                   console.log("Set PPID=4e9fe5ba-e530-49f1-b3ae-4969b58c38ba. Invoked queued function. Total: " + count);
               }
 
-              function triggerPpidBurst() {
+              window.triggerPpidBurst = function() {
                   logEvent("BP 14 Triggered: Firing burst of PPID calls.");
                   // Burst 1: 2 calls immediately (offset 0ms)
                   setTimeout(() => { for(let i=0; i<2; i++) { ppidCount++; logPpid(ppidCount); } }, 0);
@@ -184,15 +184,16 @@
               }
               
               // Trigger the specific burst pattern on load
-              triggerPpidBurst();
-              
-              // BAD PRACTICE 25: Continuous high-frequency cookie sync!
-              // Added to flood the network with tracking requests.
-              setInterval(function() {
-                  triggerPpidBurst();
-                  pbjs.triggerCookieSync();
-                  logEvent("BP_Test: Continuous cookie sync fired!");
-              }, 2000);
+              window.triggerPpidBurst();
+          });
+
+          // BAD PRACTICE 25: Continuous high-frequency cookie sync!
+          // Moved outside of auctionInit to ensure it starts running as soon as Prebid is ready.
+          setInterval(function() {
+              window.triggerPpidBurst();
+              pbjs.triggerCookieSync();
+              logEvent("BP_Test: Continuous cookie sync fired!");
+          }, 2000);
           });
 
           // BAD PRACTICE 16: Orchestration waiting for both Prebid and Amazon bids to finish.
