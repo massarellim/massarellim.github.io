@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js loaded and executing...");
+console.log("adConfig.js Version: v0.3");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -9,12 +9,30 @@ pbjs.cmd.push(function () {
     for(let i=1; i<=11; i++) adUnitCodes.push("/6353/test_desktop_" + i);
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
+    // Helper to get valid dummy params for each bidder to pass Prebid validation
+    // Fixed: Rubicon expects integers for numeric IDs, not strings!
+    function getValidParams(bidder) {
+        switch(bidder) {
+            case 'appnexus': return { placementId: 1233 };
+            case 'ix': return { siteId: "9999990" };
+            case 'criteo': return { zoneId: 1455580 };
+            case 'pubmatic': return { publisherId: "156210" };
+            case 'rubicon': return { accountId: 1001, siteId: 1002, zoneId: 1003 }; // Integers!
+            case 'openx': return { unit: "539999999", delDomain: "example-d.openx.net" };
+            case 'adform': return { mid: 2000 };
+            default: return { dummy: 1 };
+        }
+    }
+
     let adUnits = [];
     adUnitCodes.forEach(code => {
         adUnits.push({
           code: code,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: allBidders.map(bidder => ({ bidder: bidder, params: { dummy: 1 } }))
+          bids: allBidders.map(bidder => ({ 
+              bidder: bidder, 
+              params: getValidParams(bidder) 
+          }))
         });
     });
 
@@ -65,51 +83,35 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts using function for 'when' to ensure perfect slot-matching
-    // Cites: Coded based on user provided examples where 'when' takes a function (bidRequest).
+    // 3. Build Intercepts using functions for 'then' to deliver slot-specific bids!
     let intercepts = [];
-    adUnitCodes.forEach(code => {
-        allBidders.forEach(bidder => {
-            let cpm = grid[code][bidder];
-            let delay = delays[bidder];
+    allBidders.forEach(bidder => {
+        intercepts.push({
+            when: { bidder: bidder }, // Match by bidder simply to be reliable
+            options: { delay: delays[bidder] }, // Consistent delay for this bidder
             
-            // Condition for Always-0 bidders (Rubicon & Adform)
-            if (bidder === "rubicon" || bidder === "adform") {
-                // Cites: "for which I want an intercept with only delay and nothing else"
-                intercepts.push({
-                    when: function(bidRequest) {
-                        return bidRequest.bidder === bidder && bidRequest.adUnitCode === code;
-                    },
-                    options: { delay: delay }, // Delay still active
-                    then: function() {
-                        return {}; // Returns nothing else
-                    }
-                });
-                return;
-            }
-            
-            // Condition for others: Skip intercept if CPM is 0
-            // Cites: "if it's 0 set no intercept"
-            if (cpm > 0) {
-                intercepts.push({
-                    when: function(bidRequest) {
-                        return bidRequest.bidder === bidder && bidRequest.adUnitCode === code;
-                    },
-                    options: { delay: delay },
-                    then: function() {
-                        return {
-                            cpm: cpm,
-                            width: 300,
-                            height: 250,
-                            creativeId: 'mock-cr-123',
-                            netRevenue: true,
-                            currency: 'USD',
-                            ttl: 300
-                        };
-                    }
-                });
-            } else {
-                console.log(`[Mock Logic] Skipping intercept for ${bidder} on ${code} (CPM is 0)`);
+            then: function(bidRequest) {
+                let code = bidRequest.adUnitCode;
+                let cpm = grid[code][bidRequest.bidder];
+                
+                let response = {
+                    width: 300,
+                    height: 250,
+                    creativeId: 'mock-cr-123',
+                    netRevenue: true,
+                    currency: 'USD',
+                    ttl: 300
+                };
+                
+                if (cpm > 0) {
+                    response.cpm = cpm;
+                    console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
+                    return response;
+                } else {
+                    // Omit cpm when it is 0 (returning response without CPM)
+                    console.log(`[Mock Intercept] No-CPM bid for ${bidRequest.bidder} on ${code}`);
+                    return response; 
+                }
             }
         });
     });
@@ -119,7 +121,7 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
-      priceGranularity: 'high', 
+      priceGranularity: 'high',
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
