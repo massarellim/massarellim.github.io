@@ -1,0 +1,266 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Prebid Bad Practices Mockup - SLOW PAGE</title>
+
+    <!-- BAD PRACTICE 1: Loading heavy libraries SYNCHRONOUSLY in the head (No async) -->
+    <!-- This blocks HTML parsing and delays the initial render -->
+    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    
+    <!-- BAD PRACTICE 2: Loading the full "everything" build of Prebid (Not-for-Prod) synchronously -->
+    <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    
+    <!-- BAD PRACTICE 3: Loading a second, older version of Prebid that isn't used, just to waste bandwidth -->
+    <script src="https://cdn.jsdelivr.net/npm/prebid.js@5.0.0/dist/not-for-prod/prebid.js"></script>
+
+    <!-- BAD PRACTICE 4: Loading PubMatic's owpbjs wrapper and not using it -->
+    <script src="https://ads.pubmatic.com/AdServer/js/owpbjs.js"></script>
+
+    <script>
+      window.googletag = window.googletag || { cmd: [] };
+      var pbjs = pbjs || {};
+      pbjs.cmd = pbjs.cmd || [];
+
+      // BAD PRACTICE 5: Setting up S2S header bidding but not really using it properly
+      // adds configuration overhead
+      googletag.cmd.push(function () {
+        pbjs.cmd.push(function () {
+          pbjs.setConfig({
+            s2sConfig: {
+              accountId: '1234',
+              enabled: true,
+              bidders: ['appnexus'],
+              timeout: 1000,
+              adapter: 'prebidServer',
+              endpoint: 'https://prebid-server.example.com/openrtb2/auction'
+            }
+          });
+        });
+      });
+
+      googletag.cmd.push(function () {
+        // BAD PRACTICE 6: Requesting 20 slots (10 desktop, 10 mobile) in SRA setup
+        // even if we are on a specific device and don't need all of them.
+        
+        // Desktop Slots
+        for(let i=1; i<=10; i++) {
+            googletag.defineSlot("/6353/test_desktop_" + i, [300, 250], "div-d" + i)
+              .addService(googletag.pubads());
+        }
+        
+        // Mobile Slots (Requested but maybe not rendered on desktop)
+        for(let i=1; i<=10; i++) {
+            googletag.defineSlot("/6353/test_mobile_" + i, [300, 250], "div-m" + i)
+              .addService(googletag.pubads());
+        }
+
+        // BAD PRACTICE 7: Using SRA (Single Request Architecture) with a huge number of slots
+        googletag.pubads().enableSingleRequest();
+        
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+        
+        // BAD PRACTICE 13: Calling refresh as soon as slots are defined (Double Refresh)
+        // This triggers an immediate ad request before Prebid bids are back.
+        googletag.pubads().refresh();
+
+        // Event listeners to update status
+        googletag.pubads().addEventListener("slotRequested", function (event) {
+          updateSlotStatus(event.slot.getSlotElementId(), "requested");
+        });
+        googletag.pubads().addEventListener("slotRenderEnded", function (event) {
+          updateSlotStatus(event.slot.getSlotElementId(), "rendered");
+        });
+
+        pbjs.cmd.push(function () {
+          let adUnits = [];
+          
+          // Add 10 Desktop Ad Units
+          for(let i=1; i<=10; i++) {
+              adUnits.push({
+                code: "/6353/test_desktop_" + i,
+                mediaTypes: { banner: { sizes: [300, 250] } },
+                bids: [
+                  { bidder: "appnexus", params: { placementId: 1233 } },
+                  { bidder: "ix", params: { siteId: "9999990" } },
+                  { bidder: "criteo", params: { zoneId: 1455580 } }
+                ]
+              });
+          }
+          
+          // BAD PRACTICE 8: Defining and requesting bids for Mobile slots too
+          for(let i=1; i<=10; i++) {
+              adUnits.push({
+                code: "/6353/test_mobile_" + i,
+                mediaTypes: { banner: { sizes: [300, 250] } },
+                bids: [
+                  { bidder: "appnexus", params: { placementId: 1234 } },
+                  { bidder: "ix", params: { siteId: "9999990" } },
+                  { bidder: "criteo", params: { zoneId: 1455580 } }
+                ]
+              });
+          }
+
+          pbjs.addAdUnits(adUnits);
+
+          // BAD PRACTICE 9: Setting high timeout (5000ms) and a bidder that takes longer (7000ms)
+          // to guarantee the page waits the maximum time.
+          pbjs.setConfig({
+            debugging: {
+              enabled: true,
+              intercept: [
+                {
+                  when: { bidder: "criteo" },
+                  then: { cpm: 0.5 },
+                  options: { delay: 7000 }, // Slow bidder
+                }
+              ]
+            }
+          });
+
+          // BAD PRACTICE 10: Pinging cookiesync too soon (immediately on auctionInit or before bids back)
+          pbjs.onEvent('auctionInit', function() {
+              console.log("Auction Init: Pinging cookie sync too early!");
+              // Simulating immediate cookie sync trigger
+              pbjs.triggerCookieSync();
+          });
+
+          pbjs.requestBids({
+            bidsBackHandler: function () {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+              
+              // BAD PRACTICE 11: Pinging cookie sync again immediately after auction ends
+              console.log("Bids Back: Pinging cookie sync again!");
+              pbjs.triggerCookieSync();
+            },
+            timeout: 5000, // Auction timeout
+          });
+        });
+      });
+
+      function updateSlotStatus(slotId, state) {
+        var elem = document.getElementById(slotId + "-" + state);
+        if(elem) {
+            elem.className = "activated";
+            elem.innerText = "Yes";
+        }
+      }
+    </script>
+    <style>
+      div.ad-slot {
+        border-style: dashed;
+        display: block;
+        margin: 20px auto;
+        background-color: #f0f0f0;
+        text-align: center;
+        line-height: 250px;
+      }
+
+      div.main-content {
+        background-color: lightsteelblue;
+        margin-top: 260px;
+        overflow: hidden;
+        width: 100%;
+        padding: 20px;
+      }
+
+      div.status-panel {
+        background: white;
+        height: 250px;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        border-bottom: 2px solid #ccc;
+        overflow-y: auto;
+        z-index: 1000;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      table th, table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+
+      table th {
+        background-color: #f2f2f2;
+      }
+
+      table td.activated {
+        background-color: lightgreen;
+      }
+      
+      .mock-article {
+          background: white;
+          margin: 20px auto;
+          padding: 20px;
+          max-width: 800px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="status-panel">
+      <h3>Ad Slot Status Panel</h3>
+      <table>
+        <tr>
+          <th>Ad Slot</th>
+          <th>Requested?</th>
+          <th>Rendered?</th>
+        </tr>
+        <!-- We will dynamically fill this or just hardcode a few for brevity -->
+        <!-- Let's hardcode a few to show the pattern -->
+        <tr><td>Desktop Slot 1</td><td id="div-d1-requested">No</td><td id="div-d1-rendered">No</td></tr>
+        <tr><td>Desktop Slot 2</td><td id="div-d2-requested">No</td><td id="div-d2-rendered">No</td></tr>
+        <tr><td>Mobile Slot 1 (Hidden)</td><td id="div-m1-requested">No</td><td id="div-m1-rendered">No</td></tr>
+      </table>
+      <p>Scroll the container below to view content and ads.</p>
+    </div>
+
+    <div class="main-content">
+      <!-- BAD PRACTICE 12: Mock content to make the page long and scrollable -->
+      <div class="mock-article">
+          <h2>Article 1: The Impact of Poor Ad Tech Implementation</h2>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          
+          <!-- Slot 1 -->
+          <div id="div-d1" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 1 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d1"); });</script>
+          
+          <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      </div>
+
+      <div style="height: 50vh;"></div> <!-- Spacer -->
+
+      <div class="mock-article">
+          <h2>Article 2: Why Lazy Loading Matters</h2>
+          <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+          
+          <!-- Slot 2 -->
+          <div id="div-d2" class="ad-slot" style="width: 300px; height: 250px">Desktop Slot 2 [300x250]</div>
+          <script>googletag.cmd.push(function () { googletag.display("div-d2"); });</script>
+          
+          <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+      </div>
+
+      <!-- Add more spacers and dummy articles to make it very long -->
+      <div style="height: 200vh;">Content Spacer to simulate long scroll...</div>
+
+      <div class="mock-article">
+          <h2>Article 3: The Cost of Bloat</h2>
+          <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
+          
+          <!-- Let's add more slots in the content if needed, but 2 is enough to show the pattern -->
+      </div>
+      
+      <!-- Mobile slots are NOT in the DOM here to simulate "slots not on the page" -->
+      <!-- But they are requested in the Prebid/GPT config above! -->
+      
+    </div>
+  </body>
+</html>
