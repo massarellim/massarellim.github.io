@@ -130,6 +130,10 @@
 
           // BAD PRACTICE 9: Setting a very high timeout (5000ms) with a delayed bidder (7000ms).
           // Added to force the auction to wait the absolute maximum time before failing.
+          // 
+          // BAD PRACTICE 20: Loading multiple User ID modules simultaneously.
+          // Added to simulate the CPU and network overhead of resolving multiple identities on load.
+          // Cites: The subagent found multiple ID modules (sharedId, identityLink, and id5Id) on the Mirror.
           pbjs.setConfig({
             debugging: {
               enabled: true,
@@ -139,6 +143,13 @@
                   then: { cpm: 0.5 },
                   options: { delay: 7000 }, // Slow bidder
                 }
+              ]
+            },
+            userSync: {
+              userIds: [
+                { name: 'sharedId', params: { syncDelay: 100 } },
+                { name: 'identityLink', params: { syncDelay: 100 } },
+                { name: 'id5Id', params: { syncDelay: 100 } }
               ]
             }
           });
