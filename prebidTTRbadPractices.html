@@ -9,17 +9,36 @@
     <script>
       console.log('Version: v0.1');
       
+      let earlyLogs = [];
+      
       // Function to log bad practice execution events to the on-page panel
       function logEvent(message) {
+        let time = Math.floor(performance.now());
+        let logStr = `[${time}ms] ${message}`;
+        
         let panel = document.getElementById('log-panel');
         if (panel) {
-            let time = Math.floor(performance.now());
             let div = document.createElement('div');
-            div.innerText = `[${time}ms] ${message}`;
+            div.innerText = logStr;
             panel.appendChild(div);
             panel.scrollTop = panel.scrollHeight; // Auto scroll to bottom
+        } else {
+            earlyLogs.push(logStr); // Store early logs
         }
       }
+
+      // Dump early logs when DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+          let panel = document.getElementById('log-panel');
+          if (panel) {
+              earlyLogs.forEach(logStr => {
+                  let div = document.createElement('div');
+                  div.innerText = logStr;
+                  panel.appendChild(div);
+              });
+              panel.scrollTop = panel.scrollHeight;
+          }
+      });
 
       window.__tcfapi = function(command, version, callback) {
         if (command === 'addEventListener') {
