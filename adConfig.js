@@ -88,13 +88,15 @@ pbjs.cmd.push(function () {
     
     let intercepts = [];
     
-    // Criteo always has a rule to enforce its large timeout
+    // Crites: The user instructed to only respond for the first slot with Criteo
+    // and use the same random logic for pricing, but keep the long delay!
     intercepts.push({
-        when: { bidder: "criteo" },
+        when: function(bidRequest) {
+            return bidRequest.bidder === "criteo" && bidRequest.adUnitCode === "/6353/test_desktop_1";
+        },
         options: { delay: delays["criteo"] },
         then: function(bidRequest) {
-            let code = bidRequest.adUnitCode;
-            let cpm = grid[code]["criteo"];
+            let cpm = grid["/6353/test_desktop_1"]["criteo"];
             if (cpm > 0) {
                 return { cpm: cpm, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
             }
