@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.10");
+console.log("adConfig.js Version: v0.11");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -65,28 +65,20 @@ pbjs.cmd.push(function () {
         }
     });
 
-    // 3. Build Intercepts using function for 'when' to ensure perfect slot-matching
+    // 3. Reverting to Version 0.8 structure which was "perfect" for you.
     let intercepts = [];
     
     // Criteo always has a rule to enforce its large timeout
-    // Cites: "just use the same price randomizer for criteo, no need to always have it at 0"
-    // Removed the fallback to 0.0001, now using the grid value directly!
     intercepts.push({
         when: { bidder: "criteo" },
         options: { delay: delays["criteo"] },
         then: function(bidRequest) {
             let code = bidRequest.adUnitCode;
             let cpm = grid[code]["criteo"];
-            
-            return { 
-                cpm: cpm, // Directly returns the random grid value (0 or higher)
-                width: 300, 
-                height: 250, 
-                creativeId: 'cr3', 
-                netRevenue: true, 
-                currency: 'USD', 
-                ttl: 300 
-            };
+            if (cpm > 0) {
+                return { cpm: cpm, width: 300, height: 250, creativeId: 'cr3', netRevenue: true, currency: 'USD', ttl: 300 };
+            }
+            return null; // Returns null when cpm is 0 (restored from v0.8)
         }
     });
 
@@ -94,6 +86,7 @@ pbjs.cmd.push(function () {
     let biddersToMock = ["appnexus", "ix", "pubmatic", "openx"];
     biddersToMock.forEach(bidder => {
         intercepts.push({
+            // Function matches only if grid CPM > 0 for that specific slot!
             when: function(bidRequest) {
                 let code = bidRequest.adUnitCode;
                 let cpm = grid[code][bidRequest.bidder];
@@ -121,7 +114,7 @@ pbjs.cmd.push(function () {
         enabled: true,
         intercept: intercepts
       },
-      priceGranularity: 'high', 
+      priceGranularity: 'high',
       userSync: {
         userIds: [
           { name: 'sharedId', params: { syncDelay: 100 } },
