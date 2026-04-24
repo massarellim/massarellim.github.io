@@ -1,5 +1,5 @@
 // adConfig.js - Hidden Prebid Configuration and Bid Simulation
-console.log("adConfig.js Version: v0.3");
+console.log("adConfig.js Version: v0.4");
 
 pbjs.cmd.push(function () {
     let allBidders = ["appnexus", "ix", "criteo", "pubmatic", "rubicon", "openx", "adform"];
@@ -10,7 +10,6 @@ pbjs.cmd.push(function () {
     adUnitCodes.push("/6353/test_mobile_1", "/6353/test_mobile_2", "/6353/test_phantom_1", "/6353/test_phantom_2");
 
     // Helper to get valid dummy params for each bidder to pass Prebid validation
-    // Fixed: Rubicon expects integers for numeric IDs, not strings!
     function getValidParams(bidder) {
         switch(bidder) {
             case 'appnexus': return { placementId: 1233 };
@@ -94,23 +93,22 @@ pbjs.cmd.push(function () {
                 let code = bidRequest.adUnitCode;
                 let cpm = grid[code][bidRequest.bidder];
                 
-                let response = {
-                    width: 300,
-                    height: 250,
-                    creativeId: 'mock-cr-123',
-                    netRevenue: true,
-                    currency: 'USD',
-                    ttl: 300
-                };
-                
                 if (cpm > 0) {
-                    response.cpm = cpm;
                     console.log(`[Mock Intercept] Bid for ${bidRequest.bidder} on ${code}: $${cpm}`);
-                    return response;
+                    return {
+                        cpm: cpm,
+                        width: 300,
+                        height: 250,
+                        creativeId: 'mock-cr-123',
+                        netRevenue: true,
+                        currency: 'USD',
+                        ttl: 300
+                    };
                 } else {
-                    // Omit cpm when it is 0 (returning response without CPM)
-                    console.log(`[Mock Intercept] No-CPM bid for ${bidRequest.bidder} on ${code}`);
-                    return response; 
+                    // Cites: Returning null instead of omitting cpm to signify 'No Bid' 
+                    // and prevent fallback to default high values like 3.58 USD!
+                    console.log(`[Mock Intercept] Returning NULL (No Bid) for ${bidRequest.bidder} on ${code}`);
+                    return null; 
                 }
             }
         });
