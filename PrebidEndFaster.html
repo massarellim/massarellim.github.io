@@ -61,6 +61,7 @@
         console.log("Fast bidders with bid:", fastBiddersWithBid);
         console.log("Slow bidder with bid:", slowBidderWithBid);
 
+        let mockData = {};
         let intercepts = [];
         availableBidders.forEach(bidder => {
             let isSlow = slowBidders.includes(bidder);
@@ -77,16 +78,21 @@
             } else {
                 if (fastBiddersWithBid.includes(bidder)) {
                     shouldBid = true;
-                    cpm = (Math.floor(Math.random() * 91) + 10) / 100; // 0.10 to 1.00
+                    cpm = (Math.floor(Math.random() * 26) + 25) / 100; // 0.25 to 0.50
+                } else {
+                    shouldBid = true;
+                    cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
                 }
             }
+            
+            mockData[bidder] = { cpm: shouldBid ? cpm : 0, delay: delay };
             
             intercepts.push({
                 when: bidRequest => bidRequest.bidder === bidder,
                 options: { delay: delay },
                 then: function(bidRequest) {
                     return {
-                        cpm: shouldBid ? cpm : 0,
+                        cpm: mockData[bidder].cpm,
                         width: 300,
                         height: 250,
                         creativeId: 'cr-' + bidder,
@@ -182,10 +188,12 @@
 
         pbjs.onEvent('bidderDone', function(bidderData) {
           let cpmText = " with no bid";
-          if (bidderData.bids && bidderData.bids.length > 0) {
-              cpmText = ` with bid ${bidderData.bids[0].cpm}`;
+          let bidder = bidderData.bidderCode;
+          if (mockData[bidder]) {
+              let cpm = mockData[bidder].cpm;
+              cpmText = cpm > 0 ? ` with bid ${cpm}` : " with no bid";
           }
-          printEventMessage(`Bidder ${bidderData.bidderCode} responded${cpmText}`);
+          printEventMessage(`Bidder ${bidder} responded${cpmText}`);
           numBidders += 1
           if (numBidders == 3) {
             sendAdserverRequest('test-div')
@@ -205,7 +213,7 @@
       if (eventMessage === "Slot has been requested." || 
           eventMessage === "Slot has finished rendering." || 
           eventMessage === "Impression has become viewable.") {
-        row.style.color = "#00e676";
+        row.style.color = "green";
         row.style.fontWeight = "bold";
       }
       
