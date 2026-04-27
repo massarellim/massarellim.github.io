@@ -10,7 +10,7 @@
     let requestedTimestamp = Date.now();
 
     googletag.cmd.push(function() {
-      var googleSlot = googletag.defineSlot('/19968336/header-bid-tag-1', [300, 250], 'test-div').addService(googletag.pubads());
+      var googleSlot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'test-div').addService(googletag.pubads());
 
       googletag.pubads().addEventListener("impressionViewable", (event) => {
         printEventMessage("Impression has become viewable.");
@@ -181,7 +181,14 @@
         var numBidders = 0
 
         pbjs.onEvent('bidderDone', function(bidderData) {
-          printEventMessage(`Bidder ${bidderData.bidderCode} responded`);
+          let cpmText = " with no bid";
+          let response = pbjs.getBidResponsesForAdUnitCode('test-div');
+          let bids = response ? response.bids : null;
+          let bid = bids ? bids.find(b => b.bidderCode === bidderData.bidderCode) : null;
+          if (bid) {
+              cpmText = ` with bid ${bid.cpm}`;
+          }
+          printEventMessage(`Bidder ${bidderData.bidderCode} responded${cpmText}`);
           numBidders += 1
           if (numBidders == 3) {
             sendAdserverRequest('test-div')
@@ -201,7 +208,7 @@
       if (eventMessage === "Slot has been requested." || 
           eventMessage === "Slot has finished rendering." || 
           eventMessage === "Impression has become viewable.") {
-        row.style.backgroundColor = "lightgreen";
+        row.style.color = "green";
       }
       
       document.getElementsByClassName("status-container")[0].appendChild(row);
