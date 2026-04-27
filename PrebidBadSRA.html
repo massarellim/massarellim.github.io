@@ -19,6 +19,12 @@
     let requestedTimestamp = Date.now();
     let lastFastTimestamp = 0;
     let openxTimestamp = 0;
+    let gptSlots = []; // Store slots to handle non-SRA selective refresh
+    let isSRAMode = false;
+
+    // Check URL for SRA mode
+    const urlParams = new URLSearchParams(window.location.search);
+    isSRAMode = urlParams.get('sra') === 'true';
 
     function logEvent(message, className = "") {
       const body = document.getElementById("logBody");
@@ -65,7 +71,7 @@
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
-        bidderTimeout: 3500, // Increased to ensure OpenX completes before hard timeout
+        bidderTimeout: 3500, // Ensure OpenX completes before hard timeout
         debugging: {
           enabled: true,
           intercept: [
@@ -111,26 +117,48 @@
         }
       });
 
-      // FIX: Move event listener OUTSIDE the function to prevent duplication on rerun
+      // Event listener registered once
+      let fastBiddersDone = 0;
       pbjs.onEvent('bidderDone', function(bidderData) {
         const isSlow = bidderData.bidderCode === 'openx';
         const now = Date.now();
+        
         if (isSlow) {
             openxTimestamp = now;
         } else {
             lastFastTimestamp = Math.max(lastFastTimestamp, now);
+            fastBiddersDone++;
         }
+        
         const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
         logEvent(msg, isSlow ? "highlight-danger" : "");
+
+        // In Non-SRA mode, we can refresh the fast slots as soon as the 3 fast bidders are done!
+        if (!isSRAMode && fastBiddersDone === 3) {
+            logEvent("Non-SRA: Fast bidders done for Slots 1-3. Refreshing early.", "highlight-success");
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh([gptSlots[0], gptSlots[1], gptSlots[2]]);
+                    setTimeout(() => {
+                        logEvent("Slots 1-3 rendered", "highlight-success");
+                    }, 200);
+                });
+            });
+        }
       });
     });
 
     // GPT Configuration
     googletag.cmd.push(function() {
       for (let i = 1; i <= 4; i++) {
-        googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
+        gptSlots.push(googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads()));
       }
-      googletag.pubads().enableSingleRequest();
+      
+      if (isSRAMode) {
+          googletag.pubads().enableSingleRequest();
+      }
+      
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
     });
@@ -143,25 +171,37 @@
       requestedTimestamp = Date.now();
       lastFastTimestamp = 0;
       openxTimestamp = 0;
-      logEvent("Simulation started. Auction requested.");
+      
+      logEvent("Simulation started. Mode: " + (isSRAMode ? "SRA" : "Non-SRA"));
+      logEvent("Auction requested.");
 
       pbjs.cmd.push(function() {
         pbjs.requestBids({
           bidsBackHandler: function() {
             logEvent("Prebid bidsBackHandler executed. All bids ready.");
             
-            const totalTime = Date.now() - requestedTimestamp;
             googletag.cmd.push(function() {
               pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
-                logEvent("GPT Targeting set. Fetching SRA ad response...");
-                googletag.pubads().refresh();
                 
-                setTimeout(() => {
-                    logEvent("All slots rendered");
-                    const exactDelay = openxTimestamp - lastFastTimestamp;
-                    logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
-                }, 200);
+                if (isSRAMode) {
+                    logEvent("GPT Targeting set. Fetching SRA ad response...");
+                    googletag.pubads().refresh(); // Refreshes all slots
+                    
+                    setTimeout(() => {
+                        logEvent("All slots rendered", "highlight-success");
+                        const exactDelay = openxTimestamp - lastFastTimestamp;
+                        logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
+                    }, 200);
+                } else {
+                    logEvent("GPT Targeting set. Fetching remaining Non-SRA ad response for Slot 4...");
+                    googletag.pubads().refresh([gptSlots[3]]); // Refreshes only slot 4
+                    
+                    setTimeout(() => {
+                        logEvent("Slot 4 rendered", "highlight-success");
+                        logEvent("Non-SRA allowed Slots 1-3 to render early without waiting for OpenX.", "highlight-success");
+                    }, 200);
+                }
               });
             });
           }
@@ -169,7 +209,15 @@
       });
     }
 
-    // Auto-start simulation on page load as requested
+    function setMode(mode) {
+        if (mode === 'sra') {
+            window.location.search = '?sra=true';
+        } else {
+            window.location.search = '';
+        }
+    }
+
+    // Auto-start on page load
     window.onload = function() {
         startSimulation();
     };
@@ -299,6 +347,11 @@
       font-weight: bold;
     }
 
+    .highlight-success {
+      color: var(--success-color);
+      font-weight: bold;
+    }
+
     .btn {
       background-color: var(--accent-color);
       color: white;
@@ -314,6 +367,17 @@
 
     .btn:hover {
       background-color: #1765c1;
+    }
+    
+    .btn-secondary {
+      background-color: #ffffff;
+      color: var(--accent-color);
+      border-color: var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+      background-color: #f8f9fa;
+      border-color: var(--accent-color);
     }
   </style>
 </head>
@@ -348,7 +412,10 @@
       <div class="log-section">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
           <h2 style="margin: 0; border: none; padding: 0; font-size: 1.1rem; font-weight: 500;">Live Event Timeline</h2>
-          <button class="btn" onclick="startSimulation()">Request Ads</button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn" id="sraBtn" onclick="setMode('sra')">Run SRA</button>
+            <button class="btn btn-secondary" id="nonSraBtn" onclick="setMode('nonsra')">Run Non-SRA</button>
+          </div>
         </div>
         <table>
           <thead>
@@ -365,6 +432,18 @@
 
     </div>
   </div>
+
+  <script>
+      // Ensure the correct button is highlighted based on active mode
+      const isSRA = new URLSearchParams(window.location.search).get('sra') === 'true';
+      if (isSRA) {
+          document.getElementById('sraBtn').className = 'btn';
+          document.getElementById('nonSraBtn').className = 'btn btn-secondary';
+      } else {
+          document.getElementById('sraBtn').className = 'btn btn-secondary';
+          document.getElementById('nonSraBtn').className = 'btn';
+      }
+  </script>
 
 </body>
 </html>
