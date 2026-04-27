@@ -68,22 +68,40 @@
             {
               when: { bidder: 'appnexus' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300 
+                }; 
+              }
             },
             {
               when: { bidder: 'rubicon' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300 
+                }; 
+              }
             },
             {
               when: { bidder: 'pubmatic' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300 
+                }; 
+              }
             },
             {
               when: { bidder: 'openx' },
               options: { delay: 3000 }, // Slowest bidder times out at 3000ms
-              then: { cpm: 0.01 }
+              then: { 
+                cpm: 0.01, 
+                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300 
+              }
             }
           ]
         }
@@ -188,16 +206,16 @@
     /* Two Column Layout */
     .two-column-layout {
       display: grid;
-      grid-template-columns: 350px 1fr; /* Fixed width for ads, flexible for log */
+      grid-template-columns: 620px 1fr; /* 2 columns of 300px + 20px gap = 620px */
       gap: 30px;
       margin-top: 20px;
       align-items: start;
     }
 
-    /* Left Column (Ads) */
+    /* Left Column (Ads) - 2x2 Grid */
     .ad-grid {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2, 300px);
       gap: 20px;
     }
 
@@ -309,15 +327,7 @@
 <body>
 
   <div class="container">
-    <h1>Prebid SRA Bottleneck Demonstration</h1>
-    <p class="desc">
-      This page simulates a common anti-pattern where Single Request Architecture (SRA) is enabled, but one bidder is extremely slow. Because GPT waits for the Prebid auction to complete before sending the single request for all slots, the slow bidder holding up the auction blocks the delivery of <b>all</b> ads on the page, including those that had winning bids ready in hundreds of milliseconds.
-    </p>
 
-    <!-- Controls -->
-    <div style="margin-bottom: 20px;">
-      <button class="btn" onclick="startSimulation()">Run Simulation</button>
-    </div>
 
     <!-- Two Column Layout -->
     <div class="two-column-layout">
@@ -325,26 +335,29 @@
       <!-- Left Column (Ads) -->
       <div class="ad-grid">
         <div class="ad-slot-container">
-          <h3>Slot 1 (div-gpt-ad-1)</h3>
-          <div id="div-gpt-ad-1" class="ad-placeholder">Waiting for auction...</div>
+          <h3>Slot 1</h3>
+          <div id="div-gpt-ad-1" class="ad-placeholder"></div>
         </div>
         <div class="ad-slot-container">
-          <h3>Slot 2 (div-gpt-ad-2)</h3>
-          <div id="div-gpt-ad-2" class="ad-placeholder">Waiting for auction...</div>
+          <h3>Slot 2</h3>
+          <div id="div-gpt-ad-2" class="ad-placeholder"></div>
         </div>
         <div class="ad-slot-container">
-          <h3>Slot 3 (div-gpt-ad-3)</h3>
-          <div id="div-gpt-ad-3" class="ad-placeholder">Waiting for auction...</div>
+          <h3>Slot 3</h3>
+          <div id="div-gpt-ad-3" class="ad-placeholder"></div>
         </div>
         <div class="ad-slot-container">
-          <h3>Slot 4 (div-gpt-ad-4)</h3>
-          <div id="div-gpt-ad-4" class="ad-placeholder">Waiting for auction...</div>
+          <h3>Slot 4</h3>
+          <div id="div-gpt-ad-4" class="ad-placeholder"></div>
         </div>
       </div>
 
       <!-- Right Column (Log) -->
       <div class="log-section">
-        <h2>Live Event Timeline</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+          <h2 style="margin: 0; border: none; padding: 0; font-size: 1.1rem; font-weight: 500;">Live Event Timeline</h2>
+          <button class="btn" onclick="startSimulation()">Request Ads</button>
+        </div>
         <table>
           <thead>
             <tr>
