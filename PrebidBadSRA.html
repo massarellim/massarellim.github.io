@@ -8,7 +8,6 @@
   <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
   
-  <!-- JavaScript at the top -->
   <script>
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -44,7 +43,6 @@
 
     pbjs.cmd.push(function() {
       let adUnits = [];
-      // Slots 2-4 participate in Prebid (Slot 1 is GAM only)
       for (let i = 2; i <= 4; i++) {
         let bids = [
           { bidder: 'appnexus', params: { placementId: 123 } },
@@ -101,7 +99,7 @@
         if (!loggedPerAuction[id]) loggedPerAuction[id] = {};
         
         if (!loggedPerAuction[id][bidder]) {
-            loggedPerAuction[id][bidder] = true; // Log once per auction
+            loggedPerAuction[id][bidder] = true;
             const isSlow = bidder === 'openx';
             const now = Date.now();
             if (isSlow) { openxTimestamp = now; } 
@@ -114,7 +112,6 @@
     });
 
     googletag.cmd.push(function() {
-      // 1. Define Slots
       window.slot1 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-1').addService(googletag.pubads());
       window.slot1.setTargeting('test', 'red_mustang');
       googletag.display('div-gpt-ad-1');
@@ -128,12 +125,10 @@
       window.slot4 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-4').addService(googletag.pubads());
       googletag.display('div-gpt-ad-4');
 
-      // 2. Configure GAM
       if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
 
-      // 3. Define Simulation logic
       window.startSimulation = function() {
         document.getElementById("logBody").innerHTML = "";
         requestedTimestamp = Date.now();
@@ -158,7 +153,6 @@
               });
             });
         } else {
-            // Non-SRA Mode: Cascading requests
             googletag.cmd.push(function() {
                 googletag.pubads().refresh([window.slot1]);
                 setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
@@ -180,21 +174,23 @@
               });
             });
 
-            googletag.cmd.push(function() {
-              pbjs.cmd.push(function() {
-                pbjs.requestBids({
-                  adUnitCodes: ['div-gpt-ad-4'],
-                  bidsBackHandler: function() {
-                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                    googletag.pubads().refresh([window.slot4]);
-                    setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
-                  }
+            setTimeout(() => {
+              googletag.cmd.push(function() {
+                pbjs.cmd.push(function() {
+                  pbjs.requestBids({
+                    adUnitCodes: ['div-gpt-ad-4'],
+                    bidsBackHandler: function() {
+                      pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                      googletag.pubads().refresh([window.slot4]);
+                      setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
+                    }
+                  });
                 });
               });
-            });
+            }, 50);
         }
-        }
-        window.startSimulation();
+      }
+      window.startSimulation();
     });
 
     function setMode(mode) {
@@ -207,10 +203,10 @@
     :root {
       --bg-color: #f8f9fa;
       --text-color: #202124;
-      --accent-color: #1a73e8;
-      --border-color: #dadce0;
-      --danger-color: #d93025;
-      --success-color: #188038;
+      --accent-color: #4285F4;
+      --border-color: #9AA0A6;
+      --danger-color: #EA4335;
+      --success-color: #34A853;
     }
 
     body {
@@ -309,7 +305,7 @@
     }
 
     .highlight-danger { color: var(--danger-color); font-weight: bold; }
-    .highlight-warning { color: #f2a600; font-weight: bold; }
+    .highlight-warning { color: #FBBC04; font-weight: bold; }
     .highlight-success { color: var(--success-color); font-weight: bold; }
 
     .btn {
@@ -333,9 +329,7 @@
 <body>
 
   <div class="container">
-    
     <div class="two-column-layout">
-      
       <div class="ad-grid">
         <div class="ad-slot-container">
           <h3>Slot 1</h3>
@@ -371,11 +365,9 @@
             </tr>
           </thead>
           <tbody id="logBody">
-            <!-- Logs will appear here -->
           </tbody>
         </table>
       </div>
-
     </div>
   </div>
 
