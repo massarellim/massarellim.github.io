@@ -139,7 +139,7 @@
             earlyRefreshTriggered = true;
             googletag.cmd.push(function() {
                 pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync();
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
                     googletag.pubads().refresh([gptSlots[1], gptSlots[2]]);
                     setTimeout(() => {
                         logEvent("Slot 2 rendered", "highlight-success");
@@ -198,9 +198,8 @@
             
             googletag.cmd.push(function() {
               pbjs.que.push(function() {
-                pbjs.setTargetingForGPTAsync();
-                
                 if (isSRAMode) {
+                    pbjs.setTargetingForGPTAsync(); // All slots
                     logEvent("GPT Targeting set. Fetching SRA ad response...");
                     googletag.pubads().refresh(); // Refreshes all slots
                     
@@ -210,7 +209,7 @@
                         logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
                     }, 200);
                 } else {
-
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']); // Only slot 4
                     googletag.pubads().refresh([gptSlots[3]]); // Refreshes only slot 4
                     
                     setTimeout(() => {
