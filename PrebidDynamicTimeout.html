@@ -4,18 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prebid Dynamic Timeout Calculator</title>
+  
+  <!-- JavaScript at the top as requested -->
+  <script>
+    function updateAdUnitsVal() {
+      document.getElementById("adUnitsVal").textContent = document.getElementById("numAdUnits").value;
+    }
+
+    function calculateTimeout() {
+      const baseTimeout = 500; // Base timeout
+      let modifier = 0;
+
+      // 1. New vs Returning User
+      const isNewUser = document.getElementById("isNewUser").checked;
+      modifier += isNewUser ? 200 : 0;
+
+      // Includes Video
+      const includesVideo = document.getElementById("includesVideo").checked;
+      modifier += includesVideo ? 200 : 50;
+
+      // 2. Number of Ad Units
+      const numUnits = parseInt(document.getElementById("numAdUnits").value);
+      modifier += numUnits * 20;
+
+      // 3. Page Content Type
+      const pageType = document.getElementById("pageType").value;
+      if (pageType === "homepage") modifier += 200;
+      else if (pageType === "section") modifier += 100;
+      else if (pageType === "article") modifier += 50;
+
+      // 4. Device Type (Sorted slower to faster)
+      const deviceVal = document.getElementById("deviceType").value;
+      if (deviceVal === "1") { modifier += 200; document.getElementById("deviceTypeVal").textContent = "Phone (+200)"; }
+      else if (deviceVal === "2") { modifier += 100; document.getElementById("deviceTypeVal").textContent = "Tablet (+100)"; }
+      else if (deviceVal === "3") { modifier += 50; document.getElementById("deviceTypeVal").textContent = "Desktop (+50)"; }
+
+      // 5. Connection Speed (Standard effectiveType)
+      const connVal = document.getElementById("connectionSpeed").value;
+      if (connVal === "1") { modifier += 250; document.getElementById("connectionSpeedVal").textContent = "slow-2g (+250)"; }
+      else if (connVal === "2") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "2g (+200)"; }
+      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "3g (+100)"; }
+      else if (connVal === "4") { modifier += 50; document.getElementById("connectionSpeedVal").textContent = "4g (+50)"; }
+
+      const total = baseTimeout + modifier;
+      document.getElementById("totalTimeout").textContent = total + "ms";
+    }
+
+    // Initialize on DOMContentLoaded to ensure elements exist
+    document.addEventListener("DOMContentLoaded", function() {
+      updateAdUnitsVal();
+      calculateTimeout();
+    });
+  </script>
+
+  <!-- CSS Style (Ad Manager Aesthetic) -->
   <style>
     :root {
-      --bg-color: #0f172a;
-      --text-color: #f8fafc;
-      --accent-color: #38bdf8;
-      --card-bg: #1e293b;
-      --border-color: #334155;
-      --success-color: #00e676;
+      --bg-color: #f8f9fa; /* Google light gray */
+      --text-color: #202124; /* Google dark gray */
+      --accent-color: #1a73e8; /* Google blue */
+      --card-bg: #ffffff;
+      --border-color: #dadce0;
+      --success-color: #137333; /* Google green */
+      --hover-bg: #f1f3f4;
     }
 
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Roboto', 'Inter', system-ui, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
@@ -30,36 +85,39 @@
       max-width: 600px;
       width: 100%;
       background: var(--card-bg);
-      padding: 40px;
-      border-radius: 24px;
-      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
       border: 1px solid var(--border-color);
     }
 
     h1 {
-      color: var(--accent-color);
+      color: var(--text-color);
       margin-top: 0;
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 30px;
+      text-align: left;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      font-weight: 400;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
     }
 
     .control-panel {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .control-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     label {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 500;
-      color: #94a3b8;
+      color: #5f6368;
     }
 
     input[type="range"], select, input[type="checkbox"] {
@@ -67,52 +125,55 @@
     }
 
     select {
-      background: #0f172a;
-      color: white;
+      background: #ffffff;
+      color: var(--text-color);
       border: 1px solid var(--border-color);
-      padding: 12px;
-      border-radius: 8px;
+      padding: 8px 12px;
+      border-radius: 4px;
       cursor: pointer;
       font-size: 0.9rem;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--accent-color);
     }
 
     .slider-val {
       font-size: 0.85rem;
       color: var(--accent-color);
-      font-weight: 600;
+      font-weight: 500;
     }
 
     .timeout-display {
-      background: #0f172a;
-      padding: 30px;
-      border-radius: 16px;
+      background: #e8f0fe;
+      padding: 20px;
+      border-radius: 4px;
       text-align: center;
-      margin-top: 20px;
-      border: 2px solid var(--accent-color);
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+      margin-top: 10px;
+      border: 1px solid #c2d7fa;
     }
 
     .timeout-display h3 {
-      margin: 0 0 10px 0;
-      font-size: 1rem;
-      color: #94a3b8;
+      margin: 0 0 5px 0;
+      font-size: 0.85rem;
+      color: #1a73e8;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      font-weight: 500;
     }
 
     .timeout-val {
-      font-size: 3.5rem;
+      font-size: 3rem;
       font-weight: bold;
-      color: var(--accent-color);
-      text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+      color: #1a73e8;
     }
 
-    /* Custom Checkbox as Toggle */
     .switch {
       position: relative;
       display: inline-block;
-      width: 50px;
-      height: 24px;
+      width: 36px;
+      height: 20px;
     }
 
     .switch input { 
@@ -128,35 +189,70 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #334155;
+      background-color: #9aa0a6;
       transition: .4s;
-      border-radius: 24px;
+      border-radius: 20px;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 16px;
-      width: 16px;
-      left: 4px;
-      bottom: 4px;
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
       background-color: white;
       transition: .4s;
       border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
 
     input:checked + .slider {
-      background-color: var(--accent-color);
+      background-color: #8ab4f8;
     }
 
     input:checked + .slider:before {
-      transform: translateX(26px);
+      transform: translateX(16px);
+      background-color: var(--accent-color);
     }
 
     .row-flex {
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+
+    input[type=range]:focus {
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: #dadce0;
+      border-radius: 2px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+      background: #dadce0;
     }
   </style>
 </head>
@@ -167,7 +263,7 @@
     
     <div class="control-panel">
       
-      <!-- New vs Returning User -->
+      <!-- First Visit -->
       <div class="control-group">
         <div class="row-flex">
           <div>
@@ -180,6 +276,7 @@
           </label>
         </div>
       </div>
+
       <!-- Includes Video -->
       <div class="control-group">
         <div class="row-flex">
@@ -190,7 +287,6 @@
           </label>
         </div>
       </div>
-
 
       <!-- Number of Ad Units -->
       <div class="control-group">
@@ -232,61 +328,12 @@
       <!-- Timeout Display -->
       <div class="timeout-display">
         <h3>Calculated Bidder Timeout</h3>
-        <div class="timeout-val" id="totalTimeout">1320ms</div>
+        <div class="timeout-val" id="totalTimeout">820ms</div>
         <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">Base (500ms) + Modifiers</div>
       </div>
 
     </div>
   </div>
-
-  <script>
-    function updateAdUnitsVal() {
-      document.getElementById("adUnitsVal").textContent = document.getElementById("numAdUnits").value;
-    }
-
-    function calculateTimeout() {
-      const baseTimeout = 500; // Base timeout
-      let modifier = 0;
-
-      // 1. New vs Returning User
-      const isNewUser = document.getElementById("isNewUser").checked;
-      modifier += isNewUser ? 200 : 0;
-
-      // Includes Video
-      const includesVideo = document.getElementById("includesVideo").checked;
-      modifier += includesVideo ? 200 : 50;
-
-      // 2. Number of Ad Units
-      const numUnits = parseInt(document.getElementById("numAdUnits").value);
-      modifier += numUnits * 20;
-
-      // 3. Page Content Type
-      const pageType = document.getElementById("pageType").value;
-      if (pageType === "homepage") modifier += 200;
-      else if (pageType === "section") modifier += 100;
-      else if (pageType === "article") modifier += 50;
-
-      // 4. Device Type (Sorted slower to faster: Phone -> Tablet -> Desktop)
-      const deviceVal = document.getElementById("deviceType").value;
-      if (deviceVal === "1") { modifier += 200; document.getElementById("deviceTypeVal").textContent = "Phone (+200)"; }
-      else if (deviceVal === "2") { modifier += 100; document.getElementById("deviceTypeVal").textContent = "Tablet (+100)"; }
-      else if (deviceVal === "3") { modifier += 50; document.getElementById("deviceTypeVal").textContent = "Desktop (+50)"; }
-
-      // 5. Connection Speed (Standard effectiveType)
-      const connVal = document.getElementById("connectionSpeed").value;
-      if (connVal === "1") { modifier += 250; document.getElementById("connectionSpeedVal").textContent = "slow-2g (+250)"; }
-      else if (connVal === "2") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "2g (+200)"; }
-      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "3g (+100)"; }
-      else if (connVal === "4") { modifier += 50; document.getElementById("connectionSpeedVal").textContent = "4g (+50)"; }
-
-      const total = baseTimeout + modifier;
-      document.getElementById("totalTimeout").textContent = total + "ms";
-    }
-
-    // Initialize
-    updateAdUnitsVal();
-    calculateTimeout();
-  </script>
 
 </body>
 </html>
