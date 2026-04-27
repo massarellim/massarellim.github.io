@@ -64,35 +64,40 @@
 
       const creativeHtml = '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>';
 
-      // Setup Intercepts (Pure objects for maximum stability)
+      // Setup Intercepts (Mirroring working pattern from PrebidEndFaster.html)
+      let bds = ['appnexus', 'rubicon', 'pubmatic', 'openx'];
+      let ints = [];
+      
+      bds.forEach(bidder => {
+          let isSlow = (bidder === 'openx');
+          let delay = isSlow ? 3000 : Math.floor(Math.random() * 301) + 500;
+          
+          ints.push({
+              when: function(bidRequest) { return bidRequest.bidder === bidder; },
+              options: { delay: delay },
+              then: function(bidRequest) {
+                  let cpm = isSlow ? 0.01 : (Math.floor(Math.random() * 41) + 10) / 100;
+                  return {
+                      cpm: cpm,
+                      width: 300,
+                      height: 250,
+                      creativeId: 'cr-' + bidder,
+                      netRevenue: true,
+                      currency: 'USD',
+                      ttl: 300,
+                      ad: creativeHtml
+                  };
+              }
+          });
+      });
+
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
         bidderTimeout: 3000,
         debugging: {
           enabled: true,
-          intercept: [
-            {
-              when: { bidder: 'appnexus' },
-              options: { delay: Math.floor(Math.random() * 301) + 500 },
-              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
-            },
-            {
-              when: { bidder: 'rubicon' },
-              options: { delay: Math.floor(Math.random() * 301) + 500 },
-              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
-            },
-            {
-              when: { bidder: 'pubmatic' },
-              options: { delay: Math.floor(Math.random() * 301) + 500 },
-              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
-            },
-            {
-              when: { bidder: 'openx' },
-              options: { delay: 3000 },
-              then: { cpm: 0.01, width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
-            }
-          ]
+          intercept: ints
         }
       });
     });
