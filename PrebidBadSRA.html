@@ -9,7 +9,7 @@
   <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
   
-  <!-- JavaScript at the top as requested -->
+  <!-- JavaScript at the top -->
   <script>
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -37,6 +37,11 @@
       body.appendChild(row);
     }
 
+    // Helper to generate random bids once on load
+    function getRandomBid() {
+      return (Math.floor(Math.random() * 41) + 10) / 100;
+    }
+
     // Prebid configuration
     pbjs.cmd.push(function() {
       // Setup 4 ad units
@@ -57,55 +62,35 @@
       }
       pbjs.addAdUnits(adUnits);
 
-      // Setup Intercepts
+      const creativeHtml = '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>';
+
+      // Setup Intercepts (Pure objects for maximum stability)
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
-        bidderTimeout: 3000, // Match the slowest bidder response
+        bidderTimeout: 3000,
         debugging: {
           enabled: true,
           intercept: [
             {
-              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'appnexus'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300,
-                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
-                }; 
-              }
+              when: { bidder: 'appnexus' },
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
             },
             {
-              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'rubicon'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300,
-                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
-                }; 
-              }
+              when: { bidder: 'rubicon' },
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
             },
             {
-              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'pubmatic'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300,
-                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
-                }; 
-              }
+              when: { bidder: 'pubmatic' },
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: { cpm: getRandomBid(), width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
             },
             {
-              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'openx'; },
-              options: { delay: 3000 }, // Slowest bidder times out at 3000ms
-              then: { 
-                cpm: 0.01, 
-                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300,
-                ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
-              }
+              when: { bidder: 'openx' },
+              options: { delay: 3000 },
+              then: { cpm: 0.01, width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
             }
           ]
         }
@@ -117,9 +102,11 @@
       for (let i = 1; i <= 4; i++) {
         googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
       }
+      
       googletag.pubads().addEventListener('slotRenderEnded', function(event) {
         logEvent(`Slot ${event.slot.getSlotElementId()} finished rendering.`, "highlight-success");
       });
+      
       googletag.pubads().enableSingleRequest();
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
@@ -149,8 +136,6 @@
               pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
                 logEvent("GPT Targeting set. Fetching SRA ad response...", "highlight-success");
-                
-                // Simulate GAM Request
                 googletag.pubads().refresh();
               });
             });
@@ -183,7 +168,7 @@
     }
 
     .container {
-      max-width: 1200px; /* Increased width for two columns */
+      max-width: 1200px;
       width: 100%;
       background: #ffffff;
       padding: 40px;
@@ -192,34 +177,19 @@
       border: 1px solid var(--border-color);
     }
 
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 400;
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: #202124;
-    }
-
-    .desc {
-      color: #5f6368;
-      font-size: 0.95rem;
-      margin-bottom: 30px;
-      line-height: 1.5;
-    }
-
     /* Two Column Layout */
     .two-column-layout {
       display: grid;
-      grid-template-columns: 620px 1fr; /* 2 columns of 300px + 20px gap = 620px */
+      grid-template-columns: 680px 1fr; /* 2 columns of 330px + gap = 680px */
       gap: 30px;
       margin-top: 20px;
       align-items: start;
     }
 
-    /* Left Column (Ads) - 2x2 Grid */
+    /* Left Column (Ads) */
     .ad-grid {
       display: grid;
-      grid-template-columns: repeat(2, 300px);
+      grid-template-columns: repeat(2, 330px); /* Made columns wider to accommodate padding */
       gap: 20px;
     }
 
@@ -260,7 +230,7 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 20px;
-      height: 600px; /* Fixed height to match ad stack */
+      height: 600px;
       overflow-y: auto;
     }
 
@@ -332,8 +302,7 @@
 <body>
 
   <div class="container">
-
-
+    
     <!-- Two Column Layout -->
     <div class="two-column-layout">
       
