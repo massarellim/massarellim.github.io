@@ -180,6 +180,17 @@
           </label>
         </div>
       </div>
+      <!-- Includes Video -->
+      <div class="control-group">
+        <div class="row-flex">
+          <label for="includesVideo">Includes Video (adUnit.mediaTypes.video)</label>
+          <label class="switch">
+            <input type="checkbox" id="includesVideo" onchange="calculateTimeout()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
 
       <!-- Number of Ad Units -->
       <div class="control-group">
@@ -194,9 +205,9 @@
       <div class="control-group">
         <label for="pageType">Page Content Type</label>
         <select id="pageType" onchange="calculateTimeout()">
-          <option value="standard">Standard Article (+0)</option>
-          <option value="gallery">Photo Gallery (+150ms)</option>
-          <option value="video">Video Section (+200ms)</option>
+          <option value="homepage">Homepage (+200ms)</option>
+          <option value="section">Section Page (+100ms)</option>
+          <option value="article">Article (+50ms)</option>
         </select>
       </div>
 
@@ -222,7 +233,7 @@
       <div class="timeout-display">
         <h3>Calculated Bidder Timeout</h3>
         <div class="timeout-val" id="totalTimeout">1320ms</div>
-        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">Base (1000ms) + Modifiers</div>
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">Base (500ms) + Modifiers</div>
       </div>
 
     </div>
@@ -234,12 +245,16 @@
     }
 
     function calculateTimeout() {
-      const baseTimeout = 1000; // Base timeout
+      const baseTimeout = 500; // Base timeout
       let modifier = 0;
 
       // 1. New vs Returning User
       const isNewUser = document.getElementById("isNewUser").checked;
       modifier += isNewUser ? 200 : 0;
+
+      // Includes Video
+      const includesVideo = document.getElementById("includesVideo").checked;
+      modifier += includesVideo ? 200 : 50;
 
       // 2. Number of Ad Units
       const numUnits = parseInt(document.getElementById("numAdUnits").value);
@@ -247,8 +262,9 @@
 
       // 3. Page Content Type
       const pageType = document.getElementById("pageType").value;
-      if (pageType === "gallery") modifier += 150;
-      else if (pageType === "video") modifier += 200;
+      if (pageType === "homepage") modifier += 200;
+      else if (pageType === "section") modifier += 100;
+      else if (pageType === "article") modifier += 50;
 
       // 4. Device Type (Sorted slower to faster: Phone -> Tablet -> Desktop)
       const deviceVal = document.getElementById("deviceType").value;
