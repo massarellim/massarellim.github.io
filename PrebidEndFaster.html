@@ -1,0 +1,195 @@
+<head>
+  <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    var pbjs = pbjs || {};
+    pbjs.cmd = pbjs.cmd || [];
+
+    let requestedTimestamp = Date.now();
+
+    googletag.cmd.push(function() {
+      var googleSlot = googletag.defineSlot('/19968336/header-bid-tag-1', [300, 250], 'test-div').addService(googletag.pubads());
+
+      googletag.pubads().addEventListener("impressionViewable", (event) => {
+        printEventMessage("Impression has become viewable.");
+      });
+
+      googletag.pubads().addEventListener("slotRenderEnded", (event) => {
+        printEventMessage("Slot has finished rendering.");
+      });
+
+      googletag.pubads().addEventListener("slotRequested", (event) => {
+        printEventMessage("Slot has been requested.");
+      });
+
+      googletag.pubads().addEventListener("slotResponseReceived", (event) => {
+        printEventMessage("Ad response has been received.");
+      });
+
+      googletag.pubads().enableSingleRequest();
+      googletag.pubads().disableInitialLoad();
+      googletag.enableServices();
+
+      pbjs.cmd.push(function() {
+        pbjs.setConfig({
+          bidderSequence: "fixed",
+          priceGranularity: "high",
+          debugging: {
+            enabled: true, 
+            intercept: [{
+              when: {adUnitCode: /test/}, 
+              then: {cpm: 9.90}
+            }]
+          }
+        })
+
+        pbjs.addAdUnits([{
+          code: 'test-div',
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }, {
+            bidder: "rubicon",
+            params: {
+              accountId: 14062,
+              siteId: 70608,
+              zoneId: 498816
+            }
+          }, {
+            bidder: 'openx',
+            params: {
+              unit: '539439964',
+              delDomain: 'se-demo-d.openx.net'
+            }
+          }, {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '156209',
+              adSlot: 'pubmatic_test2'
+            }
+          }, {
+            bidder: "smart",
+            params: {
+              domain: 'https://prg.smartadserver.com',
+              siteId: 207435,
+              pageId: 896536,
+              formatId: 62913
+            }
+          }]
+        }]);
+
+        function sendAdserverRequest(adUnit) {
+
+          if (!pbjs.adserverRequestSent) {
+            pbjs.adserverRequestSent = true;
+
+            googletag.cmd.push(function() {
+              pbjs.que.push(function() {
+                let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
+                if (getHighest) {
+                  printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
+                  googleSlot.updateTargetingFromMap(
+                    pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
+                  );
+                } else {
+                  printEventMessage(`No bids from Prebid`);
+                }
+                googletag.pubads().refresh();
+              });
+            });
+
+          }
+        }
+
+        pbjs.requestBids({
+          bidsBackHandler: function() {
+            sendAdserverRequest('test-div')
+          }
+        });
+
+        var numBidders = 0
+
+        pbjs.onEvent('bidderDone', function(bidderData) {
+          printEventMessage(`Bidder ${bidderData.bidderCode} responded`);
+          numBidders += 1
+          if (numBidders == 3) {
+            sendAdserverRequest('test-div')
+          }
+        });
+
+      });
+    });
+
+    function printEventMessage(eventMessage, slotId, details = {}) {
+      const row = document.getElementsByClassName("status-row")[0].cloneNode(true);
+      const cells = row.getElementsByClassName("status-cell");
+      cells[0].textContent = eventMessage;
+      cells[1].textContent = `${Date.now() - requestedTimestamp}ms`;
+      document.getElementsByClassName("status-container")[0].appendChild(row);
+    }
+
+  </script>
+
+
+  <style>
+    .status,
+    .status-row {
+      display: inline-table;
+      width: 750px;
+    }
+
+    .status-container {
+      height: 400px;
+      overflow: scroll;
+      width: 100%;
+    }
+
+    .status-row:nth-child(even) {
+      background-color: lightsteelblue;
+    }
+
+    .status-cell {
+      float: left;
+      min-width: 15%;
+    }
+
+    .status-detail {
+      margin: 0;
+      padding-left: 1em;
+    }
+
+    .event {
+      width: 50%;
+    }
+
+  </style>
+
+</head>
+
+<body>
+  <span>Ad slot 1:</span>
+  <div id="test-div" style="width: 300px; height: 250px"></div>
+  <div style="height: 10px"></div>
+  <div class="status">
+    <div class="status-row">
+      <div class="status-cell event"><b>Event</b></div>
+      <div class="status-cell"><b>Time from ad request</b></div>
+    </div>
+    <div class="status-container"></div>
+  </div>
+  <script>
+    googletag.cmd.push(function() {
+      googletag.display("ad-slot-1");
+    });
+
+  </script>
+</body>
