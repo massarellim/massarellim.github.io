@@ -1,0 +1,162 @@
+<head>
+  <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    var pbjs = pbjs || {};
+    pbjs.cmd = pbjs.cmd || [];
+
+    let requestedTimestamp = Date.now();
+
+    googletag.cmd.push(function() {
+      let slotWithoutHB = googletag.defineSlot('/19968336/header-bid-tag-1', [300, 250], 'ad-slot-1').addService(googletag.pubads());
+      googletag.enableServices();
+      googletag.display('ad-slot-1');
+    });
+
+    googletag.cmd.push(function() {
+      let slotWithHB = googletag.defineSlot('/19968336/header-bid-tag-2', [300, 250], 'ad-slot-2')
+        .addService(googletag.pubads());
+
+      googletag.pubads().addEventListener("impressionViewable", (event) => {
+        const slotId = event.slot.getSlotElementId();
+        printEventMessage("Impression has become viewable.", slotId);
+      });
+
+      googletag.pubads().addEventListener("slotRenderEnded", (event) => {
+        const slotId = event.slot.getSlotElementId();
+
+        const details = {
+          "Advertiser ID": event.advertiserId,
+          "Campaign ID": event.campaignId,
+          "Line Item ID": event.lineItemId,
+          "Creative ID": event.creativeId,
+          "Is empty?": event.isEmpty
+        };
+
+        printEventMessage("Slot has finished rendering.", slotId, details);
+      });
+
+      googletag.pubads().addEventListener("slotRequested", (event) => {
+        const slotId = event.slot.getSlotElementId();
+        printEventMessage("Slot has been requested.", slotId);
+      });
+
+      googletag.pubads().addEventListener("slotResponseReceived", (event) => {
+        const slotId = event.slot.getSlotElementId();
+        printEventMessage("Ad response has been received.", slotId);
+      });
+
+      googletag.pubads().disableInitialLoad();
+      googletag.enableServices();
+      pbjs.cmd.push(function() {
+        pbjs.addAdUnits([{
+          code: '/19968336/header-bid-tag-2',
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }, {
+            bidder: 'rubicon',
+            params: {
+              placementId: 67064
+            }
+          }]
+        }]);
+        setTimeout(() => {
+          pbjs.requestBids({
+            bidsBackHandler: function() {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh([slotWithHB]);
+            }
+          });
+        }, 700) // simulate a 700ms second roundtrip to fetch prebid bids
+      });
+    });
+
+    function printEventMessage(eventMessage, slotId, details = {}) {
+      const row = document.getElementsByClassName("status-row")[0].cloneNode(true);
+
+      const cells = row.getElementsByClassName("status-cell");
+      cells[0].textContent = slotId;
+      cells[1].textContent = eventMessage;
+      for (const key in details) {
+        if (!details.hasOwnProperty(key) || !details[key]) continue;
+
+        const detailElem = document.createElement("p");
+        detailElem.className = "status-detail";
+        detailElem.textContent = `${key}: ${details[key]}`;
+        cells[1].appendChild(detailElem);
+      }
+      cells[2].textContent = `${Date.now() - requestedTimestamp}ms`;
+
+      document.getElementsByClassName("status-container")[0].appendChild(row);
+    }
+
+  </script>
+
+
+  <style>
+    .status,
+    .status-row {
+      display: inline-table;
+      width: 750px;
+    }
+
+    .status-container {
+      height: 400px;
+      overflow: scroll;
+      width: 100%;
+    }
+
+    .status-row:nth-child(even) {
+      background-color: lightsteelblue;
+    }
+
+    .status-cell {
+      float: left;
+      min-width: 15%;
+    }
+
+    .status-detail {
+      margin: 0;
+      padding-left: 1em;
+    }
+
+    .event {
+      width: 50%;
+    }
+
+  </style>
+
+</head>
+
+<body>
+  <span>Ad slot 1: no prebid</span>
+  <div id="ad-slot-1" style="width: 300px; height: 250px"></div>
+
+  <span>Ad slot 2: contains prebid</span>
+  <div id="ad-slot-2" style="width: 300px; height: 250px"></div>
+
+  <div class="status">
+    <div class="status-row">
+      <div class="status-cell"><b>Slot</b></div>
+      <div class="status-cell event"><b>Event</b></div>
+      <div class="status-cell"><b>Time from ad request</b></div>
+    </div>
+    <div class="status-container"></div>
+  </div>
+  <script>
+    googletag.cmd.push(function() {
+      googletag.display("ad-slot-2");
+    });
+
+  </script>
+</body>

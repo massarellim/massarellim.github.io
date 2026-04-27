@@ -12,20 +12,14 @@
     googletag.cmd.push(function() {
       var googleSlot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'test-div').addService(googletag.pubads());
 
-      googletag.pubads().addEventListener("impressionViewable", (event) => {
-        printEventMessage("Impression has become viewable.");
-      });
-
-      googletag.pubads().addEventListener("slotRenderEnded", (event) => {
-        printEventMessage("Slot has finished rendering.");
-      });
-
-      googletag.pubads().addEventListener("slotRequested", (event) => {
-        printEventMessage("Slot has been requested.");
-      });
-
-      googletag.pubads().addEventListener("slotResponseReceived", (event) => {
-        printEventMessage("Ad response has been received.");
+      const events = {
+        "impressionViewable": "Impression has become viewable.",
+        "slotRenderEnded": "Slot has finished rendering.",
+        "slotRequested": "Slot has been requested.",
+        "slotResponseReceived": "Ad response has been received."
+      };
+      Object.entries(events).forEach(([ev, msg]) => {
+        googletag.pubads().addEventListener(ev, () => printEventMessage(msg));
       });
 
       googletag.pubads().enableSingleRequest();
@@ -33,126 +27,19 @@
       googletag.enableServices();
 
       pbjs.cmd.push(function() {
-        let availableBidders = ['appnexus', 'rubicon', 'openx', 'pubmatic', 'smart'];
-        let biddersNotAppnexus = availableBidders.filter(b => b !== 'appnexus');
-        let slowBidders = [];
-        while (slowBidders.length < 2) {
-            let randBidder = biddersNotAppnexus[Math.floor(Math.random() * biddersNotAppnexus.length)];
-            if (!slowBidders.includes(randBidder)) {
-                slowBidders.push(randBidder);
-            }
-        }
-        let fastBidders = availableBidders.filter(b => !slowBidders.includes(b));
-        
-        console.log("Slow bidders selected:", slowBidders);
-        console.log("Fast bidders selected:", fastBidders);
-
-        // Slow bidders behavior: 1 gets a bid, 1 gets nothing
-        let slowBidderWithBid = slowBidders[Math.floor(Math.random() * slowBidders.length)];
-        
-        // Fast bidders behavior: 2 get a bid, 1 gets nothing
-        let fastBiddersWithBid = [];
-        while (fastBiddersWithBid.length < 2) {
-            let randBidder = fastBidders[Math.floor(Math.random() * fastBidders.length)];
-            if (!fastBiddersWithBid.includes(randBidder)) {
-                fastBiddersWithBid.push(randBidder);
-            }
-        }
-        console.log("Fast bidders with bid:", fastBiddersWithBid);
-        console.log("Slow bidder with bid:", slowBidderWithBid);
-
         let mockData = {};
-        let intercepts = [];
-        availableBidders.forEach(bidder => {
-            let isSlow = slowBidders.includes(bidder);
-            let delay = isSlow ? Math.floor(Math.random() * 1001) + 1500 : Math.floor(Math.random() * 501) + 300;
-            
-            let shouldBid = false;
-            let cpm = 0;
-            
-            if (isSlow) {
-                if (bidder === slowBidderWithBid) {
-                    shouldBid = true;
-                    cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
-                }
-            } else {
-                if (fastBiddersWithBid.includes(bidder)) {
-                    shouldBid = true;
-                    cpm = (Math.floor(Math.random() * 26) + 25) / 100; // 0.25 to 0.50
-                } else {
-                    shouldBid = true;
-                    cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
-                }
-            }
-            
-            mockData[bidder] = { cpm: shouldBid ? cpm : 0, delay: delay };
-            
-            intercepts.push({
-                when: bidRequest => bidRequest.bidder === bidder,
-                options: { delay: delay },
-                then: function(bidRequest) {
-                    return {
-                        cpm: mockData[bidder].cpm,
-                        width: 300,
-                        height: 250,
-                        creativeId: 'cr-' + bidder,
-                        netRevenue: true,
-                        currency: 'USD',
-                        ttl: 300
-                    };
-                }
-            });
-        });
-
-        pbjs.setConfig({
-          bidderSequence: "fixed",
-          priceGranularity: "high",
-          debugging: {
-            enabled: true, 
-            intercept: intercepts
-          }
-        })
+        setupSimulation();
 
         pbjs.addAdUnits([{
           code: 'test-div',
-          mediaTypes: {
-            banner: {
-              sizes: [300, 250]
-            }
-          },
-          bids: [{
-            bidder: 'appnexus',
-            params: {
-              placementId: 13144370
-            }
-          }, {
-            bidder: "rubicon",
-            params: {
-              accountId: 14062,
-              siteId: 70608,
-              zoneId: 498816
-            }
-          }, {
-            bidder: 'openx',
-            params: {
-              unit: '539439964',
-              delDomain: 'se-demo-d.openx.net'
-            }
-          }, {
-            bidder: 'pubmatic',
-            params: {
-              publisherId: '156209',
-              adSlot: 'pubmatic_test2'
-            }
-          }, {
-            bidder: "smart",
-            params: {
-              domain: 'https://prg.smartadserver.com',
-              siteId: 207435,
-              pageId: 896536,
-              formatId: 62913
-            }
-          }]
+          mediaTypes: { banner: { sizes: [300, 250] } },
+          bids: [
+            { bidder: 'appnexus', params: { placementId: 123 } },
+            { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } },
+            { bidder: 'openx', params: { unit: '1', delDomain: 'd' } },
+            { bidder: 'pubmatic', params: { publisherId: '1', adSlot: 's' } },
+            { bidder: 'smart', params: { domain: 'd', siteId: 1, pageId: 2, formatId: 3 } }
+          ]
         }]);
 
         function sendAdserverRequest(adUnit) {
@@ -176,6 +63,82 @@
             });
 
           }
+        }
+
+        function setupSimulation() {
+            let availableBidders = ['appnexus', 'rubicon', 'openx', 'pubmatic', 'smart'];
+            let biddersNotAppnexus = availableBidders.filter(b => b !== 'appnexus');
+            let slowBidders = [];
+            while (slowBidders.length < 2) {
+                let randBidder = biddersNotAppnexus[Math.floor(Math.random() * biddersNotAppnexus.length)];
+                if (!slowBidders.includes(randBidder)) {
+                    slowBidders.push(randBidder);
+                }
+            }
+            let fastBidders = availableBidders.filter(b => !slowBidders.includes(b));
+            
+            // Slow bidders behavior: 1 gets a bid, 1 gets nothing
+            let slowBidderWithBid = slowBidders[Math.floor(Math.random() * slowBidders.length)];
+            
+            // Fast bidders behavior: 2 get a bid, 1 gets nothing
+            let fastBiddersWithBid = [];
+            while (fastBiddersWithBid.length < 2) {
+                let randBidder = fastBidders[Math.floor(Math.random() * fastBidders.length)];
+                if (!fastBiddersWithBid.includes(randBidder)) {
+                    fastBiddersWithBid.push(randBidder);
+                }
+            }
+
+            let intercepts = [];
+            availableBidders.forEach(bidder => {
+                let isSlow = slowBidders.includes(bidder);
+                let delay = isSlow ? Math.floor(Math.random() * 1001) + 1500 : Math.floor(Math.random() * 501) + 300;
+                
+                let shouldBid = false;
+                let cpm = 0;
+                
+                if (isSlow) {
+                    if (bidder === slowBidderWithBid) {
+                        shouldBid = true;
+                        cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
+                    }
+                } else {
+                    if (fastBiddersWithBid.includes(bidder)) {
+                        shouldBid = true;
+                        cpm = (Math.floor(Math.random() * 26) + 25) / 100; // 0.25 to 0.50
+                    } else {
+                        shouldBid = true;
+                        cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
+                    }
+                }
+                
+                mockData[bidder] = { cpm: shouldBid ? cpm : 0, delay: delay };
+                
+                intercepts.push({
+                    when: bidRequest => bidRequest.bidder === bidder,
+                    options: { delay: delay },
+                    then: function(bidRequest) {
+                        return {
+                            cpm: mockData[bidder].cpm,
+                            width: 300,
+                            height: 250,
+                            creativeId: 'cr-' + bidder,
+                            netRevenue: true,
+                            currency: 'USD',
+                            ttl: 300
+                        };
+                    }
+                });
+            });
+
+            pbjs.setConfig({
+              bidderSequence: "fixed",
+              priceGranularity: "high",
+              debugging: {
+                enabled: true, 
+                intercept: intercepts
+              }
+            });
         }
 
         pbjs.requestBids({
