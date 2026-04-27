@@ -154,7 +154,11 @@
     // GPT Configuration
     googletag.cmd.push(function() {
       for (let i = 1; i <= 4; i++) {
-        gptSlots.push(googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads()));
+        let slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
+        if (i === 1) {
+            slot.setTargeting('red', 'mustang');
+        }
+        gptSlots.push(slot);
       }
       
       if (isSRAMode) {
@@ -190,7 +194,7 @@
       pbjs.cmd.push(function() {
         pbjs.requestBids({
           bidsBackHandler: function() {
-            logEvent("Prebid bidsBackHandler executed. All bids ready.");
+
             
             googletag.cmd.push(function() {
               pbjs.que.push(function() {
@@ -206,7 +210,7 @@
                         logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
                     }, 200);
                 } else {
-                    logEvent("GPT Targeting set. Fetching remaining Non-SRA ad response for Slot 4...");
+
                     googletag.pubads().refresh([gptSlots[3]]); // Refreshes only slot 4
                     
                     setTimeout(() => {

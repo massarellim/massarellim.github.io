@@ -21,7 +21,7 @@
 
       // Includes Video
       const includesVideo = document.getElementById("includesVideo").checked;
-      modifier += includesVideo ? 200 : 50;
+      modifier += includesVideo ? 200 : 0;
 
       // 2. Number of Ad Units
       const numUnits = parseInt(document.getElementById("numAdUnits").value);
@@ -31,7 +31,7 @@
       const pageType = document.getElementById("pageType").value;
       if (pageType === "homepage") modifier += 200;
       else if (pageType === "section") modifier += 100;
-      else if (pageType === "article") modifier += 50;
+      else if (pageType === "article") modifier += 0;
 
       // 4. Device Type (Sorted slower to faster)
       const deviceVal = document.getElementById("deviceType").value;
@@ -327,7 +327,7 @@
           </div>
           <div class="form-control-col">
             <label class="switch">
-              <input type="checkbox" id="isNewUser" checked onchange="calculateTimeout()">
+              <input type="checkbox" id="isNewUser" onchange="calculateTimeout()">
               <span class="slider"></span>
             </label>
           </div>
@@ -369,7 +369,7 @@
             <select id="pageType" onchange="calculateTimeout()">
               <option value="homepage">Homepage (+200ms)</option>
               <option value="section">Section Page (+100ms)</option>
-              <option value="article">Article (+50ms)</option>
+              <option value="article" selected>Article (+0ms)</option>
             </select>
           </div>
         </div>
