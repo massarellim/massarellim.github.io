@@ -94,10 +94,14 @@
         }
       });
 
+      let loggedPerAuction = {};
       pbjs.onEvent('bidderDone', function(bidderData) {
-        let bidder = bidderData.bidderCode;
-        if (!biddersLogged[bidder]) {
-            biddersLogged[bidder] = true;
+        const id = bidderData.auctionId;
+        const bidder = bidderData.bidderCode;
+        if (!loggedPerAuction[id]) loggedPerAuction[id] = {};
+        
+        if (!loggedPerAuction[id][bidder]) {
+            loggedPerAuction[id][bidder] = true; // Log once per auction
             const isSlow = bidder === 'openx';
             const now = Date.now();
             if (isSlow) { openxTimestamp = now; } 
@@ -192,8 +196,8 @@
         
         }
         
-        // Auto-start
         window.startSimulation();
+        // Auto-start
       };
     });
 
