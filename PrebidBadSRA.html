@@ -161,29 +161,33 @@
             setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
 
             // 2. Slots 2 & 3 (Fast Prebid)
-            pbjs.cmd.push(function() {
-              pbjs.requestBids({
-                adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
-                bidsBackHandler: function() {
-                  pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                  googletag.pubads().refresh([window.slot2, window.slot3]);
-                  setTimeout(() => {
-                      logEvent("Slot 2 rendered", "highlight-success");
-                      logEvent("Slot 3 rendered", "highlight-success");
-                  }, 200);
-                }
+            googletag.cmd.push(function() {
+              pbjs.cmd.push(function() {
+                pbjs.requestBids({
+                  adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
+                  bidsBackHandler: function() {
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
+                    googletag.pubads().refresh([window.slot2, window.slot3]);
+                    setTimeout(() => {
+                        logEvent("Slot 2 rendered", "highlight-success");
+                        logEvent("Slot 3 rendered", "highlight-success");
+                    }, 200);
+                  }
+                });
               });
             });
 
             // 3. Slot 4 (Slow Prebid)
-            pbjs.cmd.push(function() {
-              pbjs.requestBids({
-                adUnitCodes: ['div-gpt-ad-4'],
-                bidsBackHandler: function() {
-                  pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                  googletag.pubads().refresh([window.slot4]);
-                  setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
-                }
+            googletag.cmd.push(function() {
+              pbjs.cmd.push(function() {
+                pbjs.requestBids({
+                  adUnitCodes: ['div-gpt-ad-4'],
+                  bidsBackHandler: function() {
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                    googletag.pubads().refresh([window.slot4]);
+                    setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
+                  }
+                });
               });
             });
         }
