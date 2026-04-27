@@ -42,15 +42,17 @@
       // Setup 4 ad units
       let adUnits = [];
       for (let i = 1; i <= 4; i++) {
+        let bids = [
+          { bidder: 'appnexus', params: { placementId: 123 } },
+          { bidder: 'rubicon', params: { accountId: 1 } },
+          { bidder: 'pubmatic', params: { publisherId: '1' } }
+        ];
+        if (i === 4) bids.push({ bidder: 'openx', params: { unit: '1' } });
+
         adUnits.push({
           code: 'div-gpt-ad-' + i,
           mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: [
-            { bidder: 'appnexus', params: { placementId: 123 } },
-            { bidder: 'rubicon', params: { accountId: 1 } },
-            { bidder: 'pubmatic', params: { publisherId: '1' } },
-            { bidder: 'openx', params: { unit: '1' } }
-          ]
+          bids: bids
         });
       }
       pbjs.addAdUnits(adUnits);
@@ -64,22 +66,22 @@
           enabled: true,
           intercept: [
             {
-              when: function(bidRequest) { return bidRequest.bidder === 'appnexus'; },
+              when: { bidder: 'appnexus' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
             },
             {
-              when: function(bidRequest) { return bidRequest.bidder === 'rubicon'; },
+              when: { bidder: 'rubicon' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
             },
             {
-              when: function(bidRequest) { return bidRequest.bidder === 'pubmatic'; },
+              when: { bidder: 'pubmatic' },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
             },
             {
-              when: function(bidRequest) { return bidRequest.bidder === 'openx'; },
+              when: { bidder: 'openx' },
               options: { delay: 3000 }, // Slowest bidder times out at 3000ms
               then: { cpm: 0.01 }
             }
