@@ -92,14 +92,10 @@
         }
       });
 
-      let loggedPerAuction = {};
       pbjs.onEvent('bidderDone', function(bidderData) {
-        const id = bidderData.auctionId;
-        const bidder = bidderData.bidderCode;
-        if (!loggedPerAuction[id]) loggedPerAuction[id] = {};
-        
-        if (!loggedPerAuction[id][bidder]) {
-            loggedPerAuction[id][bidder] = true;
+        let bidder = bidderData.bidderCode;
+        if (!biddersLogged[bidder]) {
+            biddersLogged[bidder] = true;
             const isSlow = bidder === 'openx';
             const now = Date.now();
             if (isSlow) { openxTimestamp = now; } 
@@ -114,16 +110,10 @@
     googletag.cmd.push(function() {
       window.slot1 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-1').addService(googletag.pubads());
       window.slot1.setTargeting('test', 'red_mustang');
-      googletag.display('div-gpt-ad-1');
       
       window.slot2 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-2').addService(googletag.pubads());
-      googletag.display('div-gpt-ad-2');
-
       window.slot3 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-3').addService(googletag.pubads());
-      googletag.display('div-gpt-ad-3');
-
       window.slot4 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-4').addService(googletag.pubads());
-      googletag.display('div-gpt-ad-4');
 
       if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
       googletag.pubads().disableInitialLoad();
@@ -143,7 +133,6 @@
               pbjs.requestBids({
                 bidsBackHandler: function() {
                   pbjs.setTargetingForGPTAsync();
-                  logEvent("GAM refresh triggered for all SRA slots.");
                   googletag.pubads().refresh();
                   setTimeout(() => {
                       logEvent("All slots rendered", "highlight-success");
@@ -155,7 +144,6 @@
             });
         } else {
             googletag.cmd.push(function() {
-                logEvent("GAM refresh triggered for Slot 1.");
                 googletag.pubads().refresh([window.slot1]);
                 setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
             });
@@ -166,7 +154,6 @@
                   adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
                   bidsBackHandler: function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                    logEvent("GAM refresh triggered for Slots 2 & 3.");
                     googletag.pubads().refresh([window.slot2, window.slot3]);
                     setTimeout(() => {
                         logEvent("Slot 2 rendered", "highlight-success");
@@ -177,25 +164,40 @@
               });
             });
 
-            setTimeout(() => {
-              googletag.cmd.push(function() {
-                pbjs.cmd.push(function() {
-                  pbjs.requestBids({
-                    adUnitCodes: ['div-gpt-ad-4'],
-                    bidsBackHandler: function() {
-                      pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                      logEvent("GAM refresh triggered for Slot 4.");
-                      googletag.pubads().refresh([window.slot4]);
-                      setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
-                    }
-                  });
+            googletag.cmd.push(function() {
+              pbjs.cmd.push(function() {
+                pbjs.requestBids({
+                  adUnitCodes: ['div-gpt-ad-4'],
+                  bidsBackHandler: function() {
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                    googletag.pubads().refresh([window.slot4]);
+                    setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
+                  }
                 });
               });
-            }, 50);
+            });
         }
-      }
-      window.startSimulation();
+      };
     });
+
+    function initAds() {
+      googletag.cmd.push(function() {
+        googletag.display('div-gpt-ad-1');
+        googletag.display('div-gpt-ad-2');
+        googletag.display('div-gpt-ad-3');
+        googletag.display('div-gpt-ad-4');
+        
+        if (typeof window.startSimulation === 'function') {
+          window.startSimulation();
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAds);
+    } else {
+      initAds();
+    }
 
     function setMode(mode) {
         if (mode === 'nonsra') { window.location.search = '?sra=false'; } 
@@ -333,7 +335,9 @@
 <body>
 
   <div class="container">
+    
     <div class="two-column-layout">
+      
       <div class="ad-grid">
         <div class="ad-slot-container">
           <h3>Slot 1</h3>
@@ -369,9 +373,11 @@
             </tr>
           </thead>
           <tbody id="logBody">
+            <!-- Logs will appear here -->
           </tbody>
         </table>
       </div>
+
     </div>
   </div>
 
