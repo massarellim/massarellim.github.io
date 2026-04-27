@@ -64,7 +64,7 @@
         let intercepts = [];
         availableBidders.forEach(bidder => {
             let isSlow = slowBidders.includes(bidder);
-            let delay = isSlow ? Math.floor(Math.random() * 1001) + 1000 : Math.floor(Math.random() * 501) + 300;
+            let delay = isSlow ? Math.floor(Math.random() * 1001) + 1500 : Math.floor(Math.random() * 501) + 300;
             
             let shouldBid = false;
             let cpm = 0;
@@ -182,11 +182,8 @@
 
         pbjs.onEvent('bidderDone', function(bidderData) {
           let cpmText = " with no bid";
-          let response = pbjs.getBidResponsesForAdUnitCode('test-div');
-          let bids = response ? response.bids : null;
-          let bid = bids ? bids.find(b => b.bidderCode === bidderData.bidderCode) : null;
-          if (bid) {
-              cpmText = ` with bid ${bid.cpm}`;
+          if (bidderData.bids && bidderData.bids.length > 0) {
+              cpmText = ` with bid ${bidderData.bids[0].cpm}`;
           }
           printEventMessage(`Bidder ${bidderData.bidderCode} responded${cpmText}`);
           numBidders += 1
@@ -208,7 +205,8 @@
       if (eventMessage === "Slot has been requested." || 
           eventMessage === "Slot has finished rendering." || 
           eventMessage === "Impression has become viewable.") {
-        row.style.color = "green";
+        row.style.color = "#00e676";
+        row.style.fontWeight = "bold";
       }
       
       document.getElementsByClassName("status-container")[0].appendChild(row);
