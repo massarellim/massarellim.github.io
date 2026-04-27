@@ -19,10 +19,9 @@
     let requestedTimestamp = Date.now();
     let lastFastTimestamp = 0;
     let openxTimestamp = 0;
-    let gptSlots = []; // Store slots to handle non-SRA selective refresh
+    let gptSlots = []; 
     let isSRAMode = false;
 
-    // Check URL for SRA mode
     const urlParams = new URLSearchParams(window.location.search);
     isSRAMode = urlParams.get('sra') !== 'false';
 
@@ -47,7 +46,7 @@
 
     // Prebid configuration
     pbjs.cmd.push(function() {
-      // Setup 4 ad units
+      // Setup 3 ad units for Prebid (Slot 1 is GAM-only)
       let adUnits = [];
       for (let i = 2; i <= 4; i++) {
         let bids = [
@@ -71,13 +70,13 @@
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
-        bidderTimeout: 3500, // Ensure OpenX completes before hard timeout
+        bidderTimeout: 3500, 
         debugging: {
           enabled: true,
           intercept: [
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'appnexus'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
@@ -87,7 +86,7 @@
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'rubicon'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
@@ -97,7 +96,7 @@
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'pubmatic'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
@@ -107,7 +106,7 @@
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'openx'; },
-              options: { delay: 3000 }, // Slowest bidder takes 3000ms
+              options: { delay: 3000 }, 
               then: { 
                 cpm: 0.01, 
                 width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
@@ -118,8 +117,6 @@
       });
 
       // Event listener registered once
-      let fastBiddersDone = 0;
-      let earlyRefreshTriggered = false;
       pbjs.onEvent('bidderDone', function(bidderData) {
         const isSlow = bidderData.bidderCode === 'openx';
         const now = Date.now();
@@ -128,26 +125,10 @@
             openxTimestamp = now;
         } else {
             lastFastTimestamp = Math.max(lastFastTimestamp, now);
-            fastBiddersDone++;
         }
         
         const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
         logEvent(msg, isSlow ? "highlight-danger" : "");
-
-        // In Non-SRA mode, we can refresh the fast slots as soon as the 3 fast bidders are done!
-        if (!isSRAMode && fastBiddersDone === 3 && !earlyRefreshTriggered) {
-            earlyRefreshTriggered = true;
-            googletag.cmd.push(function() {
-                pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                    googletag.pubads().refresh([gptSlots[1], gptSlots[2]]);
-                    setTimeout(() => {
-                        logEvent("Slot 2 rendered", "highlight-success");
-                        logEvent("Slot 3 rendered", "highlight-success");
-                    }, 200);
-                });
-            });
-        }
       });
     });
 
@@ -178,49 +159,78 @@
       lastFastTimestamp = 0;
       openxTimestamp = 0;
       
-
       logEvent("Auction requested.");
 
-      // If Non-SRA, fire Slot 1 immediately!
-      if (!isSRAMode) {
-          googletag.cmd.push(function() {
-              googletag.pubads().refresh([gptSlots[0]]);
-              setTimeout(() => {
-                  logEvent("Slot 1 rendered", "highlight-success");
-              }, 200);
-          });
-      }
-
-      pbjs.cmd.push(function() {
-        pbjs.requestBids({
-          bidsBackHandler: function() {
-
-            
-            googletag.cmd.push(function() {
-              pbjs.que.push(function() {
-                if (isSRAMode) {
-                    pbjs.setTargetingForGPTAsync(); // All slots
-                    logEvent("GPT Targeting set. Fetching SRA ad response...");
-                    googletag.pubads().refresh(); // Refreshes all slots
+      if (isSRAMode) {
+          // SRA Mode: Single request for all slots
+          pbjs.cmd.push(function() {
+            pbjs.requestBids({
+              bidsBackHandler: function() {
+                googletag.cmd.push(function() {
+                  pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh(); // Fetches all slots at once
                     
                     setTimeout(() => {
                         logEvent("All slots rendered", "highlight-success");
                         const exactDelay = openxTimestamp - lastFastTimestamp;
                         logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
                     }, 200);
-                } else {
-                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']); // Only slot 4
-                    googletag.pubads().refresh([gptSlots[3]]); // Refreshes only slot 4
+                  });
+                });
+              }
+            });
+          });
+      } else {
+          // Non-SRA Mode: Separate auctions and targeted refreshes
+          
+          // 1. Slot 1 (GAM only) - Fire immediately
+          googletag.cmd.push(function() {
+              googletag.pubads().refresh([gptSlots[0]]);
+              setTimeout(() => {
+                  logEvent("Slot 1 rendered", "highlight-success");
+              }, 200);
+          });
+
+          // 2. Auction for Slots 2 & 3 (Fast bidders)
+          pbjs.cmd.push(function() {
+            pbjs.requestBids({
+              adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
+              bidsBackHandler: function() {
+                googletag.cmd.push(function() {
+                  pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
+                    googletag.pubads().refresh([gptSlots[1], gptSlots[2]]);
+                    
+                    setTimeout(() => {
+                        logEvent("Slot 2 rendered", "highlight-success");
+                        logEvent("Slot 3 rendered", "highlight-success");
+                    }, 200);
+                  });
+                });
+              }
+            });
+          });
+
+          // 3. Auction for Slot 4 (Includes slow OpenX)
+          pbjs.cmd.push(function() {
+            pbjs.requestBids({
+              adUnitCodes: ['div-gpt-ad-4'],
+              bidsBackHandler: function() {
+                googletag.cmd.push(function() {
+                  pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                    googletag.pubads().refresh([gptSlots[3]]);
                     
                     setTimeout(() => {
                         logEvent("Slot 4 rendered", "highlight-success");
                     }, 200);
-                }
-              });
+                  });
+                });
+              }
             });
-          }
-        });
-      });
+          });
+      }
     }
 
     function setMode(mode) {
@@ -449,13 +459,13 @@
 
   <script>
       // Ensure the correct button is highlighted based on active mode
-      const isNonSRA = new URLSearchParams(window.location.search).get('sra') === 'false';
-      if (isNonSRA) {
-          document.getElementById('sraBtn').className = 'btn btn-secondary';
-          document.getElementById('nonSraBtn').className = 'btn';
-      } else {
+      const isSRA = new URLSearchParams(window.location.search).get('sra') !== 'false';
+      if (isSRA) {
           document.getElementById('sraBtn').className = 'btn';
           document.getElementById('nonSraBtn').className = 'btn btn-secondary';
+      } else {
+          document.getElementById('sraBtn').className = 'btn btn-secondary';
+          document.getElementById('nonSraBtn').className = 'btn';
       }
   </script>
 
