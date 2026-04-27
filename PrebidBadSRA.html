@@ -18,7 +18,7 @@
     let lastFastTimestamp = 0;
     let openxTimestamp = 0;
     let isSRAMode = false;
-    let biddersLogged = {}; // Prevent duplication across auctions
+    let biddersLogged = {}; 
 
     const urlParams = new URLSearchParams(window.location.search);
     isSRAMode = urlParams.get('sra') !== 'false';
@@ -41,6 +41,7 @@
       body.appendChild(row);
     }
 
+    // Prebid configuration
     pbjs.cmd.push(function() {
       let adUnits = [];
       for (let i = 2; i <= 4; i++) {
@@ -95,7 +96,7 @@
       pbjs.onEvent('bidderDone', function(bidderData) {
         let bidder = bidderData.bidderCode;
         if (!biddersLogged[bidder]) {
-            biddersLogged[bidder] = true; // Log only once
+            biddersLogged[bidder] = true;
             const isSlow = bidder === 'openx';
             const now = Date.now();
             if (isSlow) { openxTimestamp = now; } 
@@ -107,37 +108,38 @@
       });
     });
 
+    // GPT Configuration (Unified with Simulation for access to local map)
     googletag.cmd.push(function() {
       for (let i = 1; i <= 4; i++) {
         let slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
         if (i === 1) { slot.setTargeting('test', 'red_mustang'); }
+        googletag.display('div-gpt-ad-' + i);
       }
       
-      // Create global map of slots using the working pattern from LL_HB_IO
-      window.slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
+      // Local map exactly like LL_HB_IO
+      var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
 
       if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
-    });
 
-    function startSimulation() {
-      const logBody = document.getElementById("logBody");
-      if (!logBody) return;
-      
-      logBody.innerHTML = "";
-      requestedTimestamp = Date.now();
-      lastFastTimestamp = 0;
-      openxTimestamp = 0;
-      biddersLogged = {}; // Reset for new run
-      
-      logEvent("Auction requested.");
+      // Define simulation inside to access slotsMap
+      window.startSimulation = function() {
+        const logBody = document.getElementById("logBody");
+        if (!logBody) return;
+        
+        logBody.innerHTML = "";
+        requestedTimestamp = Date.now();
+        lastFastTimestamp = 0;
+        openxTimestamp = 0;
+        biddersLogged = {}; 
+        
+        logEvent("Auction requested.");
 
-      if (isSRAMode) {
-          pbjs.cmd.push(function() {
-            pbjs.requestBids({
-              bidsBackHandler: function() {
-                googletag.cmd.push(function() {
+        if (isSRAMode) {
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                bidsBackHandler: function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync();
                     googletag.pubads().refresh();
@@ -147,58 +149,53 @@
                         logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
                     }, 200);
                   });
-                });
-              }
+                }
+              });
             });
-          });
-      } else {
-          // Non-SRA Mode: Using working array pattern from directory example
-          googletag.cmd.push(function() {
-              googletag.pubads().refresh([window.slotsMap['div-gpt-ad-1']]);
-              setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
-          });
+        } else {
+            // Non-SRA Mode using local map
+            googletag.pubads().refresh([slotsMap['div-gpt-ad-1']]);
+            setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
 
-          pbjs.cmd.push(function() {
-            pbjs.requestBids({
-              adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
-              bidsBackHandler: function() {
-                googletag.cmd.push(function() {
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
+                bidsBackHandler: function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                    googletag.pubads().refresh([window.slotsMap['div-gpt-ad-2'], window.slotsMap['div-gpt-ad-3']]);
+                    googletag.pubads().refresh([slotsMap['div-gpt-ad-2'], slotsMap['div-gpt-ad-3']]);
                     setTimeout(() => {
                         logEvent("Slot 2 rendered", "highlight-success");
                         logEvent("Slot 3 rendered", "highlight-success");
                     }, 200);
                   });
-                });
-              }
+                }
+              });
             });
-          });
 
-          pbjs.cmd.push(function() {
-            pbjs.requestBids({
-              adUnitCodes: ['div-gpt-ad-4'],
-              bidsBackHandler: function() {
-                googletag.cmd.push(function() {
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                adUnitCodes: ['div-gpt-ad-4'],
+                bidsBackHandler: function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                    googletag.pubads().refresh([window.slotsMap['div-gpt-ad-4']]);
+                    googletag.pubads().refresh([slotsMap['div-gpt-ad-4']]);
                     setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
                   });
-                });
-              }
+                }
+              });
             });
-          });
-      }
-    }
+        }
+      };
+
+      // Auto-start
+      window.startSimulation();
+    });
 
     function setMode(mode) {
         if (mode === 'nonsra') { window.location.search = '?sra=false'; } 
         else { window.location.search = ''; }
     }
-
-    window.onload = function() { startSimulation(); };
   </script>
   
   <style>
@@ -376,17 +373,6 @@
 
     </div>
   </div>
-
-  <script>
-      const isSRA = new URLSearchParams(window.location.search).get('sra') !== 'false';
-      if (isSRA) {
-          document.getElementById('sraBtn').className = 'btn';
-          document.getElementById('nonSraBtn').className = 'btn btn-secondary';
-      } else {
-          document.getElementById('sraBtn').className = 'btn btn-secondary';
-          document.getElementById('nonSraBtn').className = 'btn';
-      }
-  </script>
 
 </body>
 </html>
