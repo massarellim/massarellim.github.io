@@ -143,6 +143,7 @@
               pbjs.requestBids({
                 bidsBackHandler: function() {
                   pbjs.setTargetingForGPTAsync();
+                  logEvent("GAM refresh triggered for all SRA slots.");
                   googletag.pubads().refresh();
                   setTimeout(() => {
                       logEvent("All slots rendered", "highlight-success");
@@ -154,6 +155,7 @@
             });
         } else {
             googletag.cmd.push(function() {
+                logEvent("GAM refresh triggered for Slot 1.");
                 googletag.pubads().refresh([window.slot1]);
                 setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
             });
@@ -164,6 +166,7 @@
                   adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
                   bidsBackHandler: function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
+                    logEvent("GAM refresh triggered for Slots 2 & 3.");
                     googletag.pubads().refresh([window.slot2, window.slot3]);
                     setTimeout(() => {
                         logEvent("Slot 2 rendered", "highlight-success");
@@ -181,6 +184,7 @@
                     adUnitCodes: ['div-gpt-ad-4'],
                     bidsBackHandler: function() {
                       pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                      logEvent("GAM refresh triggered for Slot 4.");
                       googletag.pubads().refresh([window.slot4]);
                       setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
                     }
