@@ -108,9 +108,7 @@
         googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
       }
       
-      googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-        logEvent(`Slot ${event.slot.getSlotElementId()} finished rendering.`, "highlight-success");
-      });
+
       
       googletag.pubads().enableSingleRequest();
       googletag.pubads().disableInitialLoad();
@@ -122,26 +120,38 @@
       if (!logBody) return;
       
       logBody.innerHTML = "";
+      let maxFastTime = 0;
       requestedTimestamp = Date.now();
       logEvent("Simulation started. Auction requested.");
 
       pbjs.cmd.push(function() {
-        // Monitor bidder responses
         pbjs.onEvent('bidderDone', function(bidderData) {
           const isSlow = bidderData.bidderCode === 'openx';
-          const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (SLOWEST).` : `Bidder ${bidderData.bidderCode} responded.`;
+          const time = Date.now() - requestedTimestamp;
+          if (!isSlow) {
+              maxFastTime = Math.max(maxFastTime, time);
+          }
+          const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
           logEvent(msg, isSlow ? "highlight-danger" : "");
         });
 
         pbjs.requestBids({
           bidsBackHandler: function() {
-            logEvent("Prebid bidsBackHandler executed. All bids ready.", "highlight-success");
+            logEvent("Prebid bidsBackHandler executed. All bids ready.");
+            
+            const totalTime = Date.now() - requestedTimestamp;
+            const actualDelay = ((totalTime - maxFastTime) / 1000).toFixed(1);
             
             googletag.cmd.push(function() {
               pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
-                logEvent("GPT Targeting set. Fetching SRA ad response...", "highlight-success");
+                logEvent("GPT Targeting set. Fetching SRA ad response...");
                 googletag.pubads().refresh();
+                
+                setTimeout(() => {
+                    logEvent("All slots rendered");
+                    logEvent(`SRA Bottleneck: All slots were delayed by ~${actualDelay}s waiting for OpenX on Slot 4.`, "highlight-warning");
+                }, 200);
               });
             });
           }
@@ -283,6 +293,11 @@
 
     .highlight-success {
       color: var(--success-color);
+      font-weight: bold;
+    }
+
+    .highlight-warning {
+      color: #f2a600; /* Golden yellow */
       font-weight: bold;
     }
 
