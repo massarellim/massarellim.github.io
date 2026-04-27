@@ -171,7 +171,7 @@
       <div class="control-group">
         <div class="row-flex">
           <div>
-            <label for="isNewUser">First Visit (Cold Cache)</label>
+            <label for="isNewUser">First Visit (localStorage.getItem('cookie'))</label>
             <div style="font-size: 0.75rem; color: #64748b;">Adds buffer for asset loading</div>
           </div>
           <label class="switch">
@@ -184,7 +184,7 @@
       <!-- Number of Ad Units -->
       <div class="control-group">
         <div class="row-flex">
-          <label for="numAdUnits">Number of Ad Units</label>
+          <label for="numAdUnits">Number of Ad Units (pbjs.adUnits.length)</label>
           <span id="adUnitsVal" class="slider-val">1</span>
         </div>
         <input type="range" id="numAdUnits" min="1" max="15" value="1" oninput="updateAdUnitsVal(); calculateTimeout();">
@@ -203,7 +203,7 @@
       <!-- Device Type -->
       <div class="control-group">
         <div class="row-flex">
-          <label for="deviceType">Device Type</label>
+          <label for="deviceType">Device Type (navigator.userAgent / window.innerWidth)</label>
           <span id="deviceTypeVal" class="slider-val">Desktop (+50)</span>
         </div>
         <input type="range" id="deviceType" min="1" max="3" value="3" oninput="calculateTimeout();">
@@ -212,10 +212,10 @@
       <!-- Connection Speed -->
       <div class="control-group">
         <div class="row-flex">
-          <label for="connectionSpeed">Connection Speed</label>
+          <label for="connectionSpeed">Connection Speed (navigator.connection.effectiveType)</label>
           <span id="connectionSpeedVal" class="slider-val">4g (+50)</span>
         </div>
-        <input type="range" id="connectionSpeed" min="1" max="5" value="4" oninput="calculateTimeout();">
+        <input type="range" id="connectionSpeed" min="1" max="4" value="4" oninput="calculateTimeout();">
       </div>
 
       <!-- Timeout Display -->
@@ -256,13 +256,12 @@
       else if (deviceVal === "2") { modifier += 100; document.getElementById("deviceTypeVal").textContent = "Tablet (+100)"; }
       else if (deviceVal === "3") { modifier += 50; document.getElementById("deviceTypeVal").textContent = "Desktop (+50)"; }
 
-      // 5. Connection Speed (Sorted slower to faster)
+      // 5. Connection Speed (Standard effectiveType)
       const connVal = document.getElementById("connectionSpeed").value;
-      if (connVal === "1") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "2g (+200)"; }
-      else if (connVal === "2") { modifier += 150; document.getElementById("connectionSpeedVal").textContent = "3g (+150)"; }
-      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "slow-4g (+100)"; }
+      if (connVal === "1") { modifier += 250; document.getElementById("connectionSpeedVal").textContent = "slow-2g (+250)"; }
+      else if (connVal === "2") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "2g (+200)"; }
+      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "3g (+100)"; }
       else if (connVal === "4") { modifier += 50; document.getElementById("connectionSpeedVal").textContent = "4g (+50)"; }
-      else if (connVal === "5") { modifier += 20; document.getElementById("connectionSpeedVal").textContent = "5g (+20)"; }
 
       const total = baseTimeout + modifier;
       document.getElementById("totalTimeout").textContent = total + "ms";
