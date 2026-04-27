@@ -128,25 +128,7 @@
       googletag.enableServices();
 
       // Working function pattern from directory example LL_HB_IO
-      function triggerAdRequest(slotId, slotObject) {
-        pbjs.cmd.push(function() {
-          pbjs.requestBids({
-            bidsBackHandler: function() {
-              pbjs.setTargetingForGPTAsync([slotId]);
-              googletag.pubads().refresh([slotObject]);
-              
-              setTimeout(() => {
-                  if (slotId === 'div-gpt-ad-4') {
-                      logEvent("Slot 4 rendered", "highlight-success");
-                  } else {
-                      logEvent(`${slotId.replace('div-gpt-ad-', 'Slot ')} rendered`, "highlight-success");
-                  }
-              }, 200);
-            },
-            adUnitCodes: [slotId],
-          });
-        });
-      }
+
 
       window.startSimulation = function() {
         document.getElementById("logBody").innerHTML = "";
@@ -172,15 +154,38 @@
               });
             });
         } else {
-            // Non-SRA Mode: Using the specific function per slot
-            // Slot 1: GAM only
+            // Non-SRA Mode: Cascading requests
+            
+            // 1. Slot 1 (GAM only) - Immediate
             googletag.pubads().refresh([window.slot1]);
             setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
 
-            // Slots 2-4: Call the specific function passing slot object
-            triggerAdRequest('div-gpt-ad-2', window.slot2);
-            triggerAdRequest('div-gpt-ad-3', window.slot3);
-            triggerAdRequest('div-gpt-ad-4', window.slot4);
+            // 2. Slots 2 & 3 (Fast Prebid)
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
+                bidsBackHandler: function() {
+                  pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
+                  googletag.pubads().refresh([window.slot2, window.slot3]);
+                  setTimeout(() => {
+                      logEvent("Slot 2 rendered", "highlight-success");
+                      logEvent("Slot 3 rendered", "highlight-success");
+                  }, 200);
+                }
+              });
+            });
+
+            // 3. Slot 4 (Slow Prebid)
+            pbjs.cmd.push(function() {
+              pbjs.requestBids({
+                adUnitCodes: ['div-gpt-ad-4'],
+                bidsBackHandler: function() {
+                  pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
+                  googletag.pubads().refresh([window.slot4]);
+                  setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
+                }
+              });
+            });
         }
       };
 
