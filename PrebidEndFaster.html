@@ -33,15 +33,33 @@
       googletag.enableServices();
 
       pbjs.cmd.push(function() {
+        let availableBidders = ['appnexus', 'rubicon', 'openx', 'pubmatic', 'smart'];
+        let biddersNotAppnexus = availableBidders.filter(b => b !== 'appnexus');
+        let slowBidders = [];
+        while (slowBidders.length < 2) {
+            let randBidder = biddersNotAppnexus[Math.floor(Math.random() * biddersNotAppnexus.length)];
+            if (!slowBidders.includes(randBidder)) {
+                slowBidders.push(randBidder);
+            }
+        }
+        console.log("Slow bidders selected for simulation:", slowBidders);
+
+        let intercepts = [];
+        availableBidders.forEach(bidder => {
+            let isSlow = slowBidders.includes(bidder);
+            intercepts.push({
+                when: bidRequest => bidRequest.bidder === bidder,
+                options: { delay: isSlow ? Math.floor(Math.random() * 1001) + 1000 : Math.floor(Math.random() * 501) + 300 },
+                then: {cpm: 9.90}
+            });
+        });
+
         pbjs.setConfig({
           bidderSequence: "fixed",
           priceGranularity: "high",
           debugging: {
             enabled: true, 
-            intercept: [{
-              when: {adUnitCode: /test/}, 
-              then: {cpm: 9.90}
-            }]
+            intercept: intercepts
           }
         })
 
