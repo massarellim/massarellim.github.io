@@ -215,7 +215,7 @@
           <label for="connectionSpeed">Connection Speed</label>
           <span id="connectionSpeedVal" class="slider-val">4g (+50)</span>
         </div>
-        <input type="range" id="connectionSpeed" min="1" max="4" value="4" oninput="calculateTimeout();">
+        <input type="range" id="connectionSpeed" min="1" max="5" value="4" oninput="calculateTimeout();">
       </div>
 
       <!-- Timeout Display -->
@@ -256,12 +256,13 @@
       else if (deviceVal === "2") { modifier += 100; document.getElementById("deviceTypeVal").textContent = "Tablet (+100)"; }
       else if (deviceVal === "3") { modifier += 50; document.getElementById("deviceTypeVal").textContent = "Desktop (+50)"; }
 
-      // 5. Connection Speed (Sorted slower to faster: slow-2g -> 2g -> 3g -> 4g)
+      // 5. Connection Speed (Sorted slower to faster)
       const connVal = document.getElementById("connectionSpeed").value;
-      if (connVal === "1") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "slow-2g (+200)"; }
-      else if (connVal === "2") { modifier += 150; document.getElementById("connectionSpeedVal").textContent = "2g (+150)"; }
-      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "3g (+100)"; }
+      if (connVal === "1") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "2g (+200)"; }
+      else if (connVal === "2") { modifier += 150; document.getElementById("connectionSpeedVal").textContent = "3g (+150)"; }
+      else if (connVal === "3") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "slow-4g (+100)"; }
       else if (connVal === "4") { modifier += 50; document.getElementById("connectionSpeedVal").textContent = "4g (+50)"; }
+      else if (connVal === "5") { modifier += 20; document.getElementById("connectionSpeedVal").textContent = "5g (+20)"; }
 
       const total = baseTimeout + modifier;
       document.getElementById("totalTimeout").textContent = total + "ms";
