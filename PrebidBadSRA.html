@@ -8,6 +8,7 @@
   <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
   
+  <!-- JavaScript at the top -->
   <script>
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -41,9 +42,9 @@
       body.appendChild(row);
     }
 
-    // Prebid configuration
     pbjs.cmd.push(function() {
       let adUnits = [];
+      // Slots 2-4 participate in Prebid (Slot 1 is GAM only)
       for (let i = 2; i <= 4; i++) {
         let bids = [
           { bidder: 'appnexus', params: { placementId: 123 } },
@@ -108,27 +109,47 @@
       });
     });
 
-    // GPT Configuration (Unified with Simulation for access to local map)
     googletag.cmd.push(function() {
-      for (let i = 1; i <= 4; i++) {
-        let slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
-        if (i === 1) { slot.setTargeting('test', 'red_mustang'); }
-        googletag.display('div-gpt-ad-' + i);
-      }
-      
-      // Local map exactly like LL_HB_IO
-      var slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
+      window.slot1 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-1').addService(googletag.pubads());
+      window.slot1.setTargeting('test', 'red_mustang');
+      googletag.display('div-gpt-ad-1');
+
+      window.slot2 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-2').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-2');
+
+      window.slot3 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-3').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-3');
+
+      window.slot4 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-4').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-4');
 
       if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
 
-      // Define simulation inside to access slotsMap
+      // Working function pattern from directory example LL_HB_IO
+      function triggerAdRequest(slotId, slotObject) {
+        pbjs.cmd.push(function() {
+          pbjs.requestBids({
+            bidsBackHandler: function() {
+              pbjs.setTargetingForGPTAsync([slotId]);
+              googletag.pubads().refresh([slotObject]);
+              
+              setTimeout(() => {
+                  if (slotId === 'div-gpt-ad-4') {
+                      logEvent("Slot 4 rendered", "highlight-success");
+                  } else {
+                      logEvent(`${slotId.replace('div-gpt-ad-', 'Slot ')} rendered`, "highlight-success");
+                  }
+              }, 200);
+            },
+            adUnitCodes: [slotId],
+          });
+        });
+      }
+
       window.startSimulation = function() {
-        const logBody = document.getElementById("logBody");
-        if (!logBody) return;
-        
-        logBody.innerHTML = "";
+        document.getElementById("logBody").innerHTML = "";
         requestedTimestamp = Date.now();
         lastFastTimestamp = 0;
         openxTimestamp = 0;
@@ -140,51 +161,26 @@
             pbjs.cmd.push(function() {
               pbjs.requestBids({
                 bidsBackHandler: function() {
-                  pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                    setTimeout(() => {
-                        logEvent("All slots rendered", "highlight-success");
-                        const exactDelay = openxTimestamp - lastFastTimestamp;
-                        logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
-                    }, 200);
-                  });
+                  pbjs.setTargetingForGPTAsync();
+                  googletag.pubads().refresh();
+                  setTimeout(() => {
+                      logEvent("All slots rendered", "highlight-success");
+                      const exactDelay = openxTimestamp - lastFastTimestamp;
+                      logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
+                  }, 200);
                 }
               });
             });
         } else {
-            // Non-SRA Mode using local map
-            googletag.pubads().refresh([slotsMap['div-gpt-ad-1']]);
+            // Non-SRA Mode: Using the specific function per slot
+            // Slot 1: GAM only
+            googletag.pubads().refresh([window.slot1]);
             setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
 
-            pbjs.cmd.push(function() {
-              pbjs.requestBids({
-                adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
-                bidsBackHandler: function() {
-                  pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                    googletag.pubads().refresh([slotsMap['div-gpt-ad-2'], slotsMap['div-gpt-ad-3']]);
-                    setTimeout(() => {
-                        logEvent("Slot 2 rendered", "highlight-success");
-                        logEvent("Slot 3 rendered", "highlight-success");
-                    }, 200);
-                  });
-                }
-              });
-            });
-
-            pbjs.cmd.push(function() {
-              pbjs.requestBids({
-                adUnitCodes: ['div-gpt-ad-4'],
-                bidsBackHandler: function() {
-                  pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                    googletag.pubads().refresh([slotsMap['div-gpt-ad-4']]);
-                    setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
-                  });
-                }
-              });
-            });
+            // Slots 2-4: Call the specific function passing slot object
+            triggerAdRequest('div-gpt-ad-2', window.slot2);
+            triggerAdRequest('div-gpt-ad-3', window.slot3);
+            triggerAdRequest('div-gpt-ad-4', window.slot4);
         }
       };
 
@@ -373,6 +369,17 @@
 
     </div>
   </div>
+
+  <script>
+      const isSRA = new URLSearchParams(window.location.search).get('sra') !== 'false';
+      if (isSRA) {
+          document.getElementById('sraBtn').className = 'btn';
+          document.getElementById('nonSraBtn').className = 'btn btn-secondary';
+      } else {
+          document.getElementById('sraBtn').className = 'btn btn-secondary';
+          document.getElementById('nonSraBtn').className = 'btn';
+      }
+  </script>
 
 </body>
 </html>
