@@ -9,6 +9,137 @@
   <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
   
+  <!-- JavaScript at the top as requested -->
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    var pbjs = pbjs || {};
+    pbjs.cmd = pbjs.cmd || [];
+
+    let requestedTimestamp = Date.now();
+
+    function logEvent(message, className = "") {
+      const body = document.getElementById("logBody");
+      if (!body) return; // Guard in case DOM is not ready
+      
+      const row = document.createElement("tr");
+      
+      const eventCell = document.createElement("td");
+      if (className) eventCell.className = className;
+      eventCell.textContent = message;
+      
+      const timeCell = document.createElement("td");
+      timeCell.className = "timestamp";
+      timeCell.textContent = `${Date.now() - requestedTimestamp}ms`;
+      
+      row.appendChild(eventCell);
+      row.appendChild(timeCell);
+      body.appendChild(row);
+    }
+
+    // Prebid configuration
+    pbjs.cmd.push(function() {
+      // Setup 4 ad units
+      let adUnits = [];
+      for (let i = 1; i <= 4; i++) {
+        adUnits.push({
+          code: 'div-gpt-ad-' + i,
+          mediaTypes: { banner: { sizes: [300, 250] } },
+          bids: [
+            { bidder: 'appnexus', params: { placementId: 123 } },
+            { bidder: 'rubicon', params: { accountId: 1 } },
+            { bidder: 'pubmatic', params: { publisherId: '1' } },
+            { bidder: 'openx', params: { unit: '1' } }
+          ]
+        });
+      }
+      pbjs.addAdUnits(adUnits);
+
+      // Setup Intercepts
+      pbjs.setConfig({
+        bidderSequence: "fixed",
+        priceGranularity: "high",
+        bidderTimeout: 3000, // Match the slowest bidder response
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: function(bidRequest) { return bidRequest.bidder === 'appnexus'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+            },
+            {
+              when: function(bidRequest) { return bidRequest.bidder === 'rubicon'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+            },
+            {
+              when: function(bidRequest) { return bidRequest.bidder === 'pubmatic'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100 }; }
+            },
+            {
+              when: function(bidRequest) { return bidRequest.bidder === 'openx'; },
+              options: { delay: 3000 }, // Slowest bidder times out at 3000ms
+              then: { cpm: 0.01 }
+            }
+          ]
+        }
+      });
+    });
+
+    // GPT Configuration
+    googletag.cmd.push(function() {
+      for (let i = 1; i <= 4; i++) {
+        googletag.defineSlot('/6353/test_ad_' + i, [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
+      }
+      googletag.pubads().enableSingleRequest();
+      googletag.pubads().disableInitialLoad();
+      googletag.enableServices();
+    });
+
+    function startSimulation() {
+      const logBody = document.getElementById("logBody");
+      if (!logBody) return;
+      
+      logBody.innerHTML = "";
+      requestedTimestamp = Date.now();
+      logEvent("Simulation started. Auction requested.");
+
+      pbjs.cmd.push(function() {
+        // Monitor bidder responses
+        pbjs.onEvent('bidderDone', function(bidderData) {
+          const isSlow = bidderData.bidderCode === 'openx';
+          const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (SLOWEST).` : `Bidder ${bidderData.bidderCode} responded.`;
+          logEvent(msg, isSlow ? "highlight-danger" : "");
+        });
+
+        pbjs.requestBids({
+          bidsBackHandler: function() {
+            logEvent("Prebid bidsBackHandler executed. All bids ready.", "highlight-success");
+            
+            googletag.cmd.push(function() {
+              pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+                logEvent("GPT Targeting set. Fetching SRA ad response...", "highlight-success");
+                
+                // Simulate GAM Request and rendering
+                googletag.pubads().refresh();
+                
+                setTimeout(() => {
+                    for (let i = 1; i <= 4; i++) {
+                        document.getElementById('div-gpt-ad-' + i).innerHTML = "<div style='color: var(--success-color); font-weight: bold;'>Ad Rendered!</div>";
+                    }
+                    logEvent("All slots rendered (GAM response received).", "highlight-success");
+                }, 200); // Simulate quick GAM response after the bottleneck is passed
+              });
+            });
+          }
+        });
+      });
+    }
+  </script>
+  
   <style>
     :root {
       --bg-color: #f8f9fa;
@@ -56,7 +187,6 @@
       line-height: 1.5;
     }
 
-    /* Grid for Ad Slots */
     .ad-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -94,7 +224,6 @@
       border-radius: 4px;
     }
 
-    /* Event Log Table */
     .log-section {
       margin-top: 20px;
     }
@@ -209,132 +338,6 @@
       </table>
     </div>
   </div>
-
-  <script>
-    var googletag = googletag || {};
-    googletag.cmd = googletag.cmd || [];
-    var pbjs = pbjs || {};
-    pbjs.cmd = pbjs.cmd || [];
-
-    let requestedTimestamp = Date.now();
-
-    function logEvent(message, className = "") {
-      const body = document.getElementById("logBody");
-      const row = document.createElement("tr");
-      
-      const eventCell = document.createElement("td");
-      if (className) eventCell.className = className;
-      eventCell.textContent = message;
-      
-      const timeCell = document.createElement("td");
-      timeCell.className = "timestamp";
-      timeCell.textContent = `${Date.now() - requestedTimestamp}ms`;
-      
-      row.appendChild(eventCell);
-      row.appendChild(timeCell);
-      body.appendChild(row);
-    }
-
-    // Prebid configuration
-    pbjs.cmd.push(function() {
-      // Setup 4 ad units
-      let adUnits = [];
-      for (let i = 1; i <= 4; i++) {
-        adUnits.push({
-          code: 'div-gpt-ad-' + i,
-          mediaTypes: { banner: { sizes: [300, 250] } },
-          bids: [
-            { bidder: 'appnexus', params: { placementId: 123 } },
-            { bidder: 'rubicon', params: { accountId: 1 } },
-            { bidder: 'pubmatic', params: { publisherId: '1' } },
-            { bidder: 'openx', params: { unit: '1' } }
-          ]
-        });
-      }
-      pbjs.addAdUnits(adUnits);
-
-      // Setup Intercepts
-      pbjs.setConfig({
-        bidderSequence: "fixed",
-        priceGranularity: "high",
-        bidderTimeout: 3000, // Match the slowest bidder response
-        debugging: {
-          enabled: true,
-          intercept: [
-            {
-              when: function(bidRequest) { return bidRequest.bidder === 'appnexus'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: { cpm: 0.50 }
-            },
-            {
-              when: function(bidRequest) { return bidRequest.bidder === 'rubicon'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: { cpm: 0.60 }
-            },
-            {
-              when: function(bidRequest) { return bidRequest.bidder === 'pubmatic'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
-              then: { cpm: 0.70 }
-            },
-            {
-              when: function(bidRequest) { return bidRequest.bidder === 'openx'; },
-              options: { delay: 3000 }, // Slowest bidder times out at 3000ms
-              then: { cpm: 0.01 }
-            }
-          ]
-        }
-      });
-    });
-
-    // GPT Configuration
-    googletag.cmd.push(function() {
-      for (let i = 1; i <= 4; i++) {
-        googletag.defineSlot('/6353/test_ad_' + i, [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
-      }
-      googletag.pubads().enableSingleRequest();
-      googletag.pubads().disableInitialLoad();
-      googletag.enableServices();
-    });
-
-    function startSimulation() {
-      document.getElementById("logBody").innerHTML = "";
-      requestedTimestamp = Date.now();
-      logEvent("Simulation started. Auction requested.");
-
-      pbjs.cmd.push(function() {
-        // Monitor bidder responses
-        const eventsToListen = ['bidderDone'];
-        pbjs.onEvent('bidderDone', function(bidderData) {
-          const isSlow = bidderData.bidderCode === 'openx';
-          const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (SLOWEST).` : `Bidder ${bidderData.bidderCode} responded.`;
-          logEvent(msg, isSlow ? "highlight-danger" : "");
-        });
-
-        pbjs.requestBids({
-          bidsBackHandler: function() {
-            logEvent("Prebid bidsBackHandler executed. All bids ready.", "highlight-success");
-            
-            googletag.cmd.push(function() {
-              pbjs.que.push(function() {
-                pbjs.setTargetingForGPTAsync();
-                logEvent("GPT Targeting set. Fetching SRA ad response...", "highlight-success");
-                
-                // Simulate GAM Request and rendering
-                googletag.pubads().refresh();
-                
-                setTimeout(() => {
-                    for (let i = 1; i <= 4; i++) {
-                        document.getElementById('div-gpt-ad-' + i).innerHTML = "<div style='color: var(--success-color); font-weight: bold;'>Ad Rendered!</div>";
-                    }
-                    logEvent("All slots rendered (GAM response received).", "highlight-success");
-                }, 200); // Simulate quick GAM response after the bottleneck is passed
-              });
-            });
-          }
-        });
-      });
-    }
-  </script>
 
 </body>
 </html>
