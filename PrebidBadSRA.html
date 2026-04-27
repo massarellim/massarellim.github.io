@@ -44,10 +44,10 @@
       for (let i = 1; i <= 4; i++) {
         let bids = [
           { bidder: 'appnexus', params: { placementId: 123 } },
-          { bidder: 'rubicon', params: { accountId: 1 } },
+          { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } },
           { bidder: 'pubmatic', params: { publisherId: '1' } }
         ];
-        if (i === 4) bids.push({ bidder: 'openx', params: { unit: '1' } });
+        if (i === 4) bids.push({ bidder: 'openx', params: { unit: '1', delDomain: 'example-d.openx.net' } });
 
         adUnits.push({
           code: 'div-gpt-ad-' + i,
@@ -66,41 +66,45 @@
           enabled: true,
           intercept: [
             {
-              when: { bidder: 'appnexus' },
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'appnexus'; },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300 
+                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300,
+                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
                 }; 
               }
             },
             {
-              when: { bidder: 'rubicon' },
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'rubicon'; },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300 
+                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300,
+                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
                 }; 
               }
             },
             {
-              when: { bidder: 'pubmatic' },
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'pubmatic'; },
               options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
               then: function() { 
                 return { 
                   cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300 
+                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300,
+                  ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
                 }; 
               }
             },
             {
-              when: { bidder: 'openx' },
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'openx'; },
               options: { delay: 3000 }, // Slowest bidder times out at 3000ms
               then: { 
                 cpm: 0.01, 
-                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300 
+                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300,
+                ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
               }
             }
           ]
@@ -247,6 +251,7 @@
       color: #70757a;
       font-size: 0.85rem;
       border-radius: 4px;
+      overflow: hidden; /* Prevent overflowing */
     }
 
     /* Right Column (Log) */
