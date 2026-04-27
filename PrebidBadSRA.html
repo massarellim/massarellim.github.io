@@ -49,7 +49,7 @@
     pbjs.cmd.push(function() {
       // Setup 4 ad units
       let adUnits = [];
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 2; i <= 4; i++) {
         let bids = [
           { bidder: 'appnexus', params: { placementId: 123 } },
           { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } },
@@ -119,6 +119,7 @@
 
       // Event listener registered once
       let fastBiddersDone = 0;
+      let earlyRefreshTriggered = false;
       pbjs.onEvent('bidderDone', function(bidderData) {
         const isSlow = bidderData.bidderCode === 'openx';
         const now = Date.now();
@@ -134,14 +135,15 @@
         logEvent(msg, isSlow ? "highlight-danger" : "");
 
         // In Non-SRA mode, we can refresh the fast slots as soon as the 3 fast bidders are done!
-        if (!isSRAMode && fastBiddersDone === 3) {
-            logEvent("Non-SRA: Fast bidders done for Slots 1-3. Refreshing early.", "highlight-success");
+        if (!isSRAMode && fastBiddersDone === 3 && !earlyRefreshTriggered) {
+            earlyRefreshTriggered = true;
             googletag.cmd.push(function() {
                 pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh([gptSlots[0], gptSlots[1], gptSlots[2]]);
+                    googletag.pubads().refresh([gptSlots[1], gptSlots[2]]);
                     setTimeout(() => {
-                        logEvent("Slots 1-3 rendered", "highlight-success");
+                        logEvent("Slot 2 rendered", "highlight-success");
+                        logEvent("Slot 3 rendered", "highlight-success");
                     }, 200);
                 });
             });
@@ -172,8 +174,18 @@
       lastFastTimestamp = 0;
       openxTimestamp = 0;
       
-      logEvent("Simulation started. Mode: " + (isSRAMode ? "SRA" : "Non-SRA"));
+
       logEvent("Auction requested.");
+
+      // If Non-SRA, fire Slot 1 immediately!
+      if (!isSRAMode) {
+          googletag.cmd.push(function() {
+              googletag.pubads().refresh([gptSlots[0]]);
+              setTimeout(() => {
+                  logEvent("Slot 1 rendered", "highlight-success");
+              }, 200);
+          });
+      }
 
       pbjs.cmd.push(function() {
         pbjs.requestBids({
@@ -199,7 +211,6 @@
                     
                     setTimeout(() => {
                         logEvent("Slot 4 rendered", "highlight-success");
-                        logEvent("Non-SRA allowed Slots 1-3 to render early without waiting for OpenX.", "highlight-success");
                     }, 200);
                 }
               });
