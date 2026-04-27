@@ -190,15 +190,19 @@
       };
 
       // 4. FIX: Wait for DOM before rendering or fetching
-      document.addEventListener('DOMContentLoaded', function() {
+      function init() {
         googletag.display('div-gpt-ad-1');
         googletag.display('div-gpt-ad-2');
         googletag.display('div-gpt-ad-3');
         googletag.display('div-gpt-ad-4');
-        
-        // Auto-start after display is bound to actual DOM elements
         window.startSimulation();
-      });
+      }
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          init();
+      } else {
+          document.addEventListener('DOMContentLoaded', init);
+      }
     });
 
     function setMode(mode) {
