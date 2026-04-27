@@ -113,10 +113,16 @@
       // 1. Define Slots
       window.slot1 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-1').addService(googletag.pubads());
       window.slot1.setTargeting('test', 'red_mustang');
+      googletag.display('div-gpt-ad-1');
       
       window.slot2 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-2').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-2');
+
       window.slot3 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-3').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-3');
+
       window.slot4 = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-4').addService(googletag.pubads());
+      googletag.display('div-gpt-ad-4');
 
       // 2. Configure GAM
       if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
@@ -149,14 +155,11 @@
             });
         } else {
             // Non-SRA Mode: Cascading requests
-            
-            // 1. Slot 1 (GAM only) - Immediate
             googletag.cmd.push(function() {
                 googletag.pubads().refresh([window.slot1]);
                 setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
             });
 
-            // 2. Slots 2 & 3 (Fast Prebid)
             googletag.cmd.push(function() {
               pbjs.cmd.push(function() {
                 pbjs.requestBids({
@@ -173,7 +176,6 @@
               });
             });
 
-            // 3. Slot 4 (Slow Prebid)
             googletag.cmd.push(function() {
               pbjs.cmd.push(function() {
                 pbjs.requestBids({
@@ -187,22 +189,10 @@
               });
             });
         }
-      };
-
-      // 4. FIX: Wait for DOM before rendering or fetching
-      function init() {
-        googletag.display('div-gpt-ad-1');
-        googletag.display('div-gpt-ad-2');
-        googletag.display('div-gpt-ad-3');
-        googletag.display('div-gpt-ad-4');
+        
+        // Auto-start
         window.startSimulation();
-      }
-
-      if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          init();
-      } else {
-          document.addEventListener('DOMContentLoaded', init);
-      }
+      };
     });
 
     function setMode(mode) {
