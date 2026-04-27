@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prebid Dynamic Timeout Simulator</title>
+  <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --text-color: #f8fafc;
+      --accent-color: #38bdf8;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --success-color: #00e676;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 30px;
+      max-width: 1200px;
+      width: 100%;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+
+    h1, h2, h3 {
+      color: var(--accent-color);
+      margin-top: 0;
+    }
+
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-right: 20px;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+
+    input[type="range"], select, input[type="checkbox"] {
+      accent-color: var(--accent-color);
+    }
+
+    select {
+      background: #0f172a;
+      color: white;
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-size: 0.85rem;
+      color: var(--accent-color);
+      margin-left: auto;
+    }
+
+    .timeout-display {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin-top: auto;
+      border: 1px solid var(--accent-color);
+    }
+
+    .timeout-display h3 {
+      margin-bottom: 5px;
+      font-size: 1rem;
+      color: #94a3b8;
+    }
+
+    .timeout-val {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+
+    .results-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .ad-slot {
+      width: 300px;
+      height: 250px;
+      background: #0f172a;
+      border: 2px dashed var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+      border-radius: 8px;
+    }
+
+    .status-container {
+      height: 300px;
+      overflow-y: auto;
+      background: #0f172a;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .status-row:last-child {
+      border-bottom: none;
+    }
+
+    .event-name {
+      color: #38bdf8;
+    }
+
+    .event-time {
+      color: #94a3b8;
+    }
+
+    .highlight {
+      color: var(--success-color) !important;
+      font-weight: bold;
+    }
+
+    button.action-btn {
+      background: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.action-btn:hover {
+      background: #0ea5e9;
+    }
+
+    /* Custom Checkbox as Toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-color);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Left Column: Controls -->
+    <div class="control-panel">
+      <h2>Simulator Controls</h2>
+      
+      <!-- Includes Video -->
+      <div class="control-group">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label for="includesVideo">Includes Video</label>
+          <label class="switch">
+            <input type="checkbox" id="includesVideo" onchange="calculateTimeout()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Number of Ad Units -->
+      <div class="control-group">
+        <div style="display: flex; justify-content: space-between;">
+          <label for="numAdUnits">Number of Ad Units</label>
+          <span id="adUnitsVal" class="slider-val">1</span>
+        </div>
+        <input type="range" id="numAdUnits" min="1" max="15" value="1" oninput="updateAdUnitsVal(); calculateTimeout();">
+      </div>
+
+      <!-- Device Type -->
+      <div class="control-group">
+        <label for="deviceType">Device Type</label>
+        <select id="deviceType" onchange="calculateTimeout()">
+          <option value="4">Desktop (Rule +100)</option>
+          <option value="2">Tablet (Rule +50)</option>
+          <option value="5">Phone/Other (Rule +200)</option>
+        </select>
+      </div>
+
+      <!-- Connection Speed -->
+      <div class="control-group">
+        <label for="connectionSpeed">Connection Speed</label>
+        <select id="connectionSpeed" onchange="calculateTimeout()">
+          <option value="fast">Fast (Rule +50)</option>
+          <option value="medium">Medium (Rule +100)</option>
+          <option value="slow">Slow (Rule +200)</option>
+          <option value="unknown">Unknown (Rule +10)</option>
+        </select>
+      </div>
+
+      <!-- Timeout Display -->
+      <div class="timeout-display">
+        <h3>Calculated Bidder Timeout</h3>
+        <div class="timeout-val" id="totalTimeout">1010ms</div>
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">Base (800ms) + Modifiers</div>
+      </div>
+
+      <button class="action-btn" onclick="runSimulation()">Run Auction Simulation</button>
+    </div>
+
+    <!-- Right Column: Results -->
+    <div class="results-panel">
+      <h2>Simulation Output</h2>
+      
+      <span>Ad Slot (test-div):</span>
+      <div id="test-div" class="ad-slot">
+        <div style="color: #94a3b8;">Ad Placeholder</div>
+      </div>
+
+      <h3>Live Event Log</h3>
+      <div class="status-container" id="logContainer">
+        <!-- Logs will appear here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    var pbjs = pbjs || {};
+    pbjs.cmd = pbjs.cmd || [];
+
+    let requestedTimestamp = Date.now();
+
+    // Helper to log events
+    function logEvent(message, isHighlight = false) {
+      const container = document.getElementById("logContainer");
+      const row = document.createElement("div");
+      row.className = "status-row";
+      
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "event-name" + (isHighlight ? " highlight" : "");
+      nameSpan.textContent = message;
+      
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "event-time";
+      timeSpan.textContent = `${Date.now() - requestedTimestamp}ms`;
+      
+      row.appendChild(nameSpan);
+      row.appendChild(timeSpan);
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight; // Auto scroll to bottom
+    }
+
+    function updateAdUnitsVal() {
+      document.getElementById("adUnitsVal").textContent = document.getElementById("numAdUnits").value;
+    }
+
+    // Calculate timeout based on the rules provided by the user
+    function calculateTimeout() {
+      const baseTimeout = 800;
+      let modifier = 0;
+
+      // 1. Includes Video
+      const includesVideo = document.getElementById("includesVideo").checked;
+      modifier += includesVideo ? 200 : 50;
+
+      // 2. Number of Ad Units
+      const numUnits = parseInt(document.getElementById("numAdUnits").value);
+      if (numUnits >= 1 && numUnits <= 5) modifier += 100;
+      else if (numUnits >= 6 && numUnits <= 10) modifier += 200;
+      else if (numUnits >= 11 && numUnits <= 15) modifier += 300;
+
+      // 3. Device Type
+      const deviceType = document.getElementById("deviceType").value;
+      if (deviceType === "2") modifier += 50;
+      else if (deviceType === "4") modifier += 100;
+      else if (deviceType === "5") modifier += 200;
+
+      // 4. Connection Speed
+      const connSpeed = document.getElementById("connectionSpeed").value;
+      if (connSpeed === "slow") modifier += 200;
+      else if (connSpeed === "medium") modifier += 100;
+      else if (connSpeed === "fast") modifier += 50;
+      else if (connSpeed === "unknown") modifier += 10;
+
+      const total = baseTimeout + modifier;
+      document.getElementById("totalTimeout").textContent = total + "ms";
+      return total;
+    }
+
+    // Run the simulation
+    function runSimulation() {
+      // Reset state
+      document.getElementById("logContainer").innerHTML = "";
+      requestedTimestamp = Date.now();
+      
+      const calculatedTimeout = calculateTimeout();
+      logEvent("Simulation started with calculated timeout: " + calculatedTimeout + "ms");
+
+      pbjs.cmd.push(function() {
+        // Apply the calculated timeout as the bidderTimeout
+        pbjs.setConfig({ 
+          bidderTimeout: calculatedTimeout,
+          debugging: {
+            enabled: true,
+            intercept: [
+              {
+                when: { bidder: 'appnexus' },
+                options: { delay: 400 }, // Responds in time
+                then: { cpm: 0.50, width: 300, height: 250 }
+              },
+              {
+                when: { bidder: 'rubicon' },
+                options: { delay: calculatedTimeout + 200 }, // Forces timeout
+                then: { cpm: 0.80, width: 300, height: 250 }
+              }
+            ]
+          }
+        });
+
+        logEvent("Prebid config set with dynamic timeout.");
+
+        // Setup mock ad unit
+        pbjs.addAdUnits([{
+          code: 'test-div',
+          mediaTypes: { banner: { sizes: [300, 250] } },
+          bids: [
+            { bidder: 'appnexus', params: { placementId: 123 } },
+            { bidder: 'rubicon', params: { accountId: 1 } }
+          ]
+        }]);
+
+        // Helper to simulate the "magic" the user wanted to focus on
+        function executeAdServerCall() {
+          const response = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div');
+          if (response) {
+            logEvent(`${response.hb_bidder} bid ${response.hb_pb} selected. Updating targeting.`, true);
+          } else {
+            logEvent("No active bids found when GAM request was executed.", true);
+          }
+          logEvent("Ad request to GAM is made.", true);
+          
+          // Simulate rendering
+          setTimeout(() => {
+            logEvent("Slot has finished rendering.", true);
+            setTimeout(() => {
+                logEvent("Impression has become viewable.", true);
+            }, 500);
+          }, 500);
+        }
+
+        pbjs.requestBids({
+          bidsBackHandler: function() {
+            logEvent("Prebid bidsBackHandler executed.");
+            executeAdServerCall();
+          }
+        });
+
+        // Monitor bidder responses
+        pbjs.onEvent('bidderDone', function(bidderData) {
+          logEvent(`Bidder ${bidderData.bidderCode} responded.`);
+        });
+      });
+    }
+
+    // Initialize
+    updateAdUnitsVal();
+    calculateTimeout();
+  </script>
+
+</body>
+</html>
