@@ -24,7 +24,7 @@
 
     // Check URL for SRA mode
     const urlParams = new URLSearchParams(window.location.search);
-    isSRAMode = urlParams.get('sra') === 'true';
+    isSRAMode = urlParams.get('sra') !== 'false';
 
     function logEvent(message, className = "") {
       const body = document.getElementById("logBody");
@@ -224,8 +224,8 @@
     }
 
     function setMode(mode) {
-        if (mode === 'sra') {
-            window.location.search = '?sra=true';
+        if (mode === 'nonsra') {
+            window.location.search = '?sra=false';
         } else {
             window.location.search = '';
         }
@@ -449,13 +449,13 @@
 
   <script>
       // Ensure the correct button is highlighted based on active mode
-      const isSRA = new URLSearchParams(window.location.search).get('sra') === 'true';
-      if (isSRA) {
-          document.getElementById('sraBtn').className = 'btn';
-          document.getElementById('nonSraBtn').className = 'btn btn-secondary';
-      } else {
+      const isNonSRA = new URLSearchParams(window.location.search).get('sra') === 'false';
+      if (isNonSRA) {
           document.getElementById('sraBtn').className = 'btn btn-secondary';
           document.getElementById('nonSraBtn').className = 'btn';
+      } else {
+          document.getElementById('sraBtn').className = 'btn';
+          document.getElementById('nonSraBtn').className = 'btn btn-secondary';
       }
   </script>
 
