@@ -17,6 +17,8 @@
     pbjs.cmd = pbjs.cmd || [];
 
     let requestedTimestamp = Date.now();
+    let lastFastTimestamp = 0;
+    let openxTimestamp = 0;
 
     function logEvent(message, className = "") {
       const body = document.getElementById("logBody");
@@ -35,11 +37,6 @@
       row.appendChild(eventCell);
       row.appendChild(timeCell);
       body.appendChild(row);
-    }
-
-    // Helper to generate random bids once on load
-    function getRandomBid() {
-      return (Math.floor(Math.random() * 41) + 10) / 100;
     }
 
     // Prebid configuration
@@ -64,41 +61,67 @@
 
       const creativeHtml = '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>';
 
-      // Setup Intercepts (Mirroring working pattern from PrebidEndFaster.html)
-      let bds = ['appnexus', 'rubicon', 'pubmatic', 'openx'];
-      let ints = [];
-      
-      bds.forEach(bidder => {
-          let isSlow = (bidder === 'openx');
-          let delay = isSlow ? 3000 : Math.floor(Math.random() * 301) + 500;
-          
-          ints.push({
-              when: function(bidRequest) { return bidRequest.bidder === bidder; },
-              options: { delay: delay },
-              then: function(bidRequest) {
-                  let cpm = isSlow ? 0.01 : (Math.floor(Math.random() * 41) + 10) / 100;
-                  return {
-                      cpm: cpm,
-                      width: 300,
-                      height: 250,
-                      creativeId: 'cr-' + bidder,
-                      netRevenue: true,
-                      currency: 'USD',
-                      ttl: 300,
-                      ad: creativeHtml
-                  };
-              }
-          });
-      });
-
+      // Setup Intercepts
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
-        bidderTimeout: 3000,
+        bidderTimeout: 3500, // Increased to ensure OpenX completes before hard timeout
         debugging: {
           enabled: true,
-          intercept: ints
+          intercept: [
+            {
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'appnexus'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
+                }; 
+              }
+            },
+            {
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'rubicon'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
+                }; 
+              }
+            },
+            {
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'pubmatic'; },
+              options: { delay: Math.floor(Math.random() * 301) + 500 }, // 500-800ms
+              then: function() { 
+                return { 
+                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
+                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
+                }; 
+              }
+            },
+            {
+              when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'openx'; },
+              options: { delay: 3000 }, // Slowest bidder takes 3000ms
+              then: { 
+                cpm: 0.01, 
+                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
+              }
+            }
+          ]
         }
+      });
+
+      // FIX: Move event listener OUTSIDE the function to prevent duplication on rerun
+      pbjs.onEvent('bidderDone', function(bidderData) {
+        const isSlow = bidderData.bidderCode === 'openx';
+        const now = Date.now();
+        if (isSlow) {
+            openxTimestamp = now;
+        } else {
+            lastFastTimestamp = Math.max(lastFastTimestamp, now);
+        }
+        const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
+        logEvent(msg, isSlow ? "highlight-danger" : "");
       });
     });
 
@@ -107,9 +130,6 @@
       for (let i = 1; i <= 4; i++) {
         googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
       }
-      
-
-      
       googletag.pubads().enableSingleRequest();
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
@@ -120,28 +140,17 @@
       if (!logBody) return;
       
       logBody.innerHTML = "";
-      let maxFastTime = 0;
       requestedTimestamp = Date.now();
+      lastFastTimestamp = 0;
+      openxTimestamp = 0;
       logEvent("Simulation started. Auction requested.");
 
       pbjs.cmd.push(function() {
-        pbjs.onEvent('bidderDone', function(bidderData) {
-          const isSlow = bidderData.bidderCode === 'openx';
-          const time = Date.now() - requestedTimestamp;
-          if (!isSlow) {
-              maxFastTime = Math.max(maxFastTime, time);
-          }
-          const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
-          logEvent(msg, isSlow ? "highlight-danger" : "");
-        });
-
         pbjs.requestBids({
           bidsBackHandler: function() {
             logEvent("Prebid bidsBackHandler executed. All bids ready.");
             
             const totalTime = Date.now() - requestedTimestamp;
-            const actualDelay = ((totalTime - maxFastTime) / 1000).toFixed(1);
-            
             googletag.cmd.push(function() {
               pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
@@ -150,7 +159,8 @@
                 
                 setTimeout(() => {
                     logEvent("All slots rendered");
-                    logEvent(`SRA Bottleneck: All slots were delayed by ~${actualDelay}s waiting for OpenX on Slot 4.`, "highlight-warning");
+                    const exactDelay = openxTimestamp - lastFastTimestamp;
+                    logEvent(`SRA Bottleneck: All slots were delayed by ${exactDelay}ms waiting for OpenX on Slot 4.`, "highlight-warning");
                 }, 200);
               });
             });
@@ -158,6 +168,11 @@
         });
       });
     }
+
+    // Auto-start simulation on page load as requested
+    window.onload = function() {
+        startSimulation();
+    };
   </script>
   
   <style>
@@ -192,19 +207,17 @@
       border: 1px solid var(--border-color);
     }
 
-    /* Two Column Layout */
     .two-column-layout {
       display: grid;
-      grid-template-columns: 680px 1fr; /* 2 columns of 330px + gap = 680px */
+      grid-template-columns: 680px 1fr;
       gap: 30px;
       margin-top: 20px;
       align-items: start;
     }
 
-    /* Left Column (Ads) */
     .ad-grid {
       display: grid;
-      grid-template-columns: repeat(2, 330px); /* Made columns wider to accommodate padding */
+      grid-template-columns: repeat(2, 330px);
       gap: 20px;
     }
 
@@ -236,10 +249,9 @@
       color: #70757a;
       font-size: 0.85rem;
       border-radius: 4px;
-      overflow: hidden; /* Prevent overflowing */
+      overflow: hidden;
     }
 
-    /* Right Column (Log) */
     .log-section {
       background-color: #ffffff;
       border: 1px solid var(--border-color);
@@ -247,15 +259,6 @@
       padding: 20px;
       height: 600px;
       overflow-y: auto;
-    }
-
-    .log-section h2 {
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-top: 0;
-      margin-bottom: 15px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
     }
 
     table {
@@ -291,13 +294,8 @@
       font-weight: bold;
     }
 
-    .highlight-success {
-      color: var(--success-color);
-      font-weight: bold;
-    }
-
     .highlight-warning {
-      color: #f2a600; /* Golden yellow */
+      color: #f2a600;
       font-weight: bold;
     }
 
