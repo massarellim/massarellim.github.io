@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Example demonstrating how SRA (Single Request Architecture) can create a performance bottleneck when one bidder is slow.">
   <title>Prebid SRA Bottleneck Demonstration</title>
   
   <script async src="//securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
   
-  <!-- JavaScript at the top -->
   <script>
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -19,8 +17,8 @@
     let requestedTimestamp = Date.now();
     let lastFastTimestamp = 0;
     let openxTimestamp = 0;
-    let gptSlots = []; 
     let isSRAMode = false;
+    let biddersLogged = {}; // Prevent duplication across auctions
 
     const urlParams = new URLSearchParams(window.location.search);
     isSRAMode = urlParams.get('sra') !== 'false';
@@ -30,7 +28,6 @@
       if (!body) return;
       
       const row = document.createElement("tr");
-      
       const eventCell = document.createElement("td");
       if (className) eventCell.className = className;
       eventCell.textContent = message;
@@ -44,9 +41,7 @@
       body.appendChild(row);
     }
 
-    // Prebid configuration
     pbjs.cmd.push(function() {
-      // Setup 3 ad units for Prebid (Slot 1 is GAM-only)
       let adUnits = [];
       for (let i = 2; i <= 4; i++) {
         let bids = [
@@ -66,86 +61,62 @@
 
       const creativeHtml = '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>';
 
-      // Setup Intercepts
       pbjs.setConfig({
         bidderSequence: "fixed",
         priceGranularity: "high",
-        bidderTimeout: 3500, 
+        bidderTimeout: 3500,
         debugging: {
           enabled: true,
           intercept: [
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'appnexus'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
-                }; 
-              }
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100, width: 300, height: 250, creativeId: 'cr-appnexus', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }; }
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'rubicon'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
-                }; 
-              }
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100, width: 300, height: 250, creativeId: 'cr-rubicon', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }; }
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'pubmatic'; },
-              options: { delay: Math.floor(Math.random() * 301) + 500 }, 
-              then: function() { 
-                return { 
-                  cpm: (Math.floor(Math.random() * 41) + 10) / 100, 
-                  width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
-                }; 
-              }
+              options: { delay: Math.floor(Math.random() * 301) + 500 },
+              then: function() { return { cpm: (Math.floor(Math.random() * 41) + 10) / 100, width: 300, height: 250, creativeId: 'cr-pubmatic', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }; }
             },
             {
               when: function(bidRequest) { let b = bidRequest.bidder || bidRequest.bidderCode; return b === 'openx'; },
-              options: { delay: 3000 }, 
-              then: { 
-                cpm: 0.01, 
-                width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml 
-              }
+              options: { delay: 3000 },
+              then: { cpm: 0.01, width: 300, height: 250, creativeId: 'cr-openx', netRevenue: true, currency: 'USD', ttl: 300, ad: creativeHtml }
             }
           ]
         }
       });
 
-      // Event listener registered once
       pbjs.onEvent('bidderDone', function(bidderData) {
-        const isSlow = bidderData.bidderCode === 'openx';
-        const now = Date.now();
-        
-        if (isSlow) {
-            openxTimestamp = now;
-        } else {
-            lastFastTimestamp = Math.max(lastFastTimestamp, now);
+        let bidder = bidderData.bidderCode;
+        if (!biddersLogged[bidder]) {
+            biddersLogged[bidder] = true; // Log only once
+            const isSlow = bidder === 'openx';
+            const now = Date.now();
+            if (isSlow) { openxTimestamp = now; } 
+            else { lastFastTimestamp = Math.max(lastFastTimestamp, now); }
+            
+            const msg = isSlow ? `Bidder ${bidder} responded (TIMEOUT).` : `Bidder ${bidder} responded.`;
+            logEvent(msg, isSlow ? "highlight-danger" : "");
         }
-        
-        const msg = isSlow ? `Bidder ${bidderData.bidderCode} responded (TIMEOUT).` : `Bidder ${bidderData.bidderCode} responded.`;
-        logEvent(msg, isSlow ? "highlight-danger" : "");
       });
     });
 
-    // GPT Configuration
     googletag.cmd.push(function() {
       for (let i = 1; i <= 4; i++) {
         let slot = googletag.defineSlot('/6353/massarellim_test', [300, 250], 'div-gpt-ad-' + i).addService(googletag.pubads());
-        if (i === 1) {
-            slot.setTargeting('test', 'red_mustang');
-        }
-        gptSlots.push(slot);
+        if (i === 1) { slot.setTargeting('test', 'red_mustang'); }
       }
       
-      if (isSRAMode) {
-          googletag.pubads().enableSingleRequest();
-      }
-      
+      // Create global map of slots using the working pattern from LL_HB_IO
+      window.slotsMap = googletag.pubads().getSlots().reduce((o, key) => ({ ...o, [key.getSlotElementId()]: key}), {});
+
+      if (isSRAMode) { googletag.pubads().enableSingleRequest(); }
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
     });
@@ -158,19 +129,18 @@
       requestedTimestamp = Date.now();
       lastFastTimestamp = 0;
       openxTimestamp = 0;
+      biddersLogged = {}; // Reset for new run
       
       logEvent("Auction requested.");
 
       if (isSRAMode) {
-          // SRA Mode: Single request for all slots
           pbjs.cmd.push(function() {
             pbjs.requestBids({
               bidsBackHandler: function() {
                 googletag.cmd.push(function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh(); // Fetches all slots at once
-                    
+                    googletag.pubads().refresh();
                     setTimeout(() => {
                         logEvent("All slots rendered", "highlight-success");
                         const exactDelay = openxTimestamp - lastFastTimestamp;
@@ -182,17 +152,12 @@
             });
           });
       } else {
-          // Non-SRA Mode: Separate auctions and targeted refreshes
-          
-          // 1. Slot 1 (GAM only) - Fire immediately
+          // Non-SRA Mode: Using working array pattern from directory example
           googletag.cmd.push(function() {
-              googletag.pubads().refresh([gptSlots[0]]);
-              setTimeout(() => {
-                  logEvent("Slot 1 rendered", "highlight-success");
-              }, 200);
+              googletag.pubads().refresh([window.slotsMap['div-gpt-ad-1']]);
+              setTimeout(() => { logEvent("Slot 1 rendered", "highlight-success"); }, 200);
           });
 
-          // 2. Auction for Slots 2 & 3 (Fast bidders)
           pbjs.cmd.push(function() {
             pbjs.requestBids({
               adUnitCodes: ['div-gpt-ad-2', 'div-gpt-ad-3'],
@@ -200,8 +165,7 @@
                 googletag.cmd.push(function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-2', 'div-gpt-ad-3']);
-                    googletag.pubads().refresh([gptSlots[1], gptSlots[2]]);
-                    
+                    googletag.pubads().refresh([window.slotsMap['div-gpt-ad-2'], window.slotsMap['div-gpt-ad-3']]);
                     setTimeout(() => {
                         logEvent("Slot 2 rendered", "highlight-success");
                         logEvent("Slot 3 rendered", "highlight-success");
@@ -212,7 +176,6 @@
             });
           });
 
-          // 3. Auction for Slot 4 (Includes slow OpenX)
           pbjs.cmd.push(function() {
             pbjs.requestBids({
               adUnitCodes: ['div-gpt-ad-4'],
@@ -220,11 +183,8 @@
                 googletag.cmd.push(function() {
                   pbjs.que.push(function() {
                     pbjs.setTargetingForGPTAsync(['div-gpt-ad-4']);
-                    googletag.pubads().refresh([gptSlots[3]]);
-                    
-                    setTimeout(() => {
-                        logEvent("Slot 4 rendered", "highlight-success");
-                    }, 200);
+                    googletag.pubads().refresh([window.slotsMap['div-gpt-ad-4']]);
+                    setTimeout(() => { logEvent("Slot 4 rendered", "highlight-success"); }, 200);
                   });
                 });
               }
@@ -234,17 +194,11 @@
     }
 
     function setMode(mode) {
-        if (mode === 'nonsra') {
-            window.location.search = '?sra=false';
-        } else {
-            window.location.search = '';
-        }
+        if (mode === 'nonsra') { window.location.search = '?sra=false'; } 
+        else { window.location.search = ''; }
     }
 
-    // Auto-start on page load
-    window.onload = function() {
-        startSimulation();
-    };
+    window.onload = function() { startSimulation(); };
   </script>
   
   <style>
@@ -258,7 +212,7 @@
     }
 
     body {
-      font-family: 'Roboto', 'Inter', system-ui, sans-serif;
+      font-family: 'Roboto', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
@@ -266,7 +220,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
     }
 
     .container {
@@ -275,7 +228,7 @@
       background: #ffffff;
       padding: 40px;
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+      box-shadow: 0 1px 3px rgba(60,64,67,0.3);
       border: 1px solid var(--border-color);
     }
 
@@ -298,15 +251,13 @@
       border-radius: 8px;
       padding: 15px;
       text-align: center;
-      background-color: #ffffff;
     }
 
     .ad-slot-container h3 {
       font-size: 0.85rem;
       font-weight: 500;
       color: #5f6368;
-      margin-top: 0;
-      margin-bottom: 10px;
+      margin: 0 0 10px 0;
     }
 
     .ad-placeholder {
@@ -318,8 +269,6 @@
       justify-content: center;
       align-items: center;
       margin: 0 auto;
-      color: #70757a;
-      font-size: 0.85rem;
       border-radius: 4px;
       overflow: hidden;
     }
@@ -351,30 +300,15 @@
       color: #5f6368;
     }
 
-    tr:last-child td {
-      border-bottom: none;
-    }
-
     .timestamp {
       color: #5f6368;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: monospace;
       text-align: right;
     }
 
-    .highlight-danger {
-      color: var(--danger-color);
-      font-weight: bold;
-    }
-
-    .highlight-warning {
-      color: #f2a600;
-      font-weight: bold;
-    }
-
-    .highlight-success {
-      color: var(--success-color);
-      font-weight: bold;
-    }
+    .highlight-danger { color: var(--danger-color); font-weight: bold; }
+    .highlight-warning { color: #f2a600; font-weight: bold; }
+    .highlight-success { color: var(--success-color); font-weight: bold; }
 
     .btn {
       background-color: var(--accent-color);
@@ -385,12 +319,6 @@
       font-size: 0.85rem;
       font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
-      transition: background 0.2s;
-    }
-
-    .btn:hover {
-      background-color: #1765c1;
     }
     
     .btn-secondary {
@@ -398,21 +326,14 @@
       color: var(--accent-color);
       border-color: var(--border-color);
     }
-    
-    .btn-secondary:hover {
-      background-color: #f8f9fa;
-      border-color: var(--accent-color);
-    }
   </style>
 </head>
 <body>
 
   <div class="container">
     
-    <!-- Two Column Layout -->
     <div class="two-column-layout">
       
-      <!-- Left Column (Ads) -->
       <div class="ad-grid">
         <div class="ad-slot-container">
           <h3>Slot 1</h3>
@@ -432,10 +353,9 @@
         </div>
       </div>
 
-      <!-- Right Column (Log) -->
       <div class="log-section">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
-          <h2 style="margin: 0; border: none; padding: 0; font-size: 1.1rem; font-weight: 500;">Live Event Timeline</h2>
+          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 500;">Live Event Timeline</h2>
           <div style="display: flex; gap: 10px;">
             <button class="btn" id="sraBtn" onclick="setMode('sra')">Run SRA</button>
             <button class="btn btn-secondary" id="nonSraBtn" onclick="setMode('nonsra')">Run Non-SRA</button>
@@ -458,7 +378,6 @@
   </div>
 
   <script>
-      // Ensure the correct button is highlighted based on active mode
       const isSRA = new URLSearchParams(window.location.search).get('sra') !== 'false';
       if (isSRA) {
           document.getElementById('sraBtn').className = 'btn';
