@@ -250,23 +250,20 @@
 
       <!-- Device Type -->
       <div class="control-group">
-        <label for="deviceType">Device Type</label>
-        <select id="deviceType" onchange="calculateTimeout()">
-          <option value="4">Desktop (Rule +100)</option>
-          <option value="2">Tablet (Rule +50)</option>
-          <option value="5">Phone/Other (Rule +200)</option>
-        </select>
+        <div style="display: flex; justify-content: space-between;">
+          <label for="deviceType">Device Type</label>
+          <span id="deviceTypeVal" class="slider-val">Phone (+200)</span>
+        </div>
+        <input type="range" id="deviceType" min="1" max="3" value="1" oninput="calculateTimeout();">
       </div>
 
       <!-- Connection Speed -->
       <div class="control-group">
-        <label for="connectionSpeed">Connection Speed</label>
-        <select id="connectionSpeed" onchange="calculateTimeout()">
-          <option value="fast">Fast (Rule +50)</option>
-          <option value="medium">Medium (Rule +100)</option>
-          <option value="slow">Slow (Rule +200)</option>
-          <option value="unknown">Unknown (Rule +10)</option>
-        </select>
+        <div style="display: flex; justify-content: space-between;">
+          <label for="connectionSpeed">Connection Speed</label>
+          <span id="connectionSpeedVal" class="slider-val">Slow (+200)</span>
+        </div>
+        <input type="range" id="connectionSpeed" min="1" max="4" value="1" oninput="calculateTimeout();">
       </div>
 
       <!-- Timeout Display -->
@@ -343,17 +340,17 @@
       else if (numUnits >= 11 && numUnits <= 15) modifier += 300;
 
       // 3. Device Type
-      const deviceType = document.getElementById("deviceType").value;
-      if (deviceType === "2") modifier += 50;
-      else if (deviceType === "4") modifier += 100;
-      else if (deviceType === "5") modifier += 200;
+      const deviceVal = document.getElementById("deviceType").value;
+      if (deviceVal === "1") { modifier += 200; document.getElementById("deviceTypeVal").textContent = "Phone (+200)"; }
+      else if (deviceVal === "2") { modifier += 100; document.getElementById("deviceTypeVal").textContent = "Desktop (+100)"; }
+      else if (deviceVal === "3") { modifier += 50; document.getElementById("deviceTypeVal").textContent = "Tablet (+50)"; }
 
       // 4. Connection Speed
-      const connSpeed = document.getElementById("connectionSpeed").value;
-      if (connSpeed === "slow") modifier += 200;
-      else if (connSpeed === "medium") modifier += 100;
-      else if (connSpeed === "fast") modifier += 50;
-      else if (connSpeed === "unknown") modifier += 10;
+      const connVal = document.getElementById("connectionSpeed").value;
+      if (connVal === "1") { modifier += 200; document.getElementById("connectionSpeedVal").textContent = "Slow (+200)"; }
+      else if (connVal === "2") { modifier += 100; document.getElementById("connectionSpeedVal").textContent = "Medium (+100)"; }
+      else if (connVal === "3") { modifier += 50; document.getElementById("connectionSpeedVal").textContent = "Fast (+50)"; }
+      else if (connVal === "4") { modifier += 10; document.getElementById("connectionSpeedVal").textContent = "Unknown (+10)"; }
 
       const total = baseTimeout + modifier;
       document.getElementById("totalTimeout").textContent = total + "ms";
