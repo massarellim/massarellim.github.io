@@ -29,7 +29,6 @@
 
       pbjs.cmd.push(function() {
         let mockData = {};
-        let adserverRequestSent = false;
         setupSimulation();
 
         pbjs.addAdUnits([{
@@ -42,35 +41,6 @@
             { bidder: 'pubmatic', params: { publisherId: '1', adSlot: 's' } },
             { bidder: 'smart', params: { domain: 'd', siteId: 1, pageId: 2, formatId: 3 } }
           ]
-        }]);
-
-        function sendAdserverRequest(adUnit) {
-
-          if (!adserverRequestSent) {
-            adserverRequestSent = true;
-
-            function triggerGam() {
-              googletag.cmd.push(function() {
-                let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
-                if (getHighest) {
-                  printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
-                  googleSlot.updateTargetingFromMap(getHighest);
-                } else {
-                  printEventMessage(`No bids from Prebid`);
-                }
-                googletag.pubads().refresh([googleSlot]);
-              });
-            }
-
-            // Prevent GAM race condition: Don't refresh before the div exists!
-            if (document.readyState === 'loading') {
-              document.addEventListener('DOMContentLoaded', triggerGam);
-            } else {
-              triggerGam();
-            }
-          }
-        }
-
         function setupSimulation() {
             let availableBidders = ['appnexus', 'rubicon', 'openx', 'pubmatic', 'smart'];
             let biddersNotAppnexus = availableBidders.filter(b => b !== 'appnexus');
@@ -83,10 +53,8 @@
             }
             let fastBidders = availableBidders.filter(b => !slowBidders.includes(b));
             
-            // Slow bidders behavior: 1 gets a bid, 1 gets nothing
             let slowBidderWithBid = slowBidders[Math.floor(Math.random() * slowBidders.length)];
             
-            // Fast bidders behavior: 2 get a bid, 1 gets nothing
             let fastBiddersWithBid = [];
             while (fastBiddersWithBid.length < 2) {
                 let randBidder = fastBidders[Math.floor(Math.random() * fastBidders.length)];
@@ -99,60 +67,35 @@
             availableBidders.forEach(bidder => {
                 let isSlow = slowBidders.includes(bidder);
                 let delay = isSlow ? Math.floor(Math.random() * 1001) + 1500 : Math.floor(Math.random() * 501) + 300;
-                
                 let shouldBid = false;
                 let cpm = 0;
-                
                 if (isSlow) {
-                    if (bidder === slowBidderWithBid) {
-                        shouldBid = true;
-                        cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
-                    }
+                    if (bidder === slowBidderWithBid) { shouldBid = true; cpm = (Math.floor(Math.random() * 5) + 1) / 100; }
                 } else {
-                    if (fastBiddersWithBid.includes(bidder)) {
-                        shouldBid = true;
-                        cpm = (Math.floor(Math.random() * 26) + 25) / 100; // 0.25 to 0.50
-                    } else {
-                        shouldBid = true;
-                        cpm = (Math.floor(Math.random() * 5) + 1) / 100; // 0.01 to 0.05
-                    }
+                    if (fastBiddersWithBid.includes(bidder)) { shouldBid = true; cpm = (Math.floor(Math.random() * 26) + 25) / 100; }
+                    else { shouldBid = true; cpm = (Math.floor(Math.random() * 5) + 1) / 100; }
                 }
-                
                 mockData[bidder] = { cpm: shouldBid ? cpm : 0, delay: delay };
-                
                 intercepts.push({
                     when: bidRequest => bidRequest.bidder === bidder,
                     options: { delay: delay },
                     then: function(bidRequest) {
                         return {
                             cpm: mockData[bidder].cpm,
-                            width: 300,
-                            height: 250,
-                            creativeId: 'cr-' + bidder,
-                            netRevenue: true,
-                            currency: 'USD',
-                            ttl: 300,
+                            width: 300, height: 250,
+                            creativeId: 'cr-' + bidder, netRevenue: true, currency: 'USD', ttl: 300,
                             ad: '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>'
                         };
                     }
                 });
             });
 
-            pbjs.setConfig({
-              bidderSequence: "fixed",
-              priceGranularity: "high",
-              debugging: {
-                enabled: true, 
-                intercept: intercepts
-              }
-            });
+            pbjs.setConfig({ bidderSequence: "fixed", priceGranularity: "high", debugging: { enabled: true, intercept: intercepts } });
         }
 
-        // No bidsBackHandler here. We don't want to wait for all bidders!
-        // GAM will only be triggered by the counter below.
         pbjs.requestBids();
 
-        var numBidders = 0
+        let numBidders = 0;
 
         pbjs.onEvent('bidderDone', function(bidderData) {
           let cpmText = " with no bid";
@@ -162,9 +105,23 @@
               cpmText = cpm > 0 ? ` with bid ${cpm}` : " with no bid";
           }
           printEventMessage(`Bidder ${bidder} responded${cpmText}`);
-          numBidders += 1
+          
+          numBidders += 1;
+          
+          // THE ONLY AVENUE: Triggers exactly once when count hits 3.
           if (numBidders == 3) {
-            sendAdserverRequest('test-div')
+            googletag.cmd.push(function() {
+              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
+              if (getHighest) {
+                printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
+                googleSlot.updateTargetingFromMap(getHighest);
+              } else {
+                printEventMessage(`No bids from Prebid`);
+              }
+              googletag.pubads().refresh([googleSlot]);
+            });
+          }
+        });
           }
         });
 
