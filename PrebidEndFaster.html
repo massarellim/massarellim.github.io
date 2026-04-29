@@ -100,25 +100,26 @@
         let numBidders = 0;
 
         pbjs.onEvent('bidderDone', function(bidderData) {
-          let cpmText = " with no bid";
           let bidder = bidderData.bidderCode;
+          let cpmText = " with no bid";
           if (mockData[bidder]) {
               let cpm = mockData[bidder].cpm;
-              cpmText = cpm > 0 ? ` with bid ${cpm}` : " with no bid";
+              if (cpm > 0) {
+                  cpmText = " with bid " + cpm;
+              }
           }
-          printEventMessage(`Bidder ${bidder} responded${cpmText}`);
+          printEventMessage("Bidder " + bidder + " responded" + cpmText);
           
           numBidders += 1;
           
-          // THE ONLY AVENUE: Triggers exactly once when count hits 3.
           if (numBidders == 3) {
             googletag.cmd.push(function() {
               let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
               if (getHighest) {
-                printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
+                printEventMessage(getHighest.hb_bidder + " bid " + getHighest.hb_pb + ", updating targeting");
                 googleSlot.updateTargetingFromMap(getHighest);
               } else {
-                printEventMessage(`No bids from Prebid`);
+                printEventMessage("No bids from Prebid");
               }
               googletag.pubads().refresh([googleSlot]);
             });
