@@ -98,6 +98,7 @@
         pbjs.requestBids();
 
         let numBidders = 0;
+        let hasGamRefreshed = false; // STRICT LOCK
 
         pbjs.onEvent('bidderDone', function(bidderData) {
           let bidder = bidderData.bidderCode;
@@ -120,16 +121,17 @@
                   printEventMessage("Updating targeting for: " + getHighest.hb_bidder + " at " + getHighest.hb_pb);
                   googleSlot.updateTargetingFromMap(getHighest);
                 }
-                googletag.pubads().refresh([googleSlot]);
+                
+                // HARD LOCK: If refresh was already called, abort.
+                if (!hasGamRefreshed) {
+                  hasGamRefreshed = true;
+                  googletag.pubads().refresh([googleSlot]);
+                }
               });
             }
 
-            // Wait for the HTML div to exist before refreshing!
-            if (document.readyState === 'loading') {
-              document.addEventListener('DOMContentLoaded', triggerRefresh);
-            } else {
-              triggerRefresh();
-            }
+            // Called instantly. No DOM listeners.
+            triggerRefresh();
           }
         });
 
