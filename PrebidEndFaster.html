@@ -147,11 +147,9 @@
             });
         }
 
-        pbjs.requestBids({
-          bidsBackHandler: function() {
-            sendAdserverRequest('test-div')
-          }
-        });
+        // No bidsBackHandler here. We don't want to wait for all bidders!
+        // GAM will only be triggered by the counter below.
+        pbjs.requestBids();
 
         var numBidders = 0
 
