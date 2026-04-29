@@ -48,17 +48,25 @@
           if (!adserverRequestSent) {
             adserverRequestSent = true;
 
-            googletag.cmd.push(function() {
-              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
-              if (getHighest) {
-                printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
-                googleSlot.updateTargetingFromMap(getHighest);
-              } else {
-                printEventMessage(`No bids from Prebid`);
-              }
-              googletag.pubads().refresh([googleSlot]);
-            });
+            function triggerGam() {
+              googletag.cmd.push(function() {
+                let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
+                if (getHighest) {
+                  printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
+                  googleSlot.updateTargetingFromMap(getHighest);
+                } else {
+                  printEventMessage(`No bids from Prebid`);
+                }
+                googletag.pubads().refresh([googleSlot]);
+              });
+            }
 
+            // Prevent GAM race condition: Don't refresh before the div exists!
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', triggerGam);
+            } else {
+              triggerGam();
+            }
           }
         }
 
