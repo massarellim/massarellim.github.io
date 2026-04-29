@@ -121,7 +121,16 @@
               } else {
                 printEventMessage("No bids from Prebid");
               }
-              googletag.pubads().refresh([googleSlot]);
+
+              // GAM REQUIRES display() to run BEFORE refresh(). 
+              // If Prebid finishes before the HTML loads, we MUST wait for the div to exist.
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                  googletag.pubads().refresh([googleSlot]);
+                });
+              } else {
+                googletag.pubads().refresh([googleSlot]);
+              }
             });
           }
         });
@@ -196,4 +205,9 @@
     <div class="status-container"></div>
   </div>
 
+  <script>
+    googletag.cmd.push(function() {
+      googletag.display("test-div");
+    });
+  </script>
 </body>
