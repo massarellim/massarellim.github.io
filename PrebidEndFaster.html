@@ -50,6 +50,9 @@
 
             function triggerGam() {
               googletag.cmd.push(function() {
+                // Strictly register the slot right before we refresh it.
+                googletag.display('test-div');
+
                 let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
                 if (getHighest) {
                   printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
@@ -236,10 +239,5 @@
     </div>
     <div class="status-container"></div>
   </div>
-  <script>
-    googletag.cmd.push(function() {
-      googletag.display("test-div");
-    });
 
-  </script>
 </body>
