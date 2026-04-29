@@ -41,6 +41,8 @@
             { bidder: 'pubmatic', params: { publisherId: '1', adSlot: 's' } },
             { bidder: 'smart', params: { domain: 'd', siteId: 1, pageId: 2, formatId: 3 } }
           ]
+        }]);
+
         function setupSimulation() {
             let availableBidders = ['appnexus', 'rubicon', 'openx', 'pubmatic', 'smart'];
             let biddersNotAppnexus = availableBidders.filter(b => b !== 'appnexus');
