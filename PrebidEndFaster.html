@@ -114,23 +114,9 @@
           
           if (numBidders == 3) {
             googletag.cmd.push(function() {
-              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
-              if (getHighest) {
-                printEventMessage(getHighest.hb_bidder + " bid " + getHighest.hb_pb + ", updating targeting");
-                googleSlot.updateTargetingFromMap(getHighest);
-              } else {
-                printEventMessage("No bids from Prebid");
-              }
-
-              // GAM REQUIRES display() to run BEFORE refresh(). 
-              // If Prebid finishes before the HTML loads, we MUST wait for the div to exist.
-              if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                  googletag.pubads().refresh([googleSlot]);
-                });
-              } else {
-                googletag.pubads().refresh([googleSlot]);
-              }
+              // Standard Prebid pattern matching the other files
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
             });
           }
         });
@@ -195,7 +181,13 @@
 
 <body>
   <span>Ad slot 1:</span>
-  <div id="test-div" style="width: 300px; height: 250px"></div>
+  <div id="test-div" style="width: 300px; height: 250px">
+    <script>
+      googletag.cmd.push(function() {
+        googletag.display("test-div");
+      });
+    </script>
+  </div>
   <div style="height: 10px"></div>
   <div class="status">
     <div class="status-row">
