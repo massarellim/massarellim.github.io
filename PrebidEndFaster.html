@@ -138,7 +138,15 @@
       });
     });
 
+    let loggedGamEvents = new Set();
+
     function printEventMessage(eventMessage, slotId, details = {}) {
+      // Suppress duplicate logs for GAM events
+      if (eventMessage.includes("Slot has") || eventMessage.includes("Ad response") || eventMessage.includes("Impression")) {
+        if (loggedGamEvents.has(eventMessage)) return;
+        loggedGamEvents.add(eventMessage);
+      }
+
       const row = document.getElementsByClassName("status-row")[0].cloneNode(true);
       const cells = row.getElementsByClassName("status-cell");
       cells[0].textContent = eventMessage;
