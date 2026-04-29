@@ -48,18 +48,16 @@
             pbjs.adserverRequestSent = true;
 
             googletag.cmd.push(function() {
-              pbjs.que.push(function() {
-                let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
-                if (getHighest) {
-                  printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
-                  googleSlot.updateTargetingFromMap(
-                    pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
-                  );
-                } else {
-                  printEventMessage(`No bids from Prebid`);
-                }
-                googletag.pubads().refresh();
-              });
+              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
+              if (getHighest) {
+                printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
+                googleSlot.updateTargetingFromMap(
+                  pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
+                );
+              } else {
+                printEventMessage(`No bids from Prebid`);
+              }
+              googletag.pubads().refresh();
             });
 
           }
@@ -235,7 +233,7 @@
   </div>
   <script>
     googletag.cmd.push(function() {
-      googletag.display("ad-slot-1");
+      googletag.display("test-div");
     });
 
   </script>
