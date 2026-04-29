@@ -22,7 +22,8 @@
         googletag.pubads().addEventListener(ev, () => printEventMessage(msg));
       });
 
-      googletag.pubads().enableSingleRequest();
+      // SRA removed to prevent GAM from batching/double-triggering.
+      // googletag.pubads().enableSingleRequest();
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();
 
@@ -50,9 +51,6 @@
 
             function triggerGam() {
               googletag.cmd.push(function() {
-                // Strictly register the slot right before we refresh it.
-                googletag.display('test-div');
-
                 let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
                 if (getHighest) {
                   printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
@@ -240,4 +238,9 @@
     <div class="status-container"></div>
   </div>
 
+  <script>
+    googletag.cmd.push(function() {
+      googletag.display("test-div");
+    });
+  </script>
 </body>
