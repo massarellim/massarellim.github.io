@@ -28,6 +28,7 @@
 
       pbjs.cmd.push(function() {
         let mockData = {};
+        let adserverRequestSent = false;
         setupSimulation();
 
         pbjs.addAdUnits([{
@@ -44,20 +45,18 @@
 
         function sendAdserverRequest(adUnit) {
 
-          if (!pbjs.adserverRequestSent) {
-            pbjs.adserverRequestSent = true;
+          if (!adserverRequestSent) {
+            adserverRequestSent = true;
 
             googletag.cmd.push(function() {
-              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
+              let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
               if (getHighest) {
                 printEventMessage(`${getHighest.hb_bidder} bid ${getHighest.hb_pb}, updating targeting`);
-                googleSlot.updateTargetingFromMap(
-                  pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting
-                );
+                googleSlot.updateTargetingFromMap(getHighest);
               } else {
                 printEventMessage(`No bids from Prebid`);
               }
-              googletag.pubads().refresh();
+              googletag.pubads().refresh([googleSlot]);
             });
 
           }
