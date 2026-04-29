@@ -113,11 +113,23 @@
           numBidders += 1;
           
           if (numBidders == 3) {
-            googletag.cmd.push(function() {
-              // Standard Prebid pattern matching the other files
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
-            });
+            function triggerRefresh() {
+              googletag.cmd.push(function() {
+                let getHighest = pbjs.getHighestUnusedBidResponseForAdUnitCode('test-div').adserverTargeting;
+                if (getHighest) {
+                  printEventMessage("Updating targeting for: " + getHighest.hb_bidder + " at " + getHighest.hb_pb);
+                  googleSlot.updateTargetingFromMap(getHighest);
+                }
+                googletag.pubads().refresh([googleSlot]);
+              });
+            }
+
+            // Wait for the HTML div to exist before refreshing!
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', triggerRefresh);
+            } else {
+              triggerRefresh();
+            }
           }
         });
 
