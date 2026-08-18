@@ -1,0 +1,604 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Batched SRA with Multi-Threshold LazyLoad & Prebid</title>
+
+    <!-- Google Publisher Tag (GPT) & Prebid.js -->
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+    <script
+      async
+      src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"
+    ></script>
+
+    <script>
+      // Global queues initialization
+      window.googletag = window.googletag || { cmd: [] };
+      var pbjs = pbjs || {};
+      pbjs.cmd = pbjs.cmd || [];
+
+      // --- Configuration ---
+      const networkCode = "6353"; // Your Google Ad Manager network code
+
+      // Definition of batches and slots
+      const batchDefinitions = [
+        {
+          id: "batch-1",
+          name: "Batch 1",
+          lazyloadPercent: 100, // 1 viewport
+          rootMargin: "0% 0% 100% 0%",
+          slots: [
+            {
+              adUnit: "test_1",
+              divId: "div-1",
+              name: "Ad Slot 1",
+              sizes: [300, 250],
+              hasHb: true,
+            },
+            {
+              adUnit: "test_no_hb_1",
+              divId: "div-2",
+              name: "Ad Slot 2",
+              sizes: [320, 50],
+              hasHb: false,
+            },
+          ],
+        },
+        {
+          id: "batch-2",
+          name: "Batch 2",
+          lazyloadPercent: 100, // 1 viewport
+          rootMargin: "0% 0% 100% 0%",
+          slots: [
+            {
+              adUnit: "test_2",
+              divId: "div-3",
+              name: "Ad Slot 3",
+              sizes: [300, 250],
+              hasHb: true,
+            },
+            {
+              adUnit: "test_no_hb_2",
+              divId: "div-4",
+              name: "Ad Slot 4",
+              sizes: [320, 50],
+              hasHb: false,
+            },
+          ],
+        },
+        {
+          id: "batch-3",
+          name: "Batch 3",
+          lazyloadPercent: 300, // 3 viewports
+          rootMargin: "0% 0% 300% 0%",
+          slots: [
+            {
+              adUnit: "test_3",
+              divId: "div-5",
+              name: "Ad Slot 5",
+              sizes: [300, 250],
+              hasHb: true,
+            },
+            {
+              adUnit: "test_no_hb_3",
+              divId: "div-6",
+              name: "Ad Slot 6",
+              sizes: [320, 50],
+              hasHb: false,
+            },
+          ],
+        },
+        {
+          id: "batch-4",
+          name: "Batch 4",
+          lazyloadPercent: 300, // 3 viewports
+          rootMargin: "0% 0% 300% 0%",
+          slots: [
+            {
+              adUnit: "test_4",
+              divId: "div-7",
+              name: "Ad Slot 7",
+              sizes: [300, 250],
+              hasHb: true,
+            },
+            {
+              adUnit: "test_no_hb_4",
+              divId: "div-8",
+              name: "Ad Slot 8",
+              sizes: [320, 50],
+              hasHb: false,
+            },
+          ],
+        },
+      ];
+
+      const prebidConfig = {
+        bidder: "appnexus",
+        params: { placementId: 123456 },
+      };
+
+      const creativeHtml =
+        '<div style="display: inline-block; height: 250px; width: 300px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: 300px; background-repeat: repeat-x"></div>';
+
+      const prebidInterceptConfig = {
+        when: { adUnitCode: /test/ },
+        then: {
+          cpm: 9.9,
+          width: 300,
+          height: 250,
+          ad: creativeHtml,
+        },
+      };
+
+      // State tracking
+      const gptSlotsMap = {};
+      const batchTriggered = {};
+      let sraBatchCount = 0;
+
+      // Update UI Table Status
+      function updateSlotStatus(slotId, state, text = "Yes") {
+        const elem = document.getElementById(`${slotId}-${state}`);
+        if (elem) {
+          elem.className = "activated";
+          elem.innerText = text;
+        }
+
+        // When the slot is requested, also activate the configuration columns and SRA Batch #
+        if (state === "requested") {
+          ["batch-info", "threshold", "lazyload", "hb", "batch"].forEach(function (suffix) {
+            const el = document.getElementById(`${slotId}-${suffix}`);
+            if (el) {
+              el.className = "activated";
+            }
+          });
+        }
+      }
+
+      // Initialize GPT & Prebid
+      googletag.cmd.push(function () {
+        try {
+          // Define all slots across all batches and configure 'lazyload' key-value targeting
+          batchDefinitions.forEach((batch) => {
+            batch.slots.forEach((slotDef) => {
+              const slot = googletag
+                .defineSlot(
+                  `/${networkCode}/${slotDef.adUnit}`,
+                  slotDef.sizes,
+                  slotDef.divId
+                )
+                .addService(googletag.pubads());
+
+              // Set key-value targeting 'lazyload' with 100 for 1-viewport and 300 for 3-viewports
+              slot.setTargeting("lazyload", String(batch.lazyloadPercent));
+
+              gptSlotsMap[slotDef.divId] = slot;
+            });
+          });
+
+          // Enable Single Request Architecture (SRA) and Disable Initial Load
+          googletag.pubads().enableSingleRequest();
+          googletag.pubads().disableInitialLoad();
+          googletag.enableServices();
+
+          // GPT Event Listeners
+          googletag.pubads().addEventListener("slotRequested", function (event) {
+            updateSlotStatus(event.slot.getSlotElementId(), "requested");
+          });
+
+          googletag.pubads().addEventListener("slotRenderEnded", function (event) {
+            updateSlotStatus(event.slot.getSlotElementId(), "rendered");
+          });
+
+          googletag.pubads().addEventListener("impressionViewable", function (event) {
+            updateSlotStatus(event.slot.getSlotElementId(), "viewed");
+          });
+
+          // Initialize Prebid ad units and debugging configuration
+          pbjs.cmd.push(function () {
+            try {
+              const prebidAdUnits = [];
+              batchDefinitions.forEach((batch) => {
+                batch.slots.forEach((slotDef) => {
+                  if (slotDef.hasHb) {
+                    prebidAdUnits.push({
+                      code: `/${networkCode}/${slotDef.adUnit}`,
+                      mediaTypes: { banner: { sizes: [slotDef.sizes] } },
+                      bids: [prebidConfig],
+                    });
+                  }
+                });
+              });
+
+              pbjs.addAdUnits(prebidAdUnits);
+
+              pbjs.setConfig({
+                debugging: {
+                  enabled: true,
+                  intercept: [prebidInterceptConfig],
+                },
+              });
+            } catch (error) {
+              console.error("Error initializing Prebid:", error);
+            }
+          });
+        } catch (error) {
+          console.error("Error initializing Google Ad Manager:", error);
+        }
+      });
+
+      // Trigger SRA request for a batch (with Header Bidding if applicable)
+      function triggerBatchSRA(batch) {
+        if (batchTriggered[batch.id]) return;
+        batchTriggered[batch.id] = true;
+
+        sraBatchCount++;
+        const batchNum = sraBatchCount;
+
+        batch.slots.forEach((slotDef) => {
+          updateSlotStatus(slotDef.divId, "batch", `Batch #${batchNum}`);
+        });
+
+        googletag.cmd.push(function () {
+          const hbAdUnitCodes = [];
+          const batchGptSlots = [];
+
+          batch.slots.forEach((slotDef) => {
+            const gptSlot = gptSlotsMap[slotDef.divId];
+            if (gptSlot) {
+              batchGptSlots.push(gptSlot);
+              if (slotDef.hasHb) {
+                hbAdUnitCodes.push(`/${networkCode}/${slotDef.adUnit}`);
+              }
+            }
+          });
+
+          if (batchGptSlots.length === 0) return;
+
+          if (hbAdUnitCodes.length > 0) {
+            pbjs.cmd.push(function () {
+              pbjs.requestBids({
+                adUnitCodes: hbAdUnitCodes,
+                bidsBackHandler: function () {
+                  try {
+                    pbjs.setTargetingForGPTAsync(hbAdUnitCodes);
+                    googletag.pubads().refresh(batchGptSlots);
+                  } catch (error) {
+                    console.error("Error in bidsBackHandler:", error);
+                  }
+                },
+              });
+            });
+          } else {
+            googletag.pubads().refresh(batchGptSlots);
+          }
+        });
+      }
+
+      // Setup IntersectionObserver for each batch threshold once DOM is ready
+      function setupBatchObservers() {
+        batchDefinitions.forEach((batch) => {
+          const observer = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                  triggerBatchSRA(batch);
+                  // Unobserve all slots in this batch
+                  batch.slots.forEach((slotDef) => {
+                    const el = document.getElementById(slotDef.divId);
+                    if (el) observer.unobserve(el);
+                  });
+                }
+              });
+            },
+            { rootMargin: batch.rootMargin }
+          );
+
+          // Observe all slot elements in this batch
+          batch.slots.forEach((slotDef) => {
+            const el = document.getElementById(slotDef.divId);
+            if (el) observer.observe(el);
+          });
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupBatchObservers);
+      } else {
+        setupBatchObservers();
+      }
+    </script>
+
+    <style>
+      div.ad-slot {
+        border-style: dashed;
+        display: block;
+        margin: auto;
+      }
+
+      div.main-content {
+        background-color: lightsteelblue;
+        margin-top: 320px;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      div.status-panel {
+        background: white;
+        min-height: 280px;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        padding: 10px 15px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+      }
+
+      .header-info {
+        margin-bottom: 8px;
+      }
+
+      .header-info h3 {
+        margin: 0 0 4px 0;
+        font-size: 1.05rem;
+      }
+
+      .header-info p {
+        margin: 2px 0;
+        font-size: 0.85rem;
+        color: #333;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      table th {
+        text-align: center;
+        font-size: 0.85rem;
+        padding: 4px 6px;
+      }
+
+      table td {
+        text-align: center;
+        font-size: 0.82rem;
+        padding: 4px 6px;
+      }
+
+      table td.slot-name {
+        text-align: left;
+        font-weight: bold;
+      }
+
+      table td:not(.slot-name) {
+        background-color: lightsalmon;
+      }
+
+      table td.activated {
+        background-color: lightgreen;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-content">
+      <!-- BATCH 1: 1-Viewport LazyLoad (100%) -->
+      <div style="text-align: center; font-weight: bold; padding: 10px;">
+        --- Batch 1 (1-Viewport LazyLoad, lazyload=100) ---
+      </div>
+      <div style="text-align: center">Ad Slot 1 (300x250 - Header Bidding)</div>
+      <div id="div-1" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-1");
+          });
+        </script>
+      </div>
+
+      <div style="height: 100vh"></div>
+      <div style="text-align: center">Ad Slot 2 (320x50 - Direct GAM)</div>
+      <div id="div-2" class="ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-2");
+          });
+        </script>
+      </div>
+
+      <!-- BATCH 2: 1-Viewport LazyLoad (100%) -->
+      <div style="height: 200vh"></div>
+      <div style="text-align: center; font-weight: bold; padding: 10px;">
+        --- Batch 2 (1-Viewport LazyLoad, lazyload=100) ---
+      </div>
+      <div style="text-align: center">Ad Slot 3 (300x250 - Header Bidding)</div>
+      <div id="div-3" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-3");
+          });
+        </script>
+      </div>
+
+      <div style="height: 100vh"></div>
+      <div style="text-align: center">Ad Slot 4 (320x50 - Direct GAM)</div>
+      <div id="div-4" class="ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-4");
+          });
+        </script>
+      </div>
+
+      <!-- BATCH 3: 3-Viewport LazyLoad (300%) -->
+      <div style="height: 200vh"></div>
+      <div style="text-align: center; font-weight: bold; padding: 10px;">
+        --- Batch 3 (3-Viewport LazyLoad, lazyload=300) ---
+      </div>
+      <div style="text-align: center">Ad Slot 5 (300x250 - Header Bidding)</div>
+      <div id="div-5" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-5");
+          });
+        </script>
+      </div>
+
+      <div style="height: 100vh"></div>
+      <div style="text-align: center">Ad Slot 6 (320x50 - Direct GAM)</div>
+      <div id="div-6" class="ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-6");
+          });
+        </script>
+      </div>
+
+      <!-- BATCH 4: 3-Viewport LazyLoad (300%) -->
+      <div style="height: 200vh"></div>
+      <div style="text-align: center; font-weight: bold; padding: 10px;">
+        --- Batch 4 (3-Viewport LazyLoad, lazyload=300) ---
+      </div>
+      <div style="text-align: center">Ad Slot 7 (300x250 - Header Bidding)</div>
+      <div id="div-7" class="ad-slot" style="width: 300px; height: 250px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-7");
+          });
+        </script>
+      </div>
+
+      <div style="height: 100vh"></div>
+      <div style="text-align: center">Ad Slot 8 (320x50 - Direct GAM)</div>
+      <div id="div-8" class="ad-slot" style="width: 320px; height: 50px">
+        <script>
+          googletag.cmd.push(function () {
+            googletag.display("div-8");
+          });
+        </script>
+      </div>
+
+      <div style="height: 10vh"></div>
+    </div>
+
+    <!-- Status Panel Header -->
+    <div class="status-panel">
+      <div class="header-info">
+        <h3>Batched SRA with Multi-Threshold LazyLoad & Header Bidding</h3>
+        <p>
+          <strong>LazyLoad Settings:</strong> Batches 1 & 2 loaded with <strong>1-viewport</strong> setting (<code>lazyload=100</code>). Batches 3 & 4 loaded with <strong>3-viewport</strong> setting (<code>lazyload=300</code>).
+        </p>
+        <p>
+          <strong>SRA & Header Bidding:</strong> Slots in each batch execute Prebid auctions on demand and are requested together via Single Request Architecture (<code>refresh([batchSlots])</code>).
+        </p>
+      </div>
+
+      <table>
+        <tr>
+          <th>Ad Slot</th>
+          <th>Batch</th>
+          <th>Threshold</th>
+          <th>lazyload KV</th>
+          <th>HB Enabled?</th>
+          <th>SRA Batch #</th>
+          <th>Requested?</th>
+          <th>Rendered?</th>
+          <th>Viewed?</th>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 1 (300x250)</td>
+          <td id="div-1-batch-info">Batch 1</td>
+          <td id="div-1-threshold">1 Viewport</td>
+          <td id="div-1-lazyload">lazyload=100</td>
+          <td id="div-1-hb">Yes</td>
+          <td id="div-1-batch">Pending</td>
+          <td id="div-1-requested">No</td>
+          <td id="div-1-rendered">No</td>
+          <td id="div-1-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 2 (320x50)</td>
+          <td id="div-2-batch-info">Batch 1</td>
+          <td id="div-2-threshold">1 Viewport</td>
+          <td id="div-2-lazyload">lazyload=100</td>
+          <td id="div-2-hb">No</td>
+          <td id="div-2-batch">Pending</td>
+          <td id="div-2-requested">No</td>
+          <td id="div-2-rendered">No</td>
+          <td id="div-2-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 3 (300x250)</td>
+          <td id="div-3-batch-info">Batch 2</td>
+          <td id="div-3-threshold">1 Viewport</td>
+          <td id="div-3-lazyload">lazyload=100</td>
+          <td id="div-3-hb">Yes</td>
+          <td id="div-3-batch">Pending</td>
+          <td id="div-3-requested">No</td>
+          <td id="div-3-rendered">No</td>
+          <td id="div-3-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 4 (320x50)</td>
+          <td id="div-4-batch-info">Batch 2</td>
+          <td id="div-4-threshold">1 Viewport</td>
+          <td id="div-4-lazyload">lazyload=100</td>
+          <td id="div-4-hb">No</td>
+          <td id="div-4-batch">Pending</td>
+          <td id="div-4-requested">No</td>
+          <td id="div-4-rendered">No</td>
+          <td id="div-4-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 5 (300x250)</td>
+          <td id="div-5-batch-info">Batch 3</td>
+          <td id="div-5-threshold">3 Viewports</td>
+          <td id="div-5-lazyload">lazyload=300</td>
+          <td id="div-5-hb">Yes</td>
+          <td id="div-5-batch">Pending</td>
+          <td id="div-5-requested">No</td>
+          <td id="div-5-rendered">No</td>
+          <td id="div-5-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 6 (320x50)</td>
+          <td id="div-6-batch-info">Batch 3</td>
+          <td id="div-6-threshold">3 Viewports</td>
+          <td id="div-6-lazyload">lazyload=300</td>
+          <td id="div-6-hb">No</td>
+          <td id="div-6-batch">Pending</td>
+          <td id="div-6-requested">No</td>
+          <td id="div-6-rendered">No</td>
+          <td id="div-6-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 7 (300x250)</td>
+          <td id="div-7-batch-info">Batch 4</td>
+          <td id="div-7-threshold">3 Viewports</td>
+          <td id="div-7-lazyload">lazyload=300</td>
+          <td id="div-7-hb">Yes</td>
+          <td id="div-7-batch">Pending</td>
+          <td id="div-7-requested">No</td>
+          <td id="div-7-rendered">No</td>
+          <td id="div-7-viewed">No</td>
+        </tr>
+        <tr>
+          <td class="slot-name">Ad Slot 8 (320x50)</td>
+          <td id="div-8-batch-info">Batch 4</td>
+          <td id="div-8-threshold">3 Viewports</td>
+          <td id="div-8-lazyload">lazyload=300</td>
+          <td id="div-8-hb">No</td>
+          <td id="div-8-batch">Pending</td>
+          <td id="div-8-requested">No</td>
+          <td id="div-8-rendered">No</td>
+          <td id="div-8-viewed">No</td>
+        </tr>
+      </table>
+      <p style="margin: 6px 0 0 0; font-size: 0.85rem;">
+        Scroll the container below to lazily load the batched ad slots.
+      </p>
+    </div>
+  </body>
+</html>
