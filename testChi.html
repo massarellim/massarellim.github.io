@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    window.__tcfapi = window.__tcfapi || function(command, version, callback, parameter) {
+      if (command === 'ping') {
+        if (typeof callback === 'function') {
+          callback({
+            gdprApplies: false,
+            cmpLoaded: true,
+            apiVersion: '2.0',
+            cmpStatus: 'loaded'
+          }, true);
+        }
+      } else if (command === 'addEventListener' || command === 'getTCData') {
+        if (typeof callback === 'function') {
+          callback({
+            gdprApplies: false,
+            tcString: '',
+            eventStatus: 'tcloaded',
+            cmpStatus: 'loaded'
+          }, true);
+        }
+      }
+    };
+  </script>
+
+  <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  
+  <script>
+    var googletag = googletag || {}, pbjs = pbjs || {};
+    googletag.cmd = googletag.cmd || [];
+    pbjs.cmd = pbjs.cmd || [];
+  
+    pbjs.cmd.push(function() {
+      pbjs.setConfig({
+        consentManagement: {
+          gdpr: {
+            cmpApi: 'iab',
+            timeout: 8000,
+            defaultGdprScope: false
+          }
+        },
+        debugging: { 
+          enabled: true, 
+          intercept: [{ when: { bidder: 'appnexus' }, then: { cpm: 15 } }] 
+        }
+      });
+  
+      pbjs.addAdUnits([
+        {code:'/38681514,22676954050/Chi/News/BoxTop', mediaTypes:{banner:{sizes:[300, 250]}}, bids:[{bidder:'appnexus',params:{placementId:1233}}]},
+      ]);
+  
+      pbjs.requestBids({
+        bidsBackHandler: function() {
+          googletag.cmd.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        }
+      });
+    });
+  
+    googletag.cmd.push(function() {
+      googletag.pubads().set("page_url", "https://www.chimagazine.it/news/martina-de-ioannon-addio-tv-reality-universita-criminologia/");
+      var slot = googletag.defineSlot('/38681514,22676954050/Chi/News/BoxTop', [300, 250], 'div-1')
+        .addService(googletag.pubads());
+      googletag.pubads().disableInitialLoad();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+<body>
+  <div id="div-1">
+    <script>
+      googletag.cmd.push(function() { 
+        googletag.display('div-1'); 
+      });
+    </script>
+  </div>
+</body>
+</html>
