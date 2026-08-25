@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script>
+    var googletag = googletag || {}, pbjs = pbjs || {};
+    googletag.cmd = googletag.cmd || [];
+    pbjs.cmd = pbjs.cmd || [];
+
+    pbjs.cmd.push(function() {
+      pbjs.setConfig({
+        debugging: { enabled: true, intercept: [{ when: { bidder: "taboola" }, then: { cpm: 10 } }] }
+      });
+
+      pbjs.addAdUnits([{
+        code: '/22877679933/prebid-adx-poc',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [{ bidder: 'taboola', params: { publisherId: '1317924', tagId: 'Feed - taboola-stream-rocket-1-adx' } }]
+      }]);
+
+      pbjs.requestBids({
+        bidsBackHandler: function() {
+          googletag.cmd.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        }
+      });
+    });
+
+    googletag.cmd.push(function() {
+      googletag.defineSlot('/22877679933/prebid-adx-poc', [300, 250], 'div-1').addService(googletag.pubads());
+      googletag.pubads().disableInitialLoad();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+<body>
+  <div id="div-1">
+    <script>
+      googletag.cmd.push(function() { googletag.display('div-1'); });
+    </script>
+  </div>
+</body>
+</html>
