@@ -2,6 +2,21 @@
 <html>
 <head>
   <script>
+    (function() {
+      var origFetch = window.fetch;
+      if (origFetch) {
+        window.fetch = function(input, init) {
+          if (typeof input === 'string' && input.includes('ppub_config')) {
+            input = input.replace(/ippd=[^&]+/, 'ippd=www.chimagazine.it');
+          } else if (input && typeof input.url === 'string' && input.url.includes('ppub_config')) {
+            input = new Request(input.url.replace(/ippd=[^&]+/, 'ippd=www.chimagazine.it'), input);
+          }
+          return origFetch.apply(this, arguments);
+        };
+      }
+    })();
+  </script>
+  <script>
     window.__tcfapi = window.__tcfapi || function(command, version, callback, parameter) {
       if (command === 'ping') {
         if (typeof callback === 'function') {
