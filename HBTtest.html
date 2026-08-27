@@ -32,6 +32,11 @@
     
 
     googletag.cmd.push(function() {
+      googletag.setConfig({
+        headerBidding: {
+          enableHeaderBiddingTraffickingPrebidIntegration: true
+        }
+      });
       googletag.defineSlot('/22877679933/prebid-adx-poc', [300, 250], 'div-1').addService(googletag.pubads());
       googletag.pubads().disableInitialLoad();
       googletag.enableServices();

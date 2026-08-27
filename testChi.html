@@ -63,6 +63,11 @@
     });
   
     googletag.cmd.push(function() {
+      googletag.setConfig({
+        headerBidding: {
+          enableHeaderBiddingTraffickingPrebidIntegration: true
+        }
+      });
       googletag.pubads().set("page_url", "https://www.chimagazine.it/news/martina-de-ioannon-addio-tv-reality-universita-criminologia/");
       var slot = googletag.defineSlot('/38681514,22676954050/Chi/News/BoxTop', [300, 250], 'div-1')
         .addService(googletag.pubads());
